@@ -1,0 +1,11 @@
+==== IRIS ====
+
+"IRIS" (Isomorphic Reduced Instruction Set) is a r-Turing complete, fully reversible instruction set and assembly language. It defines a small set of simple, yet highly expressive reversible computing primitives which can be used to define logically reversible programs.
+
+"Iris" is a virtual machine which implements IRIS on top of irreversible hardware. It is designed to run reversible programs in an orthogonal, efficient and secure, yet minimal runtime.
+
+This project is currently in its very early stages. Right now, we are working on expanding the set of primitives that Iris supports. Planned features include:
+
+- Multithreading support
+- A reversible IRIS self-assembler, which can easily decompile IRIS bytecode back into assembly
+- Support for linking C libraries as "faux-reversible" functions, via orthogonal persistence of intermediate values
