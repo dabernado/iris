@@ -9,4 +9,5 @@ This project is currently in its very early stages. Right now, we are working on
 - Multithreading support
 - JIT compilation support
 - A reversible IRIS self-assembler, which can easily decompile IRIS bytecode back into assembly
-- Support for linking external irreversible assembly routines as "faux-reversible" functions, via orthogonal persistence of intermediate values
+- Support for linking external irreversible assembly routines as
+  "faux-reversible" functions, via orthogonal persistence of intermediate values
