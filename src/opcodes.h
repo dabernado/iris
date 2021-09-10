@@ -32,14 +32,10 @@
 #define FN_RR    0x0d
 #define FN_RL    0x0e
 
-#define FN_VADD  0x41
-#define FN_VSUB  0x43
-#define FN_VXOR  0x45
-#define FN_VNEG  0x46
-#define FN_VMUL  0x49
-#define FN_VDIV  0x4b
-#define FN_VRR   0x4d
-#define FN_VRL   0x4e
+#define FN_FADD  0x41
+#define FN_FSUB  0x43
+#define FN_FMUL  0x49
+#define FN_FDIV  0x4b
 
 /* R3-Type
  *
@@ -67,12 +63,6 @@
 #define OP_DEL   0x04
 #define OP_SWB   0x06
 #define OP_RSWB  0x07
-#define OP_BLT   0x11
-#define OP_BLTU  0x13
-#define OP_BGE   0x12
-#define OP_BGEU  0x16
-#define OP_BEQ   0x14
-#define OP_BNE   0x15
 #define OP_BEVN  0x18
 #define OP_BODD  0x19
 
@@ -89,14 +79,10 @@
 #define FN_RRI   0x0d
 #define FN_RLI   0x0e
 
-#define FN_VADDI 0x41
-#define FN_VSUBI 0x43
-#define FN_VXORI 0x45
-#define FN_VNEGI 0x46
-#define FN_VMULI 0x49
-#define FN_VDIVI 0x4b
-#define FN_VRRI  0x4d
-#define FN_VRLI  0x4e
+#define FN_FADDI 0x41
+#define FN_FSUBI 0x43
+#define FN_FMULI 0x49
+#define FN_FDIVI 0x4b
 
 /* B-Type
  *
@@ -109,7 +95,14 @@
  * non-branch instruction of this format
  */
 
+#define OP_BLT   0x11
+#define OP_BLTU  0x13
+#define OP_BGE   0x12
+#define OP_BGEU  0x16
+#define OP_BEQ   0x14
+#define OP_BNE   0x15
 #define OP_FEYI  0x09
+
 #define OP_VFEYI 0x49
 
 #endif

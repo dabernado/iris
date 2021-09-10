@@ -138,6 +138,59 @@ DIVI @d [imm]
  * Division with immediate value
  */
 
+/// F: Floating Point
+FADD @d @s
+/*
+ * Add two registers, result placed in @d
+ */
+
+FADDI @d [imm]
+/* 
+ * Addition with immediate value
+ */
+
+FSUB @d @s 
+/*
+ * Subtract @s from @d, result placed in @d
+ */
+
+FSUBI @d [imm]
+/*
+ * Subtraction with immediate value
+ */
+
+FMUL @d @s
+/* 
+ * Multiply @d with @s, result placed in @d
+ *
+ * This instruction is included only if the
+ * M extension is enabled
+ */
+
+FMULI @d [imm]
+/* 
+ * Multiplication with immediate value
+ *
+ * This instruction is included only if the
+ * M extension is enabled
+ */
+
+FDIV @d @s
+/* 
+ * Divide @d by @s, result placed in @d
+ *
+ * This instruction is included only if the
+ * M extension is enabled
+ */
+
+FDIVI @d [imm]
+/*
+ * Division with immediate value
+ *
+ * This instruction is included only if the
+ * M extension is enabled
+ */
+
 /// B: Bitrotating
 RL @d @s
 /*
@@ -280,4 +333,68 @@ VRRI @v [imm]
  *
  * This instruction is included only if the
  * B extension is enabled
+ */
+
+VFADD @d @s
+/*
+ * Add two registers, result placed in @d
+ *
+ * This instruction is included only if the
+ * F extension is enabled
+ */
+
+VFADDI @d [imm]
+/* 
+ * Addition with immediate value
+ *
+ * This instruction is included only if the
+ * F extension is enabled
+ */
+
+VFSUB @d @s 
+/*
+ * Subtract @s from @d, result placed in @d
+ *
+ * This instruction is included only if the
+ * F extension is enabled
+ */
+
+VFSUBI @d [imm]
+/*
+ * Subtraction with immediate value
+ *
+ * This instruction is included only if the
+ * F extension is enabled
+ */
+
+VFMUL @d @s
+/* 
+ * Multiply @d with @s, result placed in @d
+ *
+ * This instruction is included only if the
+ * F and M extensions are enabled
+ */
+
+VFMULI @d [imm]
+/* 
+ * Multiplication with immediate value
+ *
+ * This instruction is included only if the
+ * F and M extensions are enabled
+ */
+
+VFDIV @d @s
+/* 
+ * Divide @d by @s, result placed in @d
+ *
+ * This instruction is included only if the
+ * F and M extensions are enabled
+ */
+
+VFDIVI @d [imm]
+/*
+ * Division with immediate value
+ *
+ * This instruction is included only if the
+ * F and M extensions are enabled
  */
