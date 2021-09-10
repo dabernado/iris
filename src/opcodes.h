@@ -19,8 +19,8 @@
 #define OP_SPECIAL  0x00
 #define OP_EXCH     0x02
 
-#define OP_VSPECIAL 0x80
-#define OP_VEXCH    0x82
+#define OP_VSPECIAL 0x40
+#define OP_VEXCH    0x42
 
 // functions
 #define FN_ADD   0x01
@@ -32,14 +32,14 @@
 #define FN_RR    0x0d
 #define FN_RL    0x0e
 
-#define FN_VADD  0x81
-#define FN_VSUB  0x83
-#define FN_VXOR  0x85
-#define FN_VNEG  0x86
-#define FN_VMUL  0x89
-#define FN_VDIV  0x8b
-#define FN_VRR   0x8d
-#define FN_VRL   0x8e
+#define FN_VADD  0x41
+#define FN_VSUB  0x43
+#define FN_VXOR  0x45
+#define FN_VNEG  0x46
+#define FN_VMUL  0x49
+#define FN_VDIV  0x4b
+#define FN_VRR   0x4d
+#define FN_VRL   0x4e
 
 /* R3-Type
  *
@@ -76,8 +76,8 @@
 #define OP_BEVN  0x18
 #define OP_BODD  0x19
 
-#define OP_VIMM  0x81
-#define OP_VDEL  0x84
+#define OP_VIMM  0x41
+#define OP_VDEL  0x44
 
 // functions
 #define FN_ADDI  0x01
@@ -89,14 +89,14 @@
 #define FN_RRI   0x0d
 #define FN_RLI   0x0e
 
-#define FN_VADDI 0x81
-#define FN_VSUBI 0x83
-#define FN_VXORI 0x85
-#define FN_VNEGI 0x86
-#define FN_VMULI 0x89
-#define FN_VDIVI 0x8b
-#define FN_VRRI  0x8d
-#define FN_VRLI  0x8e
+#define FN_VADDI 0x41
+#define FN_VSUBI 0x43
+#define FN_VXORI 0x45
+#define FN_VNEGI 0x46
+#define FN_VMULI 0x49
+#define FN_VDIVI 0x4b
+#define FN_VRRI  0x4d
+#define FN_VRLI  0x4e
 
 /* B-Type
  *
@@ -110,6 +110,6 @@
  */
 
 #define OP_FEYI  0x09
-#define OP_VFEYI 0x89
+#define OP_VFEYI 0x49
 
 #endif
