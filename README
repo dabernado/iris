@@ -1,6 +1,6 @@
 ==== IRIS ====
 
-"IRIS" (Isomorphic Reduced Instruction Set) is a fully reversible 64-bit instruction set and assembly language. It defines a set of just 28 r-Turing complete computing primitives which can be used to define logically reversible programs.
+"IRIS" (Isomorphic Reduced Instruction Set) is a fully reversible 64-bit instruction set and assembly language. It defines a set of just 20 r-Turing complete computing primitives which can be used to define a logically reversible program (called an "iso"). IRIS also has extensions for multiplication/division, bitrotating, vector instructions and memory deletion, allowing for the definition of logically irreversible, effectful routines (called "arrows").
 
 "Iris" is a virtual machine which implements IRIS on top of irreversible hardware. It is designed to run reversible programs in an orthogonal, efficient and correct, yet minimal runtime.
 
@@ -9,5 +9,4 @@ This project is currently in its very early stages. Right now, we are working on
 - Multithreading support
 - JIT compilation support
 - A reversible IRIS self-assembler, which can easily decompile IRIS bytecode back into assembly
-- Support for linking external irreversible assembly routines as
-  "faux-reversible" functions, via orthogonal persistence of intermediate values
+- Support for linking external assembly routines as arrows (for x86, ARM and RISC-V only)

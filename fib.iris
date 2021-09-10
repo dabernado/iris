@@ -5,15 +5,15 @@ main:   start               ( compute Nth fibonacci number )
         neg @2              ( shorthand for "xori @2 0x1ff; addi @2 1" )
         addi @2 1           ( setup @2 for loop count )
         addi @3 bottom      ( loop target is top, swapped with bottom )
-        addi @4 t1          ( loop target is top, swapped with bottom )
-        addi @5 exit        ( loop target is top, swapped with bottom )
+        addi @4 t1          ( entry point )
+        addi @5 exit        ( exit address )
 call:   beq @0 @7 @4        ( call fib routine )
 
-        ^beq @0 @7 @5       ( return from rcall )
+        beq @0 @7 -@5       ( return from rcall )
         addi @5 -1
 rexit:  beq @0 @7 @4
 
-top:    bltz @3 @2
+top:    blt @0 @2 @3
 t1:     beq @0 @7 @4
         addi @7 1
         add @0 @1
@@ -23,7 +23,7 @@ t1:     beq @0 @7 @4
         addi @2 1           ( increment counter )
         addi @3 -10         ( correct for exchange )
 b1:     beq @0 @2 @5        ( exit condition )
-bottom: blz @3 @2           ( loop until done )
+bottom: blt @0 @2 @3           ( loop until done )
 
 exit:   beq @0 @2 @5        ( exit point. top and bottom could
                               have an unconditional jump )
@@ -31,7 +31,7 @@ exit:   beq @0 @2 @5        ( exit point. top and bottom could
 ( Copy output and call the fib generator in reverse )
         add @6 @1           ( result to @6 )
         addi @4 3           ( @4 points to call, adjust to rexit )
-rcall:  ^beq @0 @2 @5       ( call backwards; goto b1 )
+rcall:  beq @0 @2 -@5       ( call backwards; goto b1 )
         beq @0 @7 @5        ( return from rcall )
 
 ( reclaim other space 
