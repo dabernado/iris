@@ -1,22 +1,13 @@
 // Arithmetic
-ADD @d @s
+ADD @d @s|*imm
 /*
- * Add two registers, result placed in @d
+ * Add two registers or one register and immediate,
+ * result placed in @d
  */
 
-ADDI @d [imm]
-/* 
- * Addition with immediate value
- */
-
-SUB @d @s 
+SUB @d @s|*imm
 /*
- * Subtract @s from @d, result placed in @d
- */
-
-SUBI @d [imm]
-/*
- * Subtraction with immediate value
+ * Subtract @s|*imm from @d, result placed in @d
  */
 
 // Logic
@@ -25,69 +16,60 @@ NEG @d
  * Negate @d
  */
 
-XOR @d @s
+XOR @d @s|*imm
 /*
- * Exclusive-or @d and @s, result placed in @d
+ * Exclusive-or @d and @s|*imm, result placed in @d
  */
 
-XORI @d [imm]
+CSWAP @a @b @c|*imm
 /*
- * Exclusive-or with immediate value
- */
-
-FEY @a @b @c
-/*
- * Feynman gate on @a, @b and @c
- */
-
-FEYI @a [imm] @c
-/*
- * Feynman gate with immediate value
+ * Fredkin gate on @a and @b, with @c|*imm as the control,
+ * results placed in @a and @b
  */
 
 // Control Flow
-BLT @d @s [off]
+BLT @d @s *off
 /*
- * Branch by offset [off] if @d is less
+ * Branch by offset *off if @d is less
  * than @s
  */
 
-BLTU @d @s [off]
+BLTU @d @s *off
 /*
  * BLT on unsigned integers
  */
 
-BGE @d @s [off]
+BGE @d @s *off
 /*
- * Branch by offset [off] if @d is greater
+ * Branch by offset *off if @d is greater
  * than or equal to @s
  */
 
-BGEU @d @s [off]
+BGEU @d @s *off
 /*
  * BGE on unsigned integers
  */
 
-BEQ @d @s [off]
+BEQ @d @s *off
 /*
- * Branch by offset [off] if @d is equal
+ * Branch by offset *off if @d is equal
  * to @s
  */
 
-BNE @d @s [off]
+BNE @d @s *off
 /*
- * Branch by offset [off] if @d is not
+ * Branch by offset *off if @d is not
  * equal to @s
  */
 
-BEVN @d [off]
+BEVN @d *off
 /*
- * Branch by offset [off] if @d is even
+ * Branch by offset *off if @d is even
  */
 
-BODD @d [off]
+BODD @d *off
 /*
- * Branch by offset [off] if @d is odd
+ * Branch by offset *off if @d is odd
  */
 
 SWB @d
@@ -118,119 +100,63 @@ DEL @d
  */
 
 /// M: Multiplication and Division
-MUL @d @s
+MUL @d @s|*imm
 /* 
- * Multiply @d with @s, result placed in @d
+ * Multiply @d with @s|*imm, result placed in @d
  */
 
-MULI @d [imm]
+DIV @d @s|*imm
 /* 
- * Multiplication with immediate value
- */
-
-DIV @d @s
-/* 
- * Divide @d by @s, result placed in @d
- */
-
-DIVI @d [imm]
-/*
- * Division with immediate value
+ * Divide @d by @s|*imm, result placed in @d
  */
 
 /// F: Floating Point
-FADD @d @s
+FADD @d @s|*imm
 /*
  * Add two registers, result placed in @d
  */
 
-FADDI @d [imm]
-/* 
- * Addition with immediate value
- */
-
-FSUB @d @s 
+FSUB @d @s|*imm 
 /*
- * Subtract @s from @d, result placed in @d
+ * Subtract @s|*imm from @d, result placed in @d
  */
 
-FSUBI @d [imm]
-/*
- * Subtraction with immediate value
- */
-
-FMUL @d @s
+FMUL @d @s|*imm
 /* 
- * Multiply @d with @s, result placed in @d
+ * Multiply @d with @s|*imm, result placed in @d
  *
  * This instruction is included only if the
  * M extension is enabled
  */
 
-FMULI @d [imm]
+FDIV @d @s|*imm
 /* 
- * Multiplication with immediate value
- *
- * This instruction is included only if the
- * M extension is enabled
- */
-
-FDIV @d @s
-/* 
- * Divide @d by @s, result placed in @d
- *
- * This instruction is included only if the
- * M extension is enabled
- */
-
-FDIVI @d [imm]
-/*
- * Division with immediate value
+ * Divide @d by @s|*imm, result placed in @d
  *
  * This instruction is included only if the
  * M extension is enabled
  */
 
 /// B: Bitrotating
-RL @d @s
+RL @d @s|*imm
 /*
- * Rotate bits in @d left by value in @s
+ * Rotate bits in @d left by value in @s|*imm
  */
 
-RLI @d [imm]
+RR @d @s|*imm
 /*
- * Rotate bits left with immediate value
- */
-
-RR @d @s
-/*
- * Rotate bits in @d right by value in @s
- */
-
-RRI @d [imm]
-/*
- * Rotate bits right with immediate value
+ * Rotate bits in @d right by value in @s|*imm
  */
 
 /// V: Vector Instructions
-VADD @v0 @v1
+VADD @vd @vs|*imm
 /*
- * Add two registers, result placed in @v0
+ * Add two registers or immediate, result placed in @vd
  */
 
-VADDI @v [imm]
-/* 
- * Addition with immediate value
- */
-
-VSUB @v0 @v1 
+VSUB @vd @vs|*imm 
 /*
- * Subtract @v1 from @v0, result placed in @v0
- */
-
-VSUBI @v [imm]
-/*
- * Subtraction with immediate value
+ * Subtract @vd from @vs|*imm, result placed in @vd
  */
 
 VNEG @v
@@ -238,29 +164,19 @@ VNEG @v
  * Negate @v
  */
 
-VXOR @v0 @v1
+VXOR @vd @vs|*imm
 /*
- * Exclusive-or @v0 and @v1, result placed in @v0
+ * Exclusive-or @vd and @vs|*imm, result placed in @vd
  */
 
-VXORI @v [imm]
+VCSWAP @va @vb @vc|*imm
 /*
- * Exclusive-or with immediate value
+ * Fredkin gate with @va, @vb and @vc|*imm
  */
 
-VFEY @v0 @v1 @v2
+VEXCH @vd @vs
 /*
- * Feynman gate on @v0, @v1 and @v2
- */
-
-VFEYI @v0 [imm] @v1
-/*
- * Feynman gate with immediate value
- */
-
-VEXCH @v0 @v1
-/*
- * Swap the vectors in @v0 and @v1
+ * Swap the vectors in @vd and @vs
  */
 
 VDEL @v
@@ -271,129 +187,65 @@ VDEL @v
  * I extension is enabled
  */
 
-VMUL @v0 @v1
+VMUL @vd @vs|*imm
 /* 
- * Multiply @v0 with @v1, result placed in @v0
+ * Multiply @vd with @vs|*imm, result placed in @vd
  *
  * This instruction is included only if the
  * M extension is enabled
  */
 
-VMULI @v [imm]
+VDIV @vd @vs|*imm
 /* 
- * Multiplication with immediate value
+ * Divide @vd by @vs|*imm, result placed in @vd
  *
  * This instruction is included only if the
  * M extension is enabled
  */
 
-VDIV @v0 @v1
+VRL @vd @vs|*imm
+/*
+ * Rotate bits in @vd left by value in @vs|*imm
+ *
+ * This instruction is included only if the
+ * B extension is enabled
+ */
+
+VRR @vd @vs|*imm
+/*
+ * Rotate bits in @vd right by value in @vs|*imm
+ *
+ * This instruction is included only if the
+ * B extension is enabled
+ */
+
+VFADD @vd @vs|*imm
+/*
+ * Add two registers or immediate, result placed in @vd
+ *
+ * This instruction is included only if the
+ * F extension is enabled
+ */
+
+VFSUB @vd @vs|*imm
+/*
+ * Subtract @vs|*imm from @vd, result placed in @vd
+ *
+ * This instruction is included only if the
+ * F extension is enabled
+ */
+
+VFMUL @vd @vs|*imm
 /* 
- * Divide @v0 by @v1, result placed in @v0
- *
- * This instruction is included only if the
- * M extension is enabled
- */
-
-VDIVI @v [imm]
-/*
- * Division with immediate value
- *
- * This instruction is included only if the
- * M extension is enabled
- */
-
-VRL @v0 @v1
-/*
- * Rotate bits in @v0 left by value in @v1
- *
- * This instruction is included only if the
- * B extension is enabled
- */
-
-VRLI @v [imm]
-/*
- * Rotate bits left with immediate value
- *
- * This instruction is included only if the
- * B extension is enabled
- */
-
-VRR @v0 @v1
-/*
- * Rotate bits in @v0 right by value in @v1
- *
- * This instruction is included only if the
- * B extension is enabled
- */
-
-VRRI @v [imm]
-/*
- * Rotate bits right with immediate value
- *
- * This instruction is included only if the
- * B extension is enabled
- */
-
-VFADD @d @s
-/*
- * Add two registers, result placed in @d
- *
- * This instruction is included only if the
- * F extension is enabled
- */
-
-VFADDI @d [imm]
-/* 
- * Addition with immediate value
- *
- * This instruction is included only if the
- * F extension is enabled
- */
-
-VFSUB @d @s 
-/*
- * Subtract @s from @d, result placed in @d
- *
- * This instruction is included only if the
- * F extension is enabled
- */
-
-VFSUBI @d [imm]
-/*
- * Subtraction with immediate value
- *
- * This instruction is included only if the
- * F extension is enabled
- */
-
-VFMUL @d @s
-/* 
- * Multiply @d with @s, result placed in @d
+ * Multiply @vd with @vs|*imm, result placed in @vd
  *
  * This instruction is included only if the
  * F and M extensions are enabled
  */
 
-VFMULI @d [imm]
+VFDIV @vd @vs|*imm
 /* 
- * Multiplication with immediate value
- *
- * This instruction is included only if the
- * F and M extensions are enabled
- */
-
-VFDIV @d @s
-/* 
- * Divide @d by @s, result placed in @d
- *
- * This instruction is included only if the
- * F and M extensions are enabled
- */
-
-VFDIVI @d [imm]
-/*
- * Division with immediate value
+ * Divide @vd by @vs|*imm, result placed in @d
  *
  * This instruction is included only if the
  * F and M extensions are enabled
