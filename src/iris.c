@@ -4,12 +4,6 @@
 
 #define PROJECT_NAME "iris"
 
-#define REGS_NUM  32
-#define VECTOR_LEN 32
-
-int regs[REGS_NUM];
-int v_regs[REGS_NUM][VECTOR_LEN];
-
 int main(int argc, char **argv)
 {
     if(argc != 1) {
@@ -21,11 +15,15 @@ int main(int argc, char **argv)
 }
 
 /* runs the program bytecode */
-void run_program(int i_num, int prog[i_num])
+void init(int i_num, int prog[i_num])
 {
   int pc = 0; // program counter
   int direction = 0; // direction bit
   int branch = 0; // branch register
+
+  // initialize registers
+  int regs[REGS_NUM];
+  int v_regs[REGS_NUM][VECTOR_LEN];
 
   // initialize r0 and r1
   regs[0] = 0;
@@ -33,7 +31,10 @@ void run_program(int i_num, int prog[i_num])
 }
 
 /* evaluates a single instruction */
-void eval(int instr, int *pc, int *direction, int *branch)
+void eval(
+    int regs[REGS_NUM], int v_regs[REGS_NUM][VECTOR_LEN],
+    int instr,
+    int *pc, int *direction, int *branch)
 {
   int imm = 0;
   int v_op = 0;
@@ -53,7 +54,10 @@ void eval(int instr, int *pc, int *direction, int *branch)
       int rb = (instr & RTYPE_RS_MASK) >> 22;
       int offset = (instr & RTYPE_OFF_MASK) >> 6;
       
-      fn_cswap(ra, rb, -1, regs[ra], regs[rb], offset, v_op);
+      fn_cswap(regs, NULL,
+          ra, rb, -1,
+          regs[ra], regs[rb], offset);
+
       break;
 
     // memops
@@ -125,9 +129,11 @@ void eval(int instr, int *pc, int *direction, int *branch)
       int ra = (instr & RD_MASK) >> 27;
       int rb = (instr & RTYPE_RS_MASK) >> 22;
       int offset = (instr & RTYPE_OFF_MASK) >> 6;
-      v_op = 1;
       
-      fn_cswap(ra, rb, -1, 0, 0, offset, v_op);
+      fn_cswap(NULL, v_regs,
+          ra, rb, -1,
+          0, 0, offset);
+
       break;
     
     case OP_VEXCH:
@@ -166,11 +172,19 @@ FUNC:
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
 
-        fn_add(rd, rs, regs[rs], v_op);
+        if (v_op == 0) {
+          fn_add(regs, NULL, rd, rs, regs[rs]);
+        } else {
+          fn_add(NULL, v_regs, rd, rs, 0);
+        }
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
 
-        fn_add(rd, -1, offset, v_op);
+        if (v_op == 0) {
+          fn_add(regs, NULL, rd, -1, offset);
+        } else {
+          fn_add(NULL, v_regs, rd, -1, offset);
+        }
       }
       break;
 
@@ -180,11 +194,19 @@ FUNC:
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
 
-        fn_sub(rd, rs, regs[rs], v_op);
+        if (v_op == 0) {
+          fn_sub(regs, NULL, rd, rs, regs[rs]);
+        } else {
+          fn_sub(NULL, v_regs, rd, rs, 0);
+        }
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
 
-        fn_sub(rd, -1, offset, v_op);
+        if (v_op == 0) {
+          fn_sub(regs, NULL, rd, -1, offset);
+        } else {
+          fn_sub(NULL, v_regs, rd, -1, offset);
+        }
       }
       break;
 
@@ -194,18 +216,30 @@ FUNC:
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
 
-        fn_xor(rd, rs, regs[rs], v_op);
+        if (v_op == 0) {
+          fn_xor(regs, NULL, rd, rs, regs[rs]);
+        } else {
+          fn_xor(NULL, v_regs, rd, rs, 0);
+        }
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
 
-        fn_xor(rd, -1, offset, v_op);
+        if (v_op == 0) {
+          fn_xor(regs, NULL, rd, -1, offset);
+        } else {
+          fn_xor(NULL, v_regs, rd, -1, offset);
+        }
       }
       break;
 
     case FN_NEG:
       int rd = (instr & RD_MASK) >> 27;
 
-      fn_neg(rd, v_op);
+      if (v_op == 0) {
+        fn_neg(regs, NULL, rd);
+      } else {
+        fn_neg(NULL, v_regs, rd);
+      }
       break;
 
     case FN_CSWAP:
@@ -214,11 +248,13 @@ FUNC:
       int rc = (instr & RTYPE_OFF_MASK) >> 17;
       
       if (v_op == 0) {
-        fn_cswap(ra, rb, rc, regs[ra], regs[rb], regs[rc], v_op);
+        fn_cswap(regs, NULL
+            ra, rb, rc,
+            regs[ra], regs[rb], regs[rc]);
       } else {
-        for (int i = 0; i++; i < VECTOR_LEN) {
-          fn_cswap(ra, rb, rc, 0, 0, v_regs[rc][i], v_op);
-        }
+        fn_cswap(NULL, v_regs
+            ra, rb, rc,
+            0, 0, 0);
       }
       break;
 
@@ -228,11 +264,19 @@ FUNC:
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
 
-        fn_mul(rd, rs, regs[rs], v_op);
+        if (v_op == 0) {
+          fn_mul(regs, NULL, rd, rs, regs[rs]);
+        } else {
+          fn_mul(NULL, v_regs, rd, rs, 0);
+        }
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
 
-        fn_mul(rd, -1, offset, v_op);
+        if (v_op == 0) {
+          fn_mul(regs, NULL, rd, -1, offset);
+        } else {
+          fn_mul(NULL, v_regs, rd, -1, offset);
+        }
       }
       break;
 
@@ -242,18 +286,64 @@ FUNC:
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
 
-        fn_div(rd, rs, regs[rs], v_op);
+        if (v_op == 0) {
+          fn_div(regs, NULL, rd, rs, regs[rs]);
+        } else {
+          fn_div(NULL, v_regs, rd, rs, 0);
+        }
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
 
-        fn_div(rd, -1, offset, v_op);
+        if (v_op == 0) {
+          fn_div(regs, NULL, rd, -1, offset);
+        } else {
+          fn_div(NULL, v_regs, rd, -1, offset);
+        }
       }
       break;
 
     case FN_RR:
+      int rd = (instr & RD_MASK) >> 27;
+
+      if (imm = 0) {
+        int rs = (instr & RTYPE_RS_MASK) >> 22;
+
+        if (v_op == 0) {
+          fn_rr(regs, NULL, rd, rs, regs[rs]);
+        } else {
+          fn_rr(NULL, v_regs, rd, rs, 0);
+        }
+      } else {
+        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+
+        if (v_op == 0) {
+          fn_rr(regs, NULL, rd, -1, offset);
+        } else {
+          fn_rr(NULL, v_regs, rd, -1, offset);
+        }
+      }
       break;
 
     case FN_RL:
+      int rd = (instr & RD_MASK) >> 27;
+
+      if (imm = 0) {
+        int rs = (instr & RTYPE_RS_MASK) >> 22;
+
+        if (v_op == 0) {
+          fn_rl(regs, NULL, rd, rs, regs[rs]);
+        } else {
+          fn_rl(NULL, v_regs, rd, rs, 0);
+        }
+      } else {
+        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+
+        if (v_op == 0) {
+          fn_rl(regs, NULL, rd, -1, offset);
+        } else {
+          fn_rl(NULL, v_regs, rd, -1, offset);
+        }
+      }
       break;
 
     // float functions
@@ -273,7 +363,10 @@ FUNC:
 }
 
 /* evaluates a single instruction in reverse */
-void r_eval(int instr, int *pc, int *direction, int *branch)
+void r_eval(
+    int regs[REGS_NUM], int v_regs[REGS_NUM][VECTOR_LEN],
+    int instr,
+    int *pc, int *direction, int *branch)
 {
   int imm = 0;
   int v_op = 0;
@@ -293,7 +386,9 @@ void r_eval(int instr, int *pc, int *direction, int *branch)
       int rb = (instr & RTYPE_RS_MASK) >> 22;
       int offset = (instr & RTYPE_OFF_MASK) >> 6;
       
-      fn_cswap(ra, rb, -1, regs[ra], regs[rb], offset, v_op);
+      fn_cswap(regs, NULL,
+          ra, rb, -1,
+          0, 0, offset);
       break;
 
     // memops
@@ -362,9 +457,11 @@ void r_eval(int instr, int *pc, int *direction, int *branch)
       int ra = (instr & RD_MASK) >> 27;
       int rb = (instr & RTYPE_RS_MASK) >> 22;
       int offset = (instr & RTYPE_OFF_MASK) >> 6;
-      v_op = 1;
       
-      fn_cswap(ra, rb, -1, 0, 0, offset, v_op);
+      fn_cswap(NULL, v_regs,
+          ra, rb, -1,
+          0, 0, offset);
+
       break;
     
     case OP_VEXCH:
@@ -399,11 +496,19 @@ FUNC:
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
 
-        fn_sub(rd, rs, regs[rs], v_op);
+        if (v_op == 0) {
+          fn_sub(regs, NULL, rd, rs, regs[rs]);
+        } else {
+          fn_sub(NULL, v_regs, rd, rs, 0);
+        }
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
 
-        fn_sub(rd, -1, offset, v_op);
+        if (v_op == 0) {
+          fn_sub(regs, NULL, rd, -1, offset);
+        } else {
+          fn_sub(NULL, v_regs, rd, -1, offset);
+        }
       }
       break;
 
@@ -413,11 +518,19 @@ FUNC:
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
 
-        fn_add(rd, rs, regs[rs], v_op);
+        if (v_op == 0) {
+          fn_add(regs, NULL, rd, rs, regs[rs]);
+        } else {
+          fn_add(NULL, v_regs, rd, rs, 0);
+        }
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
 
-        fn_add(rd, -1, offset, v_op);
+        if (v_op == 0) {
+          fn_add(regs, NULL, rd, -1, offset);
+        } else {
+          fn_add(NULL, v_regs, rd, -1, offset);
+        }
       }
       break;
     
@@ -427,18 +540,30 @@ FUNC:
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
 
-        fn_xor(rd, rs, regs[rs], v_op);
+        if (v_op == 0) {
+          fn_xor(regs, NULL, rd, rs, regs[rs]);
+        } else {
+          fn_xor(NULL, v_regs, rd, rs, 0);
+        }
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
 
-        fn_xor(rd, -1, offset, v_op);
+        if (v_op == 0) {
+          fn_xor(regs, NULL, rd, -1, offset);
+        } else {
+          fn_xor(NULL, v_regs, rd, -1, offset);
+        }
       }
       break;
 
     case FN_NEG:
       int rd = (instr & RD_MASK) >> 27;
 
-      fn_neg(rd, v_op);
+      if (v_op == 0) {
+        fn_neg(regs, NULL, rd);
+      } else {
+        fn_neg(NULL, v_regs, rd);
+      }
       break;
 
     case FN_CSWAP:
@@ -447,11 +572,13 @@ FUNC:
       int rc = (instr & RTYPE_OFF_MASK) >> 17;
       
       if (v_op == 0) {
-        fn_cswap(ra, rb, rc, regs[ra], regs[rb], regs[rc], v_op);
+        fn_cswap(regs, NULL
+            ra, rb, rc,
+            regs[ra], regs[rb], regs[rc]);
       } else {
-        for (int i = 0; i++; i < VECTOR_LEN) {
-          fn_cswap(ra, rb, rc, 0, 0, v_regs[rc][i], v_op);
-        }
+        fn_cswap(NULL, v_regs
+            ra, rb, rc,
+            0, 0, 0);
       }
       break;
 
@@ -461,11 +588,19 @@ FUNC:
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
 
-        fn_div(rd, rs, regs[rs], v_op);
+        if (v_op == 0) {
+          fn_div(regs, NULL, rd, rs, regs[rs]);
+        } else {
+          fn_div(NULL, v_regs, rd, rs, 0);
+        }
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
 
-        fn_div(rd, -1, offset, v_op);
+        if (v_op == 0) {
+          fn_div(regs, NULL, rd, -1, offset);
+        } else {
+          fn_div(NULL, v_regs, rd, -1, offset);
+        }
       }
       break;
 
@@ -475,18 +610,64 @@ FUNC:
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
 
-        fn_mul(rd, rs, regs[rs], v_op);
+        if (v_op == 0) {
+          fn_mul(regs, NULL, rd, rs, regs[rs]);
+        } else {
+          fn_mul(NULL, v_regs, rd, rs, 0);
+        }
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
 
-        fn_mul(rd, -1, offset, v_op);
+        if (v_op == 0) {
+          fn_mul(regs, NULL, rd, -1, offset);
+        } else {
+          fn_mul(NULL, v_regs, rd, -1, offset);
+        }
       }
       break;
 
     case FN_RR:
+      int rd = (instr & RD_MASK) >> 27;
+
+      if (imm = 0) {
+        int rs = (instr & RTYPE_RS_MASK) >> 22;
+
+        if (v_op == 0) {
+          fn_rl(regs, NULL, rd, rs, regs[rs]);
+        } else {
+          fn_rl(NULL, v_regs, rd, rs, 0);
+        }
+      } else {
+        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+
+        if (v_op == 0) {
+          fn_rl(regs, NULL, rd, -1, offset);
+        } else {
+          fn_rl(NULL, v_regs, rd, -1, offset);
+        }
+      }
       break;
 
     case FN_RL:
+      int rd = (instr & RD_MASK) >> 27;
+
+      if (imm = 0) {
+        int rs = (instr & RTYPE_RS_MASK) >> 22;
+
+        if (v_op == 0) {
+          fn_rr(regs, NULL, rd, rs, regs[rs]);
+        } else {
+          fn_rr(NULL, v_regs, rd, rs, 0);
+        }
+      } else {
+        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+
+        if (v_op == 0) {
+          fn_rr(regs, NULL, rd, -1, offset);
+        } else {
+          fn_rr(NULL, v_regs, rd, -1, offset);
+        }
+      }
       break;
 
     /* float functions */

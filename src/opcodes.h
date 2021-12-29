@@ -6,7 +6,10 @@
 #ifndef IRIS_OPS
 #define IRIS_OPS
 
-// Opcode and Funcode bitmasks
+#define REGS_NUM   32
+#define VECTOR_LEN 32
+
+// opcode and funcode bitmasks
 #define OP_MASK 0x0000003f
 #define FN_MASK 0x000007c0
 #define RD_MASK 0xf8000000
