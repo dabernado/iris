@@ -49,19 +49,19 @@ void fn_rl(
 
 void fn_fadd(
     int regs[REGS_NUM], int v_regs[REGS_NUM][VECTOR_LEN],
-    int rd,
-    float a, float b);
+    int rd, int rs,
+    float n);
 void fn_fsub(
     int regs[REGS_NUM], int v_regs[REGS_NUM][VECTOR_LEN],
-    int rd,
-    float a, float b);
+    int rd, int rs,
+    float n);
 void fn_fmul(
     int regs[REGS_NUM], int v_regs[REGS_NUM][VECTOR_LEN],
-    int rd,
-    float a, float b);
+    int rd, int rs,
+    float n);
 void fn_fdiv(
     int regs[REGS_NUM], int v_regs[REGS_NUM][VECTOR_LEN],
-    int rd,
-    float a, float b);
+    int rd, int rs,
+    float n);
 
 #endif

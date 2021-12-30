@@ -672,15 +672,91 @@ FUNC:
 
     /* float functions */
     case FN_FADD:
+      int rd = (instr & RD_MASK) >> 27;
+
+      if (imm = 0) {
+        int rs = (instr & RTYPE_RS_MASK) >> 22;
+
+        if (v_op == 0) {
+          fn_fadd(regs, NULL, rd, rs, (float)regs[rs]);
+        } else {
+          fn_fadd(NULL, v_regs, rd, rs, 0.0);
+        }
+      } else {
+        float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
+
+        if (v_op == 0) {
+          fn_fadd(regs, NULL, rd, -1, offset);
+        } else {
+          fn_fadd(NULL, v_regs, rd, -1, offset);
+        }
+      }
       break;
 
     case FN_FSUB:
+      int rd = (instr & RD_MASK) >> 27;
+
+      if (imm = 0) {
+        int rs = (instr & RTYPE_RS_MASK) >> 22;
+
+        if (v_op == 0) {
+          fn_fsub(regs, NULL, rd, rs, (float)regs[rs]);
+        } else {
+          fn_fsub(NULL, v_regs, rd, rs, 0.0);
+        }
+      } else {
+        float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
+
+        if (v_op == 0) {
+          fn_fsub(regs, NULL, rd, -1, offset);
+        } else {
+          fn_fsub(NULL, v_regs, rd, -1, offset);
+        }
+      }
       break;
 
     case FN_FMUL:
+      int rd = (instr & RD_MASK) >> 27;
+
+      if (imm = 0) {
+        int rs = (instr & RTYPE_RS_MASK) >> 22;
+
+        if (v_op == 0) {
+          fn_fmul(regs, NULL, rd, rs, (float)regs[rs]);
+        } else {
+          fn_fmul(NULL, v_regs, rd, rs, 0.0);
+        }
+      } else {
+        float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
+
+        if (v_op == 0) {
+          fn_fmul(regs, NULL, rd, -1, offset);
+        } else {
+          fn_fmul(NULL, v_regs, rd, -1, offset);
+        }
+      }
       break;
 
     case FN_FDIV:
+      int rd = (instr & RD_MASK) >> 27;
+
+      if (imm = 0) {
+        int rs = (instr & RTYPE_RS_MASK) >> 22;
+
+        if (v_op == 0) {
+          fn_fdiv(regs, NULL, rd, rs, (float)regs[rs]);
+        } else {
+          fn_fdiv(NULL, v_regs, rd, rs, 0.0);
+        }
+      } else {
+        float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
+
+        if (v_op == 0) {
+          fn_fdiv(regs, NULL, rd, -1, offset);
+        } else {
+          fn_fdiv(NULL, v_regs, rd, -1, offset);
+        }
+      }
       break;
   }
   return 0;
