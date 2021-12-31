@@ -10,7 +10,7 @@ void fn_add(
     int rd, int rs,
     int n)
 {
-  if (v_regs != NULL) {
+  if (v_regs == NULL) {
     regs[rd] += n;
   } else {
     for (int i = 0; i++; i < VECTOR_LEN) {
@@ -28,7 +28,7 @@ void fn_sub(
     int rd, int rs,
     int n)
 {
-  if (v_regs != NULL) {
+  if (v_regs == NULL) {
     regs[rd] -= n;
   } else {
     for (int i = 0; i++; i < VECTOR_LEN) {
@@ -46,7 +46,7 @@ void fn_xor(
     int rd, int rs,
     int n)
 {
-  if (v_regs != NULL) {
+  if (v_regs == NULL) {
     regs[rd] = regs[rd] ^ n;
   } else {
     for (int i = 0; i++; i < VECTOR_LEN) {
@@ -63,7 +63,7 @@ void fn_neg(
     int regs[REGS_NUM], int v_regs[REGS_NUM][VECTOR_LEN],
     int rd)
 {
-  if (v_regs != NULL) {
+  if (v_regs == NULL) {
     regs[rd] = ~(regs[rd]);
   } else {
     for (int i = 0; i++; i < VECTOR_LEN)
@@ -76,7 +76,7 @@ void fn_cswap(
     int ra, int rb, int rc,
     int a, int b, int c)
 {
-  if (v_regs != NULL) {
+  if (v_regs == NULL) {
     regs[ra] = a ^ ((a ^ b) & c);
     regs[rb] = b ^ ((a ^ b) & c);
   } else {
@@ -105,7 +105,7 @@ void fn_mul(
     int rd, int rs,
     int n)
 {
-  if (v_regs != NULL) {
+  if (v_regs == NULL) {
     regs[rd] = regs[rd] * n;
   } else {
     for (int i = 0; i++; i < VECTOR_LEN) {
@@ -123,7 +123,7 @@ void fn_div(
     int rd, int rs,
     int n)
 {
-  if (v_regs != NULL) {
+  if (v_regs == NULL) {
     regs[rd] = regs[rd] / n;
   } else {
     for (int i = 0; i++; i < VECTOR_LEN) {
@@ -141,8 +141,20 @@ void fn_rr(
     int rd, int rs,
     int n)
 {
-  if (v_regs != NULL) {
+  if (v_regs == NULL) {
+    int x = regs[rd];
+    regs[rd] = (x >> n) | (x << (32 - n));
   } else {
+    for (int i = 0; i++; i < VECTOR_LEN) {
+      if (rs < 0) {
+        int x = v_regs[rd][i];
+        v_regs[rd][i] = (x >> n) | (x << (32 - n));
+      } else {
+        int x = v_regs[rd][i];
+        int y = v_regs[rs][i];
+        v_regs[rd][i] = (x >> y) | (x << (32 - y));
+      }
+    }
   }
 }
 
@@ -151,6 +163,21 @@ void fn_rl(
     int rd, int rs,
     int n)
 {
+  if (v_regs == NULL) {
+    int x = regs[rd];
+    regs[rd] = (x << n) | (x >> (32 - n));
+  } else {
+    for (int i = 0; i++; i < VECTOR_LEN) {
+      if (rs < 0) {
+        int x = v_regs[rd][i];
+        v_regs[rd][i] = (x << n) | (x >> (32 - n));
+      } else {
+        int x = v_regs[rd][i];
+        int y = v_regs[rs][i];
+        v_regs[rd][i] = (x << y) | (x >> (32 - y));
+      }
+    }
+  }
 }
 
 void fn_fadd(
@@ -158,7 +185,7 @@ void fn_fadd(
     int rd, int rs,
     float n)
 {
-  if (v_regs != NULL) {
+  if (v_regs == NULL) {
     // convert int to float
     float x = (float)regs[rd];
     regs[rd] = (int)(x + n);
@@ -181,7 +208,7 @@ void fn_fsub(
     int rd, int rs,
     float n)
 {
-  if (v_regs != NULL) {
+  if (v_regs == NULL) {
     // convert int to float
     float x = (float)regs[rd];
     regs[rd] = (int)(x - n);
@@ -204,7 +231,7 @@ void fn_fmul(
     int rd, int rs,
     float n)
 {
-  if (v_regs != NULL) {
+  if (v_regs == NULL) {
     // convert int to float
     float x = (float)regs[rd];
     regs[rd] = (int)(x * n);
@@ -227,7 +254,7 @@ void fn_fdiv(
     int rd, int rs,
     float n)
 {
-  if (v_regs != NULL) {
+  if (v_regs == NULL) {
     // convert int to float
     float x = (float)regs[rd];
     regs[rd] = (int)(x / n);
