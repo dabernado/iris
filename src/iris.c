@@ -34,7 +34,7 @@ void init(int i_num, int prog[i_num])
 void eval(
     int regs[REGS_NUM], int v_regs[REGS_NUM][VECTOR_LEN],
     int instr,
-    int *pc, int *direction, int *branch)
+    int *direction, int *branch)
 {
   int imm = 0;
   int v_op = 0;
@@ -85,34 +85,75 @@ void eval(
       break;
     
     // control
-    case OP_BLT:
-      break;
-
     case OP_BLTU:
-      break;
+    case OP_BLT:
+      int rd = (instr & RD_MASK) >> 27;
+      int rs = (instr & RTYPE_RS_MASK) >> 22;
+      int offset = (instr & RTYPE_OFF_MASK) >> 6;
 
-    case OP_BGE:
+      if (regs[rd] < regs[rs])
+        (*branch) += offset;
       break;
 
     case OP_BGEU:
+    case OP_BGE:
+      int rd = (instr & RD_MASK) >> 27;
+      int rs = (instr & RTYPE_RS_MASK) >> 22;
+      int offset = (instr & RTYPE_OFF_MASK) >> 6;
+
+      if (regs[rd] >= regs[rs])
+        (*branch) += offset;
       break;
 
     case OP_BEQ:
+      int rd = (instr & RD_MASK) >> 27;
+      int rs = (instr & RTYPE_RS_MASK) >> 22;
+      int offset = (instr & RTYPE_OFF_MASK) >> 6;
+
+      if (regs[rd] == regs[rs])
+        (*branch) += offset;
       break;
 
     case OP_BNE:
+      int rd = (instr & RD_MASK) >> 27;
+      int rs = (instr & RTYPE_RS_MASK) >> 22;
+      int offset = (instr & RTYPE_OFF_MASK) >> 6;
+
+      if (regs[rd] != regs[rs])
+        (*branch) += offset;
       break;
 
     case OP_BEVN:
+      int rd = (instr & RD_MASK) >> 27;
+      int offset = (instr & ITYPE_OFF_MASK) >> 11;
+
+      if ((regs[rd] % 2) == 0)
+        (*branch) += offset;
       break;
 
     case OP_BODD:
+      int rd = (instr & RD_MASK) >> 27;
+      int offset = (instr & ITYPE_OFF_MASK) >> 11;
+
+      if ((regs[rd] % 2) == 1)
+        (*branch) += offset;
       break;
 
     case OP_SWB:
+      int rd = (instr & RD_MASK) >> 27;
+      int bval = (*branch);
+
+      (*branch) = regs[rd];
+      regs[rd] = bval;
       break;
 
     case OP_RSWB:
+      int rd = (instr & RD_MASK) >> 27;
+      int bval = (*branch);
+
+      (*branch) = regs[rd];
+      regs[rd] = bval;
+      (*direction) = ~(*direction);
       break;
     
     // vector ops
@@ -489,34 +530,75 @@ void r_eval(
       break;
     
     // control
-    case OP_BLT:
-      break;
-
     case OP_BLTU:
-      break;
+    case OP_BLT:
+      int rd = (instr & RD_MASK) >> 27;
+      int rs = (instr & RTYPE_RS_MASK) >> 22;
+      int offset = (instr & RTYPE_OFF_MASK) >> 6;
 
-    case OP_BGE:
+      if (regs[rd] < regs[rs])
+        (*branch) -= offset;
       break;
 
     case OP_BGEU:
+    case OP_BGE:
+      int rd = (instr & RD_MASK) >> 27;
+      int rs = (instr & RTYPE_RS_MASK) >> 22;
+      int offset = (instr & RTYPE_OFF_MASK) >> 6;
+
+      if (regs[rd] >= regs[rs])
+        (*branch) -= offset;
       break;
 
     case OP_BEQ:
+      int rd = (instr & RD_MASK) >> 27;
+      int rs = (instr & RTYPE_RS_MASK) >> 22;
+      int offset = (instr & RTYPE_OFF_MASK) >> 6;
+
+      if (regs[rd] == regs[rs])
+        (*branch) -= offset;
       break;
 
     case OP_BNE:
+      int rd = (instr & RD_MASK) >> 27;
+      int rs = (instr & RTYPE_RS_MASK) >> 22;
+      int offset = (instr & RTYPE_OFF_MASK) >> 6;
+
+      if (regs[rd] != regs[rs])
+        (*branch) -= offset;
       break;
 
     case OP_BEVN:
+      int rd = (instr & RD_MASK) >> 27;
+      int offset = (instr & ITYPE_OFF_MASK) >> 11;
+
+      if ((regs[rd] % 2) == 0)
+        (*branch) -= offset;
       break;
 
     case OP_BODD:
+      int rd = (instr & RD_MASK) >> 27;
+      int offset = (instr & ITYPE_OFF_MASK) >> 11;
+
+      if ((regs[rd] % 2) == 1)
+        (*branch) -= offset;
       break;
 
     case OP_SWB:
+      int rd = (instr & RD_MASK) >> 27;
+      int bval = (*branch);
+
+      (*branch) = regs[rd];
+      regs[rd] = bval;
       break;
 
     case OP_RSWB:
+      int rd = (instr & RD_MASK) >> 27;
+      int bval = (*branch);
+
+      (*branch) = regs[rd];
+      regs[rd] = bval;
+      (*direction) = ~(*direction);
       break;
     
     // vector ops
