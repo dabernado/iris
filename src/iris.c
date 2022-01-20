@@ -4,6 +4,8 @@
 
 #define PROJECT_NAME "iris"
 
+#define BIT_WIDTH 32
+
 int main(int argc, char **argv)
 {
     if(argc != 1) {
@@ -15,7 +17,7 @@ int main(int argc, char **argv)
 }
 
 /* runs the program bytecode */
-void init(int i_num, int prog[i_num])
+void init(int *prog, int mem_size)
 {
   int pc = 0; // program counter
   int direction = 0; // direction bit
@@ -25,6 +27,9 @@ void init(int i_num, int prog[i_num])
   int regs[REGS_NUM];
   int v_regs[REGS_NUM][VECTOR_LEN];
 
+  // initialize memory
+  int memory[(mem_size * 1000000) / (BIT_WIDTH / 8)];
+
   // initialize r0 and r1
   regs[0] = 0;
   regs[1] = -1;
@@ -33,6 +38,7 @@ void init(int i_num, int prog[i_num])
 /* evaluates a single instruction */
 void eval(
     int regs[REGS_NUM], int v_regs[REGS_NUM][VECTOR_LEN],
+    int *m_regs,
     int instr,
     int *direction, int *branch)
 {
@@ -72,6 +78,16 @@ void eval(
       break;
 
     case OP_MEXCH:
+      int rd = (instr & RD_MASK) >> 27;
+      int rs = (instr & RTYPE_RS_MASK) >> 22;
+      int offset = (instr & RTYPE_OFF_MASK) >> 6;
+      
+      int addr = regs[rs] + offset;
+      int m_val = *(m_regs + addr);
+      int r_val = regs[rd];
+
+      regs[rd] = m_val;
+      *(m_regs + addr) = r_val;
       break;
 
     case OP_DEL:
@@ -82,6 +98,14 @@ void eval(
       break;
 
     case OP_MDEL:
+      int rd = (instr & RD_MASK) >> 27;
+      int offset = (instr & ITYPE_OFF_MASK) >> 11;
+      int addr = regs[rd] + offset;
+
+      // TODO: push mem value onto garbage stack
+      // int m_val = *(m_regs + addr);
+
+      *(m_regs + addr) = 0;
       break;
     
     // control
@@ -188,6 +212,19 @@ void eval(
       break;
 
     case OP_VMEXCH:
+      int rd = (instr & RD_MASK) >> 27;
+      int rs = (instr & RTYPE_RS_MASK) >> 22;
+      int offset = (instr & RTYPE_OFF_MASK) >> 6;
+      
+      int addr = regs[rs] + offset;
+      for (int i = 0; i < VECTOR_LEN; i++)
+      {
+        int m_val = *(m_regs + addr + i);
+        int r_val = v_regs[rd][i];
+
+        v_regs[rd][i] = m_val;
+        *(m_regs + addr + i) = r_val;
+      }
       break;
 
     case OP_VDEL:
@@ -199,6 +236,17 @@ void eval(
       break;
 
     case OP_VMDEL:
+      int rd = (instr & RD_MASK) >> 27;
+      int offset = (instr & ITYPE_OFF_MASK) >> 11;
+      int addr = regs[rd] + offset;
+
+      for (int i = 0; i < VECTOR_LEN; i++)
+      {
+        // TODO: push mem value onto garbage stack
+        // int m_val = *(m_regs + addr);
+
+        *(m_regs + addr + i) = 0;
+      }
       break;
   }
   return 0;
@@ -482,8 +530,9 @@ FUNC:
 /* evaluates a single instruction in reverse */
 void r_eval(
     int regs[REGS_NUM], int v_regs[REGS_NUM][VECTOR_LEN],
+    int *m_regs,
     int instr,
-    int *pc, int *direction, int *branch)
+    int *direction, int *branch)
 {
   int imm = 0;
   int v_op = 0;
@@ -520,6 +569,16 @@ void r_eval(
       break;
 
     case OP_MEXCH:
+      int rd = (instr & RD_MASK) >> 27;
+      int rs = (instr & RTYPE_RS_MASK) >> 22;
+      int offset = (instr & RTYPE_OFF_MASK) >> 6;
+      
+      int addr = regs[rs] + offset;
+      int m_val = *(m_regs + addr);
+      int r_val = regs[rd];
+
+      regs[rd] = m_val;
+      *(m_regs + addr) = r_val;
       break;
 
     case OP_DEL:
@@ -527,6 +586,11 @@ void r_eval(
       break;
 
     case OP_MDEL:
+      int rd = (instr & RD_MASK) >> 27;
+      int offset = (instr & ITYPE_OFF_MASK) >> 11;
+      int addr = regs[rd] + offset;
+
+      // TODO: pop value off garbage stack
       break;
     
     // control
@@ -633,6 +697,19 @@ void r_eval(
       break;
 
     case OP_VMEXCH:
+      int rd = (instr & RD_MASK) >> 27;
+      int rs = (instr & RTYPE_RS_MASK) >> 22;
+      int offset = (instr & RTYPE_OFF_MASK) >> 6;
+      
+      int addr = regs[rs] + offset;
+      for (int i = 0; i < VECTOR_LEN; i++)
+      {
+        int m_val = *(m_regs + addr + i);
+        int r_val = v_regs[rd][i];
+
+        v_regs[rd][i] = m_val;
+        *(m_regs + addr + i) = r_val;
+      }
       break;
 
     case OP_VDEL:
@@ -640,6 +717,11 @@ void r_eval(
       break;
 
     case OP_VMDEL:
+      int rd = (instr & RD_MASK) >> 27;
+      int offset = (instr & ITYPE_OFF_MASK) >> 11;
+      int addr = regs[rd] + offset;
+
+      // TODO: pop value off garbage stack
       break;
   }
   return 0;
