@@ -6,8 +6,8 @@
 #ifndef IRIS_OPS
 #define IRIS_OPS
 
-#define REGS_NUM   32
-#define VECTOR_LEN 32
+#define REGS_NUM  32
+#define VREG_LEN  32
 
 // opcode and funcode bitmasks
 #define OP_MASK 0x0000003f
@@ -69,6 +69,8 @@
 
 #define OP_VIMM  0x00000021
 #define OP_VDEL  0x00000025
+#define OP_VCFG  0x00000029
+#define OP_VSWL  0x0000002a
 
 /* R3-Type
  *

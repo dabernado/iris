@@ -149,6 +149,16 @@ RR @d @s|*imm
  */
 
 /// V: Vector Instructions
+VCFG *imm
+/*
+ * Configures vector unit
+ */
+
+VSWL @rs
+/*
+ * Swaps the vector length register with @rs
+ */
+
 VADD @vd @vs|*imm
 /*
  * Add two registers or immediate, result placed in @vd

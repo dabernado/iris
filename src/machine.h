@@ -8,6 +8,16 @@
 
 #include "opcodes.h"
 
+/* init - executes IRIS bytecode on a new VM
+ *
+ * This function takes a given program and executes it
+ * on a freshly spun Iris instance, with a given size
+ * of memory (in MB) and returns a pointer to the VM's
+ * allocated memory when finished
+ */
+
+void *init(int *prog, int prog_size, int mb);
+
 /* eval - evaluates a single instruction
  *
  * This function takes a single IRIS instruction, decodes
@@ -17,10 +27,8 @@
 
 void eval(
     int regs[REGS_NUM], // CPU registers
-    int v_regs[REGS_NUM][VECTOR_LEN], // Vector registers
     int *m_regs, // Pointer to start of memory
     int *garbage, // Pointer to top of garbage stack within memory
-    int mem_size // Memory size
     int *direction, // Direction bit - assumed to be 0
     int *branch, // Branch register
     int instr // Instruction to execute
@@ -35,10 +43,8 @@ void eval(
 
 void r_eval(
     int regs[REGS_NUM], // CPU registers
-    int v_regs[REGS_NUM][VECTOR_LEN], // Vector registers
     int *m_regs, // Pointer to start of memory
     int *garbage, // Pointer to top of garbage stack within memory
-    int mem_size // Memory size
     int *direction, // Direction bit - assumed to be 1
     int *branch, // Branch register
     int instr // Instruction to execute
