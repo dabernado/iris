@@ -93,9 +93,7 @@ void eval(
       int rb = (instr & RTYPE_RS_MASK) >> 22;
       int offset = (instr & RTYPE_OFF_MASK) >> 6;
       
-      fn_cswap(regs,
-          ra, rb, -1,
-          regs[ra], regs[rb], offset);
+      fn_cswap(regs, ra, rb, offset);
 
       break;
 
@@ -228,10 +226,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_add(regs, rd, rs, regs[rs]);
+        fn_add(regs, rd, regs[rs]);
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
-        fn_add(regs, rd, -1, offset);
+        fn_add(regs, rd, offset);
         }
       }
       break;
@@ -241,10 +239,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_sub(regs, rd, rs, regs[rs]);
+        fn_sub(regs, rd, regs[rs]);
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
-        fn_sub(regs, rd, -1, offset);
+        fn_sub(regs, rd, offset);
       }
       break;
 
@@ -253,10 +251,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_xor(regs, rd, rs, regs[rs]);
+        fn_xor(regs, rd, regs[rs]);
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
-        fn_xor(regs, rd, -1, offset);
+        fn_xor(regs, rd, offset);
       }
       break;
 
@@ -269,9 +267,7 @@ FUNC:
       int ra = (instr & R3TYPE_RA_MASK) >> 27;
       int rb = (instr & R3TYPE_RB_MASK) >> 22;
       int rc = (instr & RTYPE_OFF_MASK) >> 17;
-      fn_cswap(regs,
-          ra, rb, rc,
-          regs[ra], regs[rb], regs[rc]);
+      fn_cswap(regs, ra, rb, regs[rc]);
       break;
 
     case FN_MUL:
@@ -279,10 +275,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_mul(regs, rd, rs, regs[rs]);
+        fn_mul(regs, rd, regs[rs]);
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
-        fn_mul(regs, rd, -1, offset);
+        fn_mul(regs, rd, offset);
       }
       break;
 
@@ -291,10 +287,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_div(regs, rd, rs, regs[rs]);
+        fn_div(regs, rd, regs[rs]);
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
-        fn_div(regs, rd, -1, offset);
+        fn_div(regs, rd, offset);
       }
       break;
 
@@ -303,10 +299,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_rr(regs, rd, rs, regs[rs]);
+        fn_rr(regs, rd, regs[rs]);
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
-        fn_rr(regs, rd, -1, offset);
+        fn_rr(regs, rd, offset);
       }
       break;
 
@@ -315,10 +311,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_rl(regs, rd, rs, regs[rs]);
+        fn_rl(regs, rd, regs[rs]);
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
-        fn_rl(regs, rd, -1, offset);
+        fn_rl(regs, rd, offset);
       }
       break;
 
@@ -328,10 +324,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_fadd(regs, rd, rs, (float)regs[rs]);
+        fn_fadd(regs, rd, (float)regs[rs]);
       } else {
         float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
-        fn_fadd(regs, rd, -1, offset);
+        fn_fadd(regs, rd, offset);
       }
       break;
 
@@ -340,10 +336,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_fsub(regs, rd, rs, (float)regs[rs]);
+        fn_fsub(regs, rd, (float)regs[rs]);
       } else {
         float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
-        fn_fsub(regs, rd, -1, offset);
+        fn_fsub(regs, rd, offset);
       }
       break;
 
@@ -352,10 +348,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_fmul(regs, rd, rs, (float)regs[rs]);
+        fn_fmul(regs, rd, (float)regs[rs]);
       } else {
         float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
-        fn_fmul(regs, rd, -1, offset);
+        fn_fmul(regs, rd, offset);
       }
       break;
 
@@ -364,10 +360,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_fdiv(regs, rd, rs, (float)regs[rs]);
+        fn_fdiv(regs, rd, (float)regs[rs]);
       } else {
         float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
-        fn_fdiv(regs, rd, -1, offset);
+        fn_fdiv(regs, rd, offset);
       }
       break;
   }
@@ -398,9 +394,7 @@ void r_eval(
       int rb = (instr & RTYPE_RS_MASK) >> 22;
       int offset = (instr & RTYPE_OFF_MASK) >> 6;
       
-      fn_cswap(regs,
-          ra, rb, -1,
-          0, 0, offset);
+      fn_cswap(regs, ra, rb, offset);
       break;
 
     // memops
@@ -532,10 +526,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_sub(regs, rd, rs, regs[rs]);
+        fn_sub(regs, rd, regs[rs]);
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
-        fn_sub(regs, rd, -1, offset);
+        fn_sub(regs, rd, offset);
       }
       break;
 
@@ -544,10 +538,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_add(regs, rd, rs, regs[rs]);
+        fn_add(regs, rd, regs[rs]);
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
-        fn_add(regs, rd, -1, offset);
+        fn_add(regs, rd, offset);
       }
       break;
     
@@ -556,10 +550,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_xor(regs, rd, rs, regs[rs]);
+        fn_xor(regs, rd, regs[rs]);
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
-        fn_xor(regs, rd, -1, offset);
+        fn_xor(regs, rd, offset);
       }
       break;
 
@@ -572,9 +566,7 @@ FUNC:
       int ra = (instr & R3TYPE_RA_MASK) >> 27;
       int rb = (instr & R3TYPE_RB_MASK) >> 22;
       int rc = (instr & RTYPE_OFF_MASK) >> 17;
-      fn_cswap(regs,
-          ra, rb, rc,
-          regs[ra], regs[rb], regs[rc]);
+      fn_cswap(regs, ra, rb, regs[rc]);
       break;
 
     case FN_MUL:
@@ -582,10 +574,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_div(regs, rd, rs, regs[rs]);
+        fn_div(regs, rd, regs[rs]);
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
-        fn_div(regs, rd, -1, offset);
+        fn_div(regs, rd, offset);
       }
       break;
 
@@ -594,10 +586,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_mul(regs, rd, rs, regs[rs]);
+        fn_mul(regs, rd, regs[rs]);
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
-        fn_mul(regs, rd, -1, offset);
+        fn_mul(regs, rd, offset);
       }
       break;
 
@@ -606,10 +598,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_rl(regs, rd, rs, regs[rs]);
+        fn_rl(regs, rd, regs[rs]);
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
-        fn_rl(regs, rd, -1, offset);
+        fn_rl(regs, rd, offset);
       }
       break;
 
@@ -618,10 +610,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_rr(regs, rd, rs, regs[rs]);
+        fn_rr(regs, rd, regs[rs]);
       } else {
         int offset = (instr & ITYPE_OFF_MASK) >> 11;
-        fn_rr(regs, rd, -1, offset);
+        fn_rr(regs, rd, offset);
       }
       break;
 
@@ -631,10 +623,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_fsub(regs, rd, rs, (float)regs[rs]);
+        fn_fsub(regs, rd, (float)regs[rs]);
       } else {
         float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
-        fn_fsub(regs, rd, -1, offset);
+        fn_fsub(regs, rd, offset);
       }
       break;
 
@@ -643,10 +635,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_fadd(regs, rd, rs, (float)regs[rs]);
+        fn_fadd(regs, rd, (float)regs[rs]);
       } else {
         float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
-        fn_fadd(regs, rd, -1, offset);
+        fn_fadd(regs, rd, offset);
       }
       break;
 
@@ -655,10 +647,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_fdiv(regs, rd, rs, (float)regs[rs]);
+        fn_fdiv(regs, rd, (float)regs[rs]);
       } else {
         float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
-        fn_fdiv(regs, rd, -1, offset);
+        fn_fdiv(regs, rd, offset);
       }
       break;
 
@@ -667,10 +659,10 @@ FUNC:
 
       if (imm = 0) {
         int rs = (instr & RTYPE_RS_MASK) >> 22;
-        fn_fmul(regs, rd, rs, (float)regs[rs]);
+        fn_fmul(regs, rd, (float)regs[rs]);
       } else {
         float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
-        fn_fmul(regs, rd, -1, offset);
+        fn_fmul(regs, rd, offset);
       }
       break;
   }
