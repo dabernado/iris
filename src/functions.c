@@ -2,8 +2,9 @@
  * functions.c - IRIS function implementations
  *
  */
-#include "opcodes.h"
+
 #include "functions.h"
+#include "opcodes.h"
 
 void fn_add(int regs[REGS_NUM], int rd, int n)
 {

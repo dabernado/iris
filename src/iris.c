@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "vm.h"
+#include "machine.h"
 
 #define PROJECT_NAME "iris"
 
@@ -11,6 +11,11 @@ int main(int argc, char **argv)
         printf("%s takes no arguments.\n", argv[0]);
         return 1;
     }
-    printf("This is project %s.\n", PROJECT_NAME);
+
+    int prog = 0;
+    int prog_size = 1;
+    
+    init_vm(&prog, prog_size, 4);
+
     return 0;
 }

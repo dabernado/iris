@@ -3,6 +3,9 @@
  *
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include "machine.h"
 #include "opcodes.h"
 #include "functions.h"
 
@@ -13,9 +16,9 @@
 #define STATUS_ERR 2
 
 /* executes IRIS bytecode on a new VM */
-void *init(int *prog, int prog_size, int mb)
+void *init_vm(int *prog, int prog_size, int mb)
 {
-  int pc = 0; // program counter
+  int *pc = NULL; // program counter
   int direction = 0; // direction bit
   int branch = 0; // branch register
   int mem_size = (mb * 1000000) / (BIT_WIDTH / 8);
@@ -34,10 +37,11 @@ void *init(int *prog, int prog_size, int mb)
   // initialize memory + garbage stack to last 1/8th of memory
   int *memory = malloc(sizeof(int) * mem_size);
   int *garbage = memory + (mem_size - (mem_size / 8));
+  int *garbage_start = garbage;
 
   // load the program into memory
-  for (int i = 0; i < prog_size, i++)
-    *(memory + i) = *(prog_size + i);
+  for (int i = 0; i < prog_size; i++)
+    *(memory + i) = *(prog + i);
   pc = memory;
 
   // execution loop
@@ -62,8 +66,17 @@ void *init(int *prog, int prog_size, int mb)
 
     // increment program counter
     if (branch != 0)
-      pc += branch
+    {
+      pc += branch;
+    }
     else pc += 1;
+
+    // check if garbage pointer is within bounds
+    if ((garbage > garbage_start) && (garbage < (memory + mem_size)))
+    {
+      printf("ERROR: Garbage stack is full");
+      status = STATUS_ERR;
+    }
   }
 
   return memory;
@@ -77,6 +90,15 @@ void eval(
     int instr)
 {
   int imm = 0;
+
+  // R-Type defaults
+  int rd = (instr & RD_MASK) >> 27;
+  int rs = (instr & RTYPE_RS_MASK) >> 22;
+  int offset = (instr & RTYPE_OFF_MASK) >> 6;
+
+  // exchange values
+  int a = 0;
+  int b = 0;
   
   // check opcode
   switch (instr & OP_MASK) {
@@ -89,285 +111,214 @@ void eval(
       goto FUNC;
 
     case OP_CSWAPI:
-      int ra = (instr & RD_MASK) >> 27;
-      int rb = (instr & RTYPE_RS_MASK) >> 22;
-      int offset = (instr & RTYPE_OFF_MASK) >> 6;
-      
-      fn_cswap(regs, ra, rb, offset);
-
+      fn_cswap(regs, rs, rd, offset);
       break;
 
     // memops
     case OP_EXCH:
-      int rd = (instr & RD_MASK) >> 27;
-      int rs = (instr & RTYPE_RS_MASK) >> 22;
-      int a = regs[rd];
-      int b = regs[rs];
+      a = regs[rd];
+      b = regs[rs];
 
       regs[rd] = b;
       regs[rs] = a;
       break;
 
     case OP_MEXCH:
-      int rd = (instr & RD_MASK) >> 27;
-      int rs = (instr & RTYPE_RS_MASK) >> 22;
-      int offset = (instr & RTYPE_OFF_MASK) >> 6;
-      
-      int addr = regs[rs] + offset;
-      int m_val = *(m_regs + addr);
-      int r_val = regs[rd];
+      a = regs[rs] + offset; // memory address
+      b = regs[rd];
 
-      regs[rd] = m_val;
-      *(m_regs + addr) = r_val;
+      regs[rd] = *(m_regs + a);
+      *(m_regs + a) = b;
       break;
 
     case OP_DEL:
-      int rd = (instr & RD_MASK) >> 27;
-      int value = regs[rd];
+      a = regs[rd];
 
       // push regs[rd] onto garbage stack
       regs[rd] = 0;
-      (*garbage) = value;
+      (*garbage) = a;
       garbage++;
       break;
 
     case OP_MDEL:
-      int rd = (instr & RD_MASK) >> 27;
-      int offset = (instr & ITYPE_OFF_MASK) >> 11;
-      int addr = regs[rd] + offset;
-      int m_val = *(m_regs + addr);
+      offset = (instr & ITYPE_OFF_MASK) >> 11;
+      a = regs[rd] + offset;
+      b = *(m_regs + a);
 
       // push mem value onto garbage stack
-      *(m_regs + addr) = 0;
-      (*garbage) = m_val;
+      *(m_regs + a) = 0;
+      (*garbage) = b;
       garbage++;
       break;
     
     // control
     case OP_BLTU:
     case OP_BLT:
-      int rd = (instr & RD_MASK) >> 27;
-      int rs = (instr & RTYPE_RS_MASK) >> 22;
-      int offset = (instr & RTYPE_OFF_MASK) >> 6;
-
       if (regs[rd] < regs[rs])
         (*branch) += offset;
       break;
 
     case OP_BGEU:
     case OP_BGE:
-      int rd = (instr & RD_MASK) >> 27;
-      int rs = (instr & RTYPE_RS_MASK) >> 22;
-      int offset = (instr & RTYPE_OFF_MASK) >> 6;
-
       if (regs[rd] >= regs[rs])
         (*branch) += offset;
       break;
 
     case OP_BEQ:
-      int rd = (instr & RD_MASK) >> 27;
-      int rs = (instr & RTYPE_RS_MASK) >> 22;
-      int offset = (instr & RTYPE_OFF_MASK) >> 6;
-
       if (regs[rd] == regs[rs])
         (*branch) += offset;
       break;
 
     case OP_BNE:
-      int rd = (instr & RD_MASK) >> 27;
-      int rs = (instr & RTYPE_RS_MASK) >> 22;
-      int offset = (instr & RTYPE_OFF_MASK) >> 6;
-
       if (regs[rd] != regs[rs])
         (*branch) += offset;
       break;
 
     case OP_BEVN:
-      int rd = (instr & RD_MASK) >> 27;
-      int offset = (instr & ITYPE_OFF_MASK) >> 11;
+      offset = (instr & ITYPE_OFF_MASK) >> 11;
 
       if ((regs[rd] % 2) == 0)
         (*branch) += offset;
       break;
 
     case OP_BODD:
-      int rd = (instr & RD_MASK) >> 27;
-      int offset = (instr & ITYPE_OFF_MASK) >> 11;
+      offset = (instr & ITYPE_OFF_MASK) >> 11;
 
       if ((regs[rd] % 2) == 1)
         (*branch) += offset;
       break;
 
     case OP_SWB:
-      int rd = (instr & RD_MASK) >> 27;
-      int bval = (*branch);
+      a = (*branch);
 
       (*branch) = regs[rd];
-      regs[rd] = bval;
+      regs[rd] = a;
       break;
 
     case OP_RSWB:
-      int rd = (instr & RD_MASK) >> 27;
-      int bval = (*branch);
+      a = (*branch);
 
       (*branch) = regs[rd];
-      regs[rd] = bval;
+      regs[rd] = a;
       (*direction) = ~(*direction);
       break;
   }
-  return 0;
 
   // Check funcode
 FUNC:
   switch (instr & FN_MASK) {
     // int functions
     case FN_ADD:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_add(regs, rd, regs[rs]);
       } else {
-        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
         fn_add(regs, rd, offset);
-        }
       }
       break;
 
     case FN_SUB:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_sub(regs, rd, regs[rs]);
       } else {
-        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
         fn_sub(regs, rd, offset);
       }
       break;
 
     case FN_XOR:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_xor(regs, rd, regs[rs]);
       } else {
-        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
         fn_xor(regs, rd, offset);
       }
       break;
 
     case FN_NEG:
-      int rd = (instr & RD_MASK) >> 27;
       fn_neg(regs, rd);
       break;
 
     case FN_CSWAP:
-      int ra = (instr & R3TYPE_RA_MASK) >> 27;
-      int rb = (instr & R3TYPE_RB_MASK) >> 22;
-      int rc = (instr & RTYPE_OFF_MASK) >> 17;
-      fn_cswap(regs, ra, rb, regs[rc]);
+      rd = (instr & R3TYPE_RA_MASK) >> 27; // ra
+      rs = (instr & R3TYPE_RB_MASK) >> 22; // rb
+      offset = (instr & R3TYPE_RC_MASK) >> 17; // rc
+      fn_cswap(regs, rd, rs, regs[offset]);
       break;
 
     case FN_MUL:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_mul(regs, rd, regs[rs]);
       } else {
-        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
         fn_mul(regs, rd, offset);
       }
       break;
 
     case FN_DIV:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_div(regs, rd, regs[rs]);
       } else {
-        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
         fn_div(regs, rd, offset);
       }
       break;
 
     case FN_RR:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_rr(regs, rd, regs[rs]);
       } else {
-        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
         fn_rr(regs, rd, offset);
       }
       break;
 
     case FN_RL:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_rl(regs, rd, regs[rs]);
       } else {
-        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
         fn_rl(regs, rd, offset);
       }
       break;
 
     // float functions
     case FN_FADD:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_fadd(regs, rd, (float)regs[rs]);
       } else {
-        float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
-        fn_fadd(regs, rd, offset);
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
+        fn_fadd(regs, rd, (float)offset);
       }
       break;
 
     case FN_FSUB:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_fsub(regs, rd, (float)regs[rs]);
       } else {
-        float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
-        fn_fsub(regs, rd, offset);
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
+        fn_fsub(regs, rd, (float)offset);
       }
       break;
 
     case FN_FMUL:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_fmul(regs, rd, (float)regs[rs]);
       } else {
-        float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
-        fn_fmul(regs, rd, offset);
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
+        fn_fmul(regs, rd, (float)offset);
       }
       break;
 
     case FN_FDIV:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_fdiv(regs, rd, (float)regs[rs]);
       } else {
-        float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
-        fn_fdiv(regs, rd, offset);
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
+        fn_fdiv(regs, rd, (float)offset);
       }
       break;
   }
-  return 0;
 }
 
 /* evaluates a single instruction in reverse */
@@ -378,6 +329,15 @@ void r_eval(
     int instr)
 {
   int imm = 0;
+
+  // R-Type defaults
+  int rd = (instr & RD_MASK) >> 27;
+  int rs = (instr & RTYPE_RS_MASK) >> 22;
+  int offset = (instr & RTYPE_OFF_MASK) >> 6;
+
+  // exchange values
+  int a = 0;
+  int b = 0;
   
   // check opcode
   switch (instr & OP_MASK) {
@@ -390,55 +350,42 @@ void r_eval(
       goto FUNC;
 
     case OP_CSWAPI:
-      int ra = (instr & RD_MASK) >> 27;
-      int rb = (instr & RTYPE_RS_MASK) >> 22;
-      int offset = (instr & RTYPE_OFF_MASK) >> 6;
-      
-      fn_cswap(regs, ra, rb, offset);
+      fn_cswap(regs, rs, rd, offset);
       break;
 
     // memops
     case OP_EXCH:
-      int rd = (instr & RD_MASK) >> 27;
-      int rs = (instr & RTYPE_RS_MASK) >> 22;
-      int a = regs[rd];
-      int b = regs[rs];
+      a = regs[rd];
+      b = regs[rs];
 
       regs[rd] = b;
       regs[rs] = a;
       break;
 
     case OP_MEXCH:
-      int rd = (instr & RD_MASK) >> 27;
-      int rs = (instr & RTYPE_RS_MASK) >> 22;
-      int offset = (instr & RTYPE_OFF_MASK) >> 6;
-      
-      int addr = regs[rs] + offset;
-      int m_val = *(m_regs + addr);
-      int r_val = regs[rd];
+      a = regs[rs] + offset; // memory address
+      b = regs[rd];
 
-      regs[rd] = m_val;
-      *(m_regs + addr) = r_val;
+      regs[rd] = *(m_regs + a);
+      *(m_regs + a) = b;
       break;
 
     case OP_DEL:
-      int rd = (instr & RD_MASK) >> 27;
-      int value = (*garbage);
+      a = (*garbage);
 
-      // pop value off garbage stack to regs[rd]
-      regs[rd] = value;
+      // push regs[rd] onto garbage stack
+      regs[rd] = a;
       (*garbage) = 0;
       garbage--;
       break;
 
     case OP_MDEL:
-      int rd = (instr & RD_MASK) >> 27;
-      int offset = (instr & ITYPE_OFF_MASK) >> 11;
-      int addr = regs[rd] + offset;
-      int value = (*garbage);
+      offset = (instr & ITYPE_OFF_MASK) >> 11;
+      a = regs[rd] + offset;
+      b = (*garbage);
 
-      // pop value off garbage stack to mem location
-      *(m_regs + addr) = value;
+      // push mem value onto garbage stack
+      *(m_regs + a) = b;
       (*garbage) = 0;
       garbage--;
       break;
@@ -446,225 +393,169 @@ void r_eval(
     // control
     case OP_BLTU:
     case OP_BLT:
-      int rd = (instr & RD_MASK) >> 27;
-      int rs = (instr & RTYPE_RS_MASK) >> 22;
-      int offset = (instr & RTYPE_OFF_MASK) >> 6;
-
       if (regs[rd] < regs[rs])
         (*branch) -= offset;
       break;
 
     case OP_BGEU:
     case OP_BGE:
-      int rd = (instr & RD_MASK) >> 27;
-      int rs = (instr & RTYPE_RS_MASK) >> 22;
-      int offset = (instr & RTYPE_OFF_MASK) >> 6;
-
       if (regs[rd] >= regs[rs])
         (*branch) -= offset;
       break;
 
     case OP_BEQ:
-      int rd = (instr & RD_MASK) >> 27;
-      int rs = (instr & RTYPE_RS_MASK) >> 22;
-      int offset = (instr & RTYPE_OFF_MASK) >> 6;
-
       if (regs[rd] == regs[rs])
         (*branch) -= offset;
       break;
 
     case OP_BNE:
-      int rd = (instr & RD_MASK) >> 27;
-      int rs = (instr & RTYPE_RS_MASK) >> 22;
-      int offset = (instr & RTYPE_OFF_MASK) >> 6;
-
       if (regs[rd] != regs[rs])
         (*branch) -= offset;
       break;
 
     case OP_BEVN:
-      int rd = (instr & RD_MASK) >> 27;
-      int offset = (instr & ITYPE_OFF_MASK) >> 11;
+      offset = (instr & ITYPE_OFF_MASK) >> 11;
 
       if ((regs[rd] % 2) == 0)
         (*branch) -= offset;
       break;
 
     case OP_BODD:
-      int rd = (instr & RD_MASK) >> 27;
-      int offset = (instr & ITYPE_OFF_MASK) >> 11;
+      offset = (instr & ITYPE_OFF_MASK) >> 11;
 
       if ((regs[rd] % 2) == 1)
         (*branch) -= offset;
       break;
 
     case OP_SWB:
-      int rd = (instr & RD_MASK) >> 27;
-      int bval = (*branch);
+      a = (*branch);
 
       (*branch) = regs[rd];
-      regs[rd] = bval;
+      regs[rd] = a;
       break;
 
     case OP_RSWB:
-      int rd = (instr & RD_MASK) >> 27;
-      int bval = (*branch);
+      a = (*branch);
 
       (*branch) = regs[rd];
-      regs[rd] = bval;
+      regs[rd] = a;
       (*direction) = ~(*direction);
       break;
   }
-  return 0;
 
   // Check funcode
 FUNC:
   switch (instr & FN_MASK) {
-    /* int functions */
+    // int functions
     case FN_ADD:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_sub(regs, rd, regs[rs]);
       } else {
-        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
         fn_sub(regs, rd, offset);
       }
       break;
 
     case FN_SUB:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_add(regs, rd, regs[rs]);
       } else {
-        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
         fn_add(regs, rd, offset);
       }
       break;
-    
-    case FN_XOR:
-      int rd = (instr & RD_MASK) >> 27;
 
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+    case FN_XOR:
+      if (imm == 0) {
         fn_xor(regs, rd, regs[rs]);
       } else {
-        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
         fn_xor(regs, rd, offset);
       }
       break;
 
     case FN_NEG:
-      int rd = (instr & RD_MASK) >> 27;
       fn_neg(regs, rd);
       break;
 
     case FN_CSWAP:
-      int ra = (instr & R3TYPE_RA_MASK) >> 27;
-      int rb = (instr & R3TYPE_RB_MASK) >> 22;
-      int rc = (instr & RTYPE_OFF_MASK) >> 17;
-      fn_cswap(regs, ra, rb, regs[rc]);
+      rd = (instr & R3TYPE_RA_MASK) >> 27; // ra
+      rs = (instr & R3TYPE_RB_MASK) >> 22; // rb
+      offset = (instr & R3TYPE_RC_MASK) >> 17; // rc
+      fn_cswap(regs, rd, rs, regs[offset]);
       break;
 
     case FN_MUL:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_div(regs, rd, regs[rs]);
       } else {
-        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
         fn_div(regs, rd, offset);
       }
       break;
 
     case FN_DIV:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_mul(regs, rd, regs[rs]);
       } else {
-        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
         fn_mul(regs, rd, offset);
       }
       break;
 
     case FN_RR:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_rl(regs, rd, regs[rs]);
       } else {
-        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
         fn_rl(regs, rd, offset);
       }
       break;
 
     case FN_RL:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_rr(regs, rd, regs[rs]);
       } else {
-        int offset = (instr & ITYPE_OFF_MASK) >> 11;
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
         fn_rr(regs, rd, offset);
       }
       break;
 
-    /* float functions */
+    // float functions
     case FN_FADD:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_fsub(regs, rd, (float)regs[rs]);
       } else {
-        float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
-        fn_fsub(regs, rd, offset);
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
+        fn_fsub(regs, rd, (float)offset);
       }
       break;
 
     case FN_FSUB:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_fadd(regs, rd, (float)regs[rs]);
       } else {
-        float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
-        fn_fadd(regs, rd, offset);
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
+        fn_fadd(regs, rd, (float)offset);
       }
       break;
 
     case FN_FMUL:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_fdiv(regs, rd, (float)regs[rs]);
       } else {
-        float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
-        fn_fdiv(regs, rd, offset);
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
+        fn_fdiv(regs, rd, (float)offset);
       }
       break;
 
     case FN_FDIV:
-      int rd = (instr & RD_MASK) >> 27;
-
-      if (imm = 0) {
-        int rs = (instr & RTYPE_RS_MASK) >> 22;
+      if (imm == 0) {
         fn_fmul(regs, rd, (float)regs[rs]);
       } else {
-        float offset = (float)((instr & ITYPE_OFF_MASK) >> 11);
-        fn_fmul(regs, rd, offset);
+        offset = (instr & ITYPE_OFF_MASK) >> 11;
+        fn_fmul(regs, rd, (float)offset);
       }
       break;
   }
-  return 0;
 }

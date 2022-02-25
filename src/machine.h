@@ -16,7 +16,7 @@
  * allocated memory when finished
  */
 
-void *init(int *prog, int prog_size, int mb);
+void *init_vm(int *prog, int prog_size, int mb);
 
 /* eval - evaluates a single instruction
  *

@@ -84,7 +84,7 @@
 
 #define R3TYPE_RA_MASK  0xf8000000
 #define R3TYPE_RB_MASK  0x07c00000
-#define R3TYPE_RB_MASK  0x003e0000
+#define R3TYPE_RC_MASK  0x003e0000
 
 /* Functions */
 #define FN_ADD   0x00000040
