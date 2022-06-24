@@ -1,0 +1,191 @@
+// Functions
+ID <-> ID		: ?a <-> ?a
+/*
+ * Identity; does nothing
+ */
+
+ZEROI <-> ZEROE		: ?a <-> (0 + ?a)
+/*
+ * Introduce/eliminate sum variant of type 0 
+ */
+
+SWAPS <-> SWAPS		: (?a + ?b) <-> (?b + ?a)
+/*
+ * Swap the two variant types' sides
+ * n = number of total variants in the type
+ * d = first variant value of the right hand of the type
+ * o = offset (usually 0 unless type is wrapped by another sum type)
+ */
+
+ASSRS <-> ASSLS		: (?a + (?b + ?c)) <-> ((?a + ?b) + ?c)
+/*
+ * Associate inner sum with types on the right or left
+ * n = number of total variants in the type
+ * d = first variant value of the right hand of the type
+ * o = offset (usually 0 unless type is wrapped by another sum type)
+ */
+
+UNITI <-> UNITE		: ?a <-> (?a * 1)
+/*
+ * Introduce/eliminate product with unit type
+ * @a = register to load unit value into
+ */
+
+SWAPP <-> SWAPP 	: (?a * ?b) <-> (?b * ?a)
+/*
+ * Swap the first and second values
+ * @a = starting register of first value
+ * @b = starting register of second value
+ * s = size of second value
+ */
+
+ASSRP <-> ASSLP		: (?a * (?b * ?c)) <-> ((?a * ?b) * ?c)
+/*
+ * Associate inner product with types on the right or left
+ */
+
+DIST <-> FACT		: ((?a + ?b) * ?c) <-> ((?a * ?c) + (?b * ?c))
+/*
+ * Distribute inner sum over both product values/Factor inner sum into first value
+ */
+
+EXPN <-> COLN		: 0 <-> (-?a + ?a)
+/*
+ * Reverse type sign and direction of execution
+ */
+
+EXPF <-> COLF		: 1 <-> (1/?a * ?a)
+/*
+ * Allocate/deallocate new variable
+ * s = size of allocated/deallocated type
+ */
+
+// Arithmetic
+ADD <-> SUB		: (int * int) <-> (int * int)
+/*
+ * Add/subtract two integers, with result placed in first value
+ */
+
+ADDI n <-> SUBI n	: int <-> int
+/*
+ * Add/subtract constant to/from integer
+ */
+
+MUL <-> DIV		: (int * int) <-> (int * int)
+/*
+ * Multiply/divide two integers, with result placed in first value
+ */
+
+MULI n <-> DIVI n	: int <-> int
+/*
+ * Multiply/divide integer with/by constant
+ */
+
+XOR <-> XOR		: (int * int) <-> (int * int)
+/*
+ * Exclusive-or on two integers, result placed in first value
+ */
+
+XORI n <-> XORI n 	: int <-> int
+/*
+ * Exclusive-or integer with constant
+ */
+
+NEG <-> NEG 		: int <-> int
+/*
+ * Flip sign of integer
+ */
+
+CSWAP <-> CSWAP		: ((int * int) * int) <-> ((int * int) * int)
+/*
+ * Controlled swap on two integers, with second value as control
+ */
+
+CSWAPI n <-> CSWAPI n	: (int * int) <-> (int * int)
+/*
+ * Controlled swap on two integers, with constant as control
+ */
+
+RR <-> RL		: (int * int) <-> (int * int)
+/*
+ * Rotate bits of an integer left/right
+ */
+
+RRI n <-> RLI n		: int <-> int
+/*
+ * Rotate bits of an integer left/right by constant value
+ */
+
+// Combinators
++{
+/*
+ * Left hand sum combinator delimiter
+ * @i = pointer to first instruction of right half of combinator
+ */
+
++ // Division point of combinator
+
+}+
+/*
+ * Right hand sum combinator delimiter
+ * @i = pointer to first instruction of left half of combinator
+ */
+
+*{
+/*
+ * First product combinator delimiter
+ * @i = pointer to first instruction of second half of combinator
+ * @n = pointer to second value of product
+ */
+
+* // Division point of combinator
+
+}*
+/*
+ * Second product combinator delimiter
+ * @i = pointer to first instruction of first half of combinator
+ * @n = pointer to first value of product
+ */
+
+// Control/Memory
+CALL f <-> UNCALL f		: ?a <-> ?b
+/*
+ * Invoke function forwards/backwards on datatype
+ * @f = pointer to invoked function
+ */
+
+START <-> RETURN		: ?a <-> ?a
+/*
+ * Designates beginning/end of function; operationally equivalent to ID
+ */
+
+EVAL <-> DEVAL			: ((?a <-> ?b) * ?a) <-> ((?a <-> ?b) * ?b)
+/*
+ * Invoke a function dynamically
+ * @a = pointer to second value of product (the function argument)
+ */
+
+// Example Code
+data0: (int * int) + (int * bool)	-- type definition
+data1: (int + bool) * int
+
+function: data0 <-> data1		-- function definition
+    START
+    +{
+        ADD
+        ID
+	+
+        SWAPP
+    }+
+    BLFT 2
+    FACT
+    *{			-- fst = @r0, snd = @r1
+        +{
+	    NEG
+	    +
+	    MULI 2
+	}+
+	*
+	ADDI 69
+    }*
+    RETURN
