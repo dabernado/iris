@@ -54,33 +54,33 @@ IRIS uses a register-based memory architecture, but instead of addressing regist
 
 ### Data Types
 #### Primitive Types
-Besides the four algebraic data types, there are five primitive types in IRIS: int, uint, bool, 1 (the unit type) and 0 (the empty type). Since there are no possible values of type 0, it can only be used to define sum types in which only one of the two variants can be instantiated. The only value of type 1 is "()", or the unit value.
+Besides the four algebraic data types, there are five primitive types in IRIS: `int`, `uint`, `bool`, `1` (the unit type) and `0` (the empty type). Since there are no possible values of type `0`, it can only be used to define sum types in which only one of the two variants can be instantiated. The only value of type `1` is "()", or the unit value.
 
-The numerical primtypes int and uint are actually represented by 15 and 31 bits on 32-bit and 64-bit platforms respectively, in order to be able to fit into product type values. IRIS can be extended with full-precision numerical types, but since they won't fit inside of a product cell, they can't be considered as primtypes.
+The numerical primtypes `int` and `uint` are actually represented by 15 and 31 bits on 32-bit and 64-bit platforms respectively, in order to be able to fit into product type values. IRIS can be extended with full-precision numerical types, but since they won't fit inside of a product cell, they can't be considered as primtypes.
 
-Some other primtypes which can be added to IRIS via extension are arrays (int[], bool[], etc.) provided by the vector extension, and the floating-point numerical types float and ufloat provided by the floating-point extension.
+Some other primtypes which can be added to IRIS via extension are arrays (`int[]`, `bool[]`, etc.) provided by the vector extension, and the floating-point numerical type `float` provided by the floating-point extension.
 
 #### Sum Types
-Sum types are represented by an additional integer indicating which variant of the type the value is, along with the value itself. The amount of memory allocated is equal to the size of the largest variant of the type. For example, a value of 'left (right v)' of type ((int + int) + int) would be represented as such:
+Sum types are represented by an additional integer indicating which variant of the type the value is, along with the value itself. The amount of memory allocated is equal to the size of the largest variant of the type. For example, a value of 'left (right v)' of type `((int + int) + int)` would be represented as such:
 r0	r1
 [  1  ] [  v  ]
 
 The assembler keeps track of where the variant value places the data in the type by remembering both the amount of variants in the left hand of the root sum, the total number of variants in the type, and an offset value which is set to 0 for operations on the root sum.
 
-For example, a value "left (right (right v))" of type ((int + (int + int)) + (int + int)) would be represented with a variant value of 2, with the division value being 3 and a total value of 4. Say that the processor executed an ASSLS on the data structure, transforming it into the type (int + ((int + int) + (int + int))); the division value becomes (total-division)+offset = 1 and the variant value stays the same, but since the division value has changed its interpretation now becomes "right (left (right v))".
+For example, a value "left (right (right v))" of type `((int + (int + int)) + (int + int))` would be represented with a variant value of 2, with the division value being 3 and a total value of 4. Say that the processor executed an `ASSLS` on the data structure, transforming it into the type `(int + ((int + int) + (int + int)))`; the division value becomes (total-division)+offset = 1 and the variant value stays the same, but since the division value has changed its interpretation now becomes "right (left (right v))".
 
-Similarly, if a SWAPS was performed on the original value, turning it into type ((int + int) + (int + (int + int))), the division value would become "(total-division)+1+offset" which would evaluate to 2 in this case, and the variant value would become "new division + variant" which evaluates to 4, making the value "right (right (right v))".
+Similarly, if a SWAPS was performed on the original value, turning it into type `((int + int) + (int + (int + int)))`, the division value would become "(total-division)+1+offset" which would evaluate to 2 in this case, and the variant value would become "new division + variant" which evaluates to 4, making the value "right (right (right v))".
 
-What if a +{ID + SWAPS}+ is executed on this result? The assembler needs to keep track of the division and total values of the inner type, while still executing with a variant value that specifies the variant in the context of the outer type. In this case, the processor would perform the SWAPP calculations with the inner type's division and total values as normal, but the offset would be equal to the division value of the outer type (in this case 2), which would then be added to get the resulting variant of the whole data structure.
+What if an `+{ID + SWAPS}+` is executed on this result? The assembler needs to keep track of the division and total values of the inner type, while still executing with a variant value that specifies the variant in the context of the outer type. In this case, the processor would perform the `SWAPP` calculations with the inner type's division and total values as normal, but the offset would be equal to the division value of the outer type (in this case 2), which would then be added to get the resulting variant of the whole data structure.
 
-The only sum operation which allocates/deallocates information is ZEROI/ZEROE, which must introduct a variant value to the type it is operating on. If the next register after the current value is empty, the the processor simply moves it over and introduces the variant value at its former starting location. If not, then the processor must reallocate the value along with its variant at the next free registers, and update the pointer to the value in the outer type.
+The only sum operation which allocates/deallocates information is `ZEROI/ZEROE`, which must introduct a variant value to the type it is operating on. If the next register after the current value is empty, the the processor simply moves it over and introduces the variant value at its former starting location. If not, then the processor must reallocate the value along with its variant at the next free registers, and update the pointer to the value in the outer type.
 
 #### Product Types
-Product types are represented by a special cell type which can be divided into two parts; a field containing the first value, and a field for the second value. Each of these pointers can be further divided into a 1-bit field indicating whether or not the value is a pointer or a primtype, and a 15/31-bit field containing the pointer or primtype. For example, a value of type (int * int) on a 32-bit system would be represented as such:
+Product types are represented by a special cell type which can be divided into two parts; a field containing the first value, and a field for the second value. Each of these pointers can be further divided into a 1-bit field indicating whether or not the value is a pointer or a primtype, and a 15/31-bit field containing the pointer or primtype. For example, a value of type `(int * int)` on a 32-bit system would be represented as such:
 0     1		 15 16    17	     31
 [ 0 ] [    fst    ] [ 0 ] [    snd    ]
 
-While a value of type ((int * int) * int) would look like:
+While a value of type `((int * int) * int)` would look like:
 0     1		 15 16    17	     31
 [ 1 ] [   *fst    ] [ 0 ] [    snd    ]
 	    |
@@ -90,30 +90,31 @@ While a value of type ((int * int) * int) would look like:
 
 The pointers of product cells can further be divided into a 1-bit field indicating whether or not the pointer points to a new memory block, with the rest of the bits containing the pointer value.
 
-For operations such as SWAPP and ASSRP/ASSLP, execution is a simple matter of moving around the fields contained in the product cells. Operations such as UNITI/UNITE and INTI/INTE may have to allocate an extra register to contain the product cell, in which case the pointer to the current object has to be modfied in both the value that wraps it and in the current context value. DIST/FACT simply involves swapping the product cell and the sum value registers, and rewriting the first pointer in the product value to point to the value which was previously contained in the sum.
+For operations such as `SWAPP` and `ASSRP/ASSLP`, execution is a simple matter of moving around the fields contained in the product cells. Operations such as `UNITI/UNITE` may have to allocate an extra register to contain the product cell, in which case the pointer to the current object has to be modfied in both the value that wraps it and in the current context value. `DIST/FACT` simply involves swapping the product cell and the sum value registers, and rewriting the first pointer in the product value to point to the value which was previously contained in the sum.
 
 #### Fractional Types
 Fractional types are represented as a pointer to a data structure somewhere in memory which the type was initialized to. Upon unification, the value and the fraction are compared by the processor and, if they are equivalent, the value is deallocated and the fraction changes back into the unit type.
 
-For example, take the sequence of operations "*{ UNITI; *{ ID * EXPF; COLF }*; * ID }*" which takes a starting type of (1 * 1) and transforms it into ((1 * (1/(int * int), (int * int))) * 1). The CPU executes these operations in order:
+For example, take the sequence of operations `*{ UNITI; *{ ID * EXPF; COLF }*; * ID }*` which takes a starting type of `(1 * 1)` and transforms it into `((1 * (1/(int * int), (int * int))) * 1)` before collapsing the fraction and its value. The CPU executes these operations in order:
 
     1. The root product combinator is entered, and the processor begins executing on the first value
-    2. UNITI begins executing; a new product cell containing of type (1 * 1) is allocated and the first value of the current product cell is updated to point to the new value. The data pointer is updated to point to the new product cell. The size register is updated and UNITI finishes
-    3. The next product combinator is entered, and ID is executed on the first value of our newly created product cell
-    4. The second part of the combinator is entered, and EXPF begins execution; a new product cell is allocated containing a pointer to the fractional value and a pointer to where the new value will be allocated, and the second field of the previous product cell is updated to point to the new cell
-    5. The CPU allocates the new value into the location, and EXPF finishes executing
-    6. COLF begins execution; all the primtypes contained in the fraction value and the allocated value are compared
-    7. If the two values are unequal, an exception is thrown; otherwise, the value is deallocated and the fraction pointer is turned back into the unit type, and COLF finishes execution
+    2. `UNITI` begins executing; a new product cell containing of type `(1 * 1)` is allocated and the first value of the current product cell is updated to point to the new value. The data pointer is updated to point to the new product cell. The size register is updated and `UNITI` finishes
+    3. The next product combinator is entered, and `ID` is executed on the first value of our newly created product cell
+    4. The second part of the combinator is entered, and `EXPF` begins execution; a new product cell is allocated containing a pointer to the fractional value and a pointer to where the new value will be allocated, and the second field of the previous product cell is updated to point to the new cell
+    5. The CPU allocates the new value into the location, and `EXPF` finishes executing
+    6. `COLF` begins execution; all the primtypes contained in the fraction value and the allocated value are compared
+    7. If the two values are unequal, an exception is thrown; otherwise, the value is deallocated and the fraction pointer is turned back into the unit type, and `COLF` finishes execution
     8. The inner product combinator is exited, and the CPU returns to the root product cell after transitioning from the contexts that were previously pushed onto the stack
-    9. ID is executed on the second value, and the root product combinator is exited
+    9. `ID` is executed on the second value, and the root product combinator is exited
 
 #### Negative Types
-The negative type isomorphism EXPN/COLN is interesting because it is the only isomorphism in IRIS which is partial between the forward and backward evaluators. EXPN can only be performed when executing backwards, and COLN only when executing forwards. Both of these instructions flip the direction bit and the direction of execution when performed.
+The negative type isomorphism `EXPN/COLN` is interesting because it is the only isomorphism in IRIS which is partial between the forward and backward evaluators. `EXPN` can only be performed when executing backwards, and `COLN` only when executing forwards. Both of these instructions flip the direction bit and the direction of execution when performed.
 
-Based on the sum variant of the incoming value, EXPN/COLN will negate its type. For example, if a value of "right v" enters COLN, it will be transformed into "left -v" and the CPU will begin executing in reverse. Otherwise, if a value of "left -v" enters COLN, it will become "right v" and the CPU will also begin executing in reverse. The 'vice versa' holds for EXPN, which accepts incoming values in reverse and switches the CPU to begin executing forwards.
+Based on the sum variant of the incoming value, `EXPN/COLN` will negate its type. For example, if a value of "right v" enters `COLN`, it will be transformed into "left -v" and the CPU will begin executing in reverse. Otherwise, if a value of "left -v" enters `COLN`, it will become "right v" and the CPU will also begin executing in reverse. The 'vice versa' holds for `EXPN`, which accepts incoming values in reverse and switches the CPU to begin executing forwards.
 
-Negative types can be used to implement novel control structures such as recursion, delimited continuations, coroutines, and others. Looping in IRIS is implemented with the additive trace, which itself is implemented using negative types. For example, given a function "f" of type "(?a + ?b) + (?a + ?c)", a trace over f can be constructed with the following function:
+Negative types can be used to implement novel control structures such as recursion, delimited continuations, coroutines, and others. Looping in IRIS is implemented with the additive trace, which itself is implemented using negative types. For example, given a function `f` of type `(?a + ?b) + (?a + ?c)`, a trace over `f` can be constructed with the following function:
 
+```
 traceadd: ?b <-> ?c
     START
     ZEROI
@@ -134,9 +135,10 @@ traceadd: ?b <-> ?c
     }+
     ZEROE
     RETURN
+```
 
 #### Functions
-Functions as a datatype in IRIS are represented by a pointer to the function's start in the program, which also includes an offset value which indicates the end of the function. When EVAL is called on a data value with a function pointer, the instruction pointer is updated with the information in the function pointer and the function is executed on the data value, returning after the function is finished executing.
+Functions as a datatype in IRIS are represented by a pointer to the function's start in the program, which also includes an offset value which indicates the end of the function. When `EVAL` is called on a data value with a function pointer, the instruction pointer is updated with the information in the function pointer and the function is executed on the data value, returning after the function is finished executing.
 
 #### Polymorphism
 Polymorphic functions can be written IRIS, which are instantiated as overloaded versions of the functions at compile time.
@@ -144,11 +146,10 @@ Polymorphic functions can be written IRIS, which are instantiated as overloaded 
 ## Exceptions
 Despite the strong typing of IRIS allowing for the elimination of many runtime errors that are possible in other assembly languages, there are still some scenarios in which the attempted execution of certain instructions may result in the CPU throwing an exception. Some of the most common are:
 
-ERRFRAC - failed unification of a fraction and a value
-ERRALLOC - not enough space left to perform allocation
-ERRZERO - encountered a function which expects a value of type 0
-ERROFLOW - integer overflow
-ERRINTE - attempted to eliminate integer with non-zero value
-ERRDIV0 - attempted integer division by 0
-ERRMUL0 - attempted integer multiplication by 0 (irreversible)
-ERREXT - code contains instructions/datatypes from an extension not supported by the current environment
+`ERRFRAC` - failed unification of a fraction and a value
+`ERRALLOC` - not enough space left to perform allocation
+`ERRZERO` - encountered a function which expects a value of type 0
+`ERRISIZE` - integer overflow
+`ERRDIV0` - attempted integer division by 0
+`ERRMUL0` - attempted integer multiplication by 0 (irreversible)
+`ERREXT` - code contains instructions/datatypes from an extension not supported by the current environment
