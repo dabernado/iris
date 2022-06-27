@@ -25,27 +25,27 @@ The context stack tells an IRIS computer what they are doing, and stores necessa
 **!**; the terminal symbol, simply represented by a value of 0, with the first bit of a context value indicating whether it is terminal or non-terminal
 
 **Fst @i @a 0|1**; the context for processing the first value of a product
-    - @i = pointer to first instruction of the second part of the product combinator, which is compared to the instruction pointer before each instruction is executed. When the instruction pointer reaches this value, the Fst context is popped off the stack and a Snd context is pushed
-    - @n = pointer to the second value of the product, which is pushed onto the data stack once the current context is finished
-    - 0|1 = indicates whether or not the current value being processed is a primtype contained within the product value
+- @i = pointer to first instruction of the second part of the product combinator, which is compared to the instruction pointer before each instruction is executed. When the instruction pointer reaches this value, the Fst context is popped off the stack and a Snd context is pushed
+- @n = pointer to the second value of the product, which is pushed onto the data stack once the current context is finished
+- 0|1 = indicates whether or not the current value being processed is a primtype contained within the product value
 
 **Snd @i @a 0|1**; the context for processing the second value of a product
-    - @i = pointer to last instruction of the first part of the product combinator, which when executing in reverse behaves exactly like the instruction pointer in the Fst context. When the instruction pointer reaches a BFST opcode, the Snd context is popped off the stack.
-    - @n = pointer to the first value of the product, which is pushed onto the data stack once the current context is finished and the current value is popped
-    - 0|1 = indicates whether or not the current value being processed is a primtype contained within the product value
+- @i = pointer to last instruction of the first part of the product combinator, which when executing in reverse behaves exactly like the instruction pointer in the Fst context. When the instruction pointer reaches a BFST opcode, the Snd context is popped off the stack.
+- @n = pointer to the first value of the product, which is pushed onto the data stack once the current context is finished and the current value is popped
+- 0|1 = indicates whether or not the current value being processed is a primtype contained within the product value
 
 **Left @i**; the context for processing the left value of a sum
-    - @i = pointer to first instruction of the right part of the sum combinator, which is compared to the instruction pointer before each instruction is executed. When the instruction pointer reaches this value, the Left context is popped off the stack and the instruction pointer moves down the program without executing anything until it reaches a BLFT opcode.
+- @i = pointer to first instruction of the right part of the sum combinator, which is compared to the instruction pointer before each instruction is executed. When the instruction pointer reaches this value, the Left context is popped off the stack and the instruction pointer moves down the program without executing anything until it reaches a BLFT opcode.
 
 **Right @i**; the context for processing the right value of a sum
-    - @i = pointer to first instruction of the right part of the sum combinator, which when executing in reverse behaves exactly like the instruction pointer in a Left context. When the instruction pointer reaches a BLFT opcode, the Right context is popped off the stack.
+- @i = pointer to first instruction of the right part of the sum combinator, which when executing in reverse behaves exactly like the instruction pointer in a Left context. When the instruction pointer reaches a BLFT opcode, the Right context is popped off the stack.
 
 **Indirect @a @b**; the context for following a pointer to some object
-    - @a = pointer to last object from which the process came from
-    - @b = pointer to current object
+- @a = pointer to last object from which the process came from
+- @b = pointer to current object
 
 **Call @i**; the context for calling a function
-    - @i = pointer to the next instruction after the CALL/UNCALL or EVAL/DEVAL which prompted the function call
+- @i = pointer to the next instruction after the CALL/UNCALL or EVAL/DEVAL which prompted the function call
 
 Context values contain a 3-bit tag which indicates what context it is, with the rest of the word divided up between whatever fields the context value holds (15/31-bit instruction pointer and 14/30-bit data pointer for product contexts, 29/61-bit instruction pointer for sum contexts).
 
@@ -57,6 +57,8 @@ IRIS uses a register-based memory architecture, but instead of addressing regist
 Besides the four algebraic data types, there are five primitive types in IRIS: int, uint, bool, 1 (the unit type) and 0 (the empty type). Since there are no possible values of type 0, it can only be used to define sum types in which only one of the two variants can be instantiated. The only value of type 1 is "()", or the unit value.
 
 The numerical primtypes int and uint are actually represented by 15 and 31 bits on 32-bit and 64-bit platforms respectively, in order to be able to fit into product type values. IRIS can be extended with full-precision numerical types, but since they won't fit inside of a product cell, they can't be considered as primtypes.
+
+Some other primtypes which can be added to IRIS via extension are arrays (int[], bool[], etc.) provided by the vector extension, and the floating-point numerical types float and ufloat provided by the floating-point extension.
 
 #### Sum Types
 Sum types are represented by an additional integer indicating which variant of the type the value is, along with the value itself. The amount of memory allocated is equal to the size of the largest variant of the type. For example, a value of 'left (right v)' of type ((int + int) + int) would be represented as such:
