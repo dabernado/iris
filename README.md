@@ -30,22 +30,22 @@ The context stack tells an IRIS computer what they are doing, and stores necessa
 - 0|1 = indicates whether or not the current value being processed is a primtype contained within the product value
 
 **Snd @i @a 0|1**; the context for processing the second value of a product
-- @i = pointer to last instruction of the first part of the product combinator, which when executing in reverse behaves exactly like the instruction pointer in the Fst context. When the instruction pointer reaches a BFST opcode, the Snd context is popped off the stack.
+- @i = pointer to last instruction of the first part of the product combinator, which when executing in reverse behaves exactly like the instruction pointer in the Fst context. When the instruction pointer reaches the end of the product combinator, the Snd context is popped off the stack.
 - @n = pointer to the first value of the product, which is pushed onto the data stack once the current context is finished and the current value is popped
 - 0|1 = indicates whether or not the current value being processed is a primtype contained within the product value
 
 **Left @i**; the context for processing the left value of a sum
-- @i = pointer to first instruction of the right part of the sum combinator, which is compared to the instruction pointer before each instruction is executed. When the instruction pointer reaches this value, the Left context is popped off the stack and the instruction pointer moves down the program without executing anything until it reaches a BLFT opcode.
+- @i = pointer to first instruction of the right part of the sum combinator, which is compared to the instruction pointer before each instruction is executed. When the instruction pointer reaches this value, the Left context is popped off the stack and the instruction pointer moves down the program without executing anything until it reaches the end of the sum combinator.
 
 **Right @i**; the context for processing the right value of a sum
-- @i = pointer to first instruction of the right part of the sum combinator, which when executing in reverse behaves exactly like the instruction pointer in a Left context. When the instruction pointer reaches a BLFT opcode, the Right context is popped off the stack.
+- @i = pointer to first instruction of the right part of the sum combinator, which when executing in reverse behaves exactly like the instruction pointer in a Left context. When the instruction pointer reaches the end of the sum combinator, the Right context is popped off the stack.
 
 **Indirect @a @b**; the context for following a pointer to some object
 - @a = pointer to last object from which the process came from
 - @b = pointer to current object
 
 **Call @i**; the context for calling a function
-- @i = pointer to the next instruction after the CALL/UNCALL or EVAL/DEVAL which prompted the function call
+- @i = pointer to the next instruction after the `CALL/UNCALL` or `EVAL/DEVAL` which prompted the function call
 
 Context values contain a 3-bit tag which indicates what context it is, with the rest of the word divided up between whatever fields the context value holds (15/31-bit instruction pointer and 14/30-bit data pointer for product contexts, 29/61-bit instruction pointer for sum contexts).
 
@@ -62,14 +62,16 @@ Some other primtypes which can be added to IRIS via extension are arrays (`int[]
 
 #### Sum Types
 Sum types are represented by an additional integer indicating which variant of the type the value is, along with the value itself. The amount of memory allocated is equal to the size of the largest variant of the type. For example, a value of 'left (right v)' of type `((int + int) + int)` would be represented as such:
+```
 r0	r1
 [  1  ] [  v  ]
+```
 
 The assembler keeps track of where the variant value places the data in the type by remembering both the amount of variants in the left hand of the root sum, the total number of variants in the type, and an offset value which is set to 0 for operations on the root sum.
 
 For example, a value "left (right (right v))" of type `((int + (int + int)) + (int + int))` would be represented with a variant value of 2, with the division value being 3 and a total value of 4. Say that the processor executed an `ASSLS` on the data structure, transforming it into the type `(int + ((int + int) + (int + int)))`; the division value becomes (total-division)+offset = 1 and the variant value stays the same, but since the division value has changed its interpretation now becomes "right (left (right v))".
 
-Similarly, if a SWAPS was performed on the original value, turning it into type `((int + int) + (int + (int + int)))`, the division value would become "(total-division)+1+offset" which would evaluate to 2 in this case, and the variant value would become "new division + variant" which evaluates to 4, making the value "right (right (right v))".
+Similarly, if a `SWAPS` was performed on the original value, turning it into type `((int + int) + (int + (int + int)))`, the division value would become "(total-division)+1+offset" which would evaluate to 2 in this case, and the variant value would become "new division + variant" which evaluates to 4, making the value "right (right (right v))".
 
 What if an `+{ID + SWAPS}+` is executed on this result? The assembler needs to keep track of the division and total values of the inner type, while still executing with a variant value that specifies the variant in the context of the outer type. In this case, the processor would perform the `SWAPP` calculations with the inner type's division and total values as normal, but the offset would be equal to the division value of the outer type (in this case 2), which would then be added to get the resulting variant of the whole data structure.
 
@@ -77,16 +79,20 @@ The only sum operation which allocates/deallocates information is `ZEROI/ZEROE`,
 
 #### Product Types
 Product types are represented by a special cell type which can be divided into two parts; a field containing the first value, and a field for the second value. Each of these pointers can be further divided into a 1-bit field indicating whether or not the value is a pointer or a primtype, and a 15/31-bit field containing the pointer or primtype. For example, a value of type `(int * int)` on a 32-bit system would be represented as such:
+```
 0     1		 15 16    17	     31
 [ 0 ] [    fst    ] [ 0 ] [    snd    ]
+```
 
 While a value of type `((int * int) * int)` would look like:
+```
 0     1		 15 16    17	     31
 [ 1 ] [   *fst    ] [ 0 ] [    snd    ]
 	    |
 	    v
 	    0     1	     15 16    17	 31
 	    [ 0 ] [    fst    ] [ 0 ] [    snd    ]
+```
 
 The pointers of product cells can further be divided into a 1-bit field indicating whether or not the pointer points to a new memory block, with the rest of the bits containing the pointer value.
 
@@ -96,16 +102,15 @@ For operations such as `SWAPP` and `ASSRP/ASSLP`, execution is a simple matter o
 Fractional types are represented as a pointer to a data structure somewhere in memory which the type was initialized to. Upon unification, the value and the fraction are compared by the processor and, if they are equivalent, the value is deallocated and the fraction changes back into the unit type.
 
 For example, take the sequence of operations `*{ UNITI; *{ ID * EXPF; COLF }*; * ID }*` which takes a starting type of `(1 * 1)` and transforms it into `((1 * (1/(int * int), (int * int))) * 1)` before collapsing the fraction and its value. The CPU executes these operations in order:
-
-    1. The root product combinator is entered, and the processor begins executing on the first value
-    2. `UNITI` begins executing; a new product cell containing of type `(1 * 1)` is allocated and the first value of the current product cell is updated to point to the new value. The data pointer is updated to point to the new product cell. The size register is updated and `UNITI` finishes
-    3. The next product combinator is entered, and `ID` is executed on the first value of our newly created product cell
-    4. The second part of the combinator is entered, and `EXPF` begins execution; a new product cell is allocated containing a pointer to the fractional value and a pointer to where the new value will be allocated, and the second field of the previous product cell is updated to point to the new cell
-    5. The CPU allocates the new value into the location, and `EXPF` finishes executing
-    6. `COLF` begins execution; all the primtypes contained in the fraction value and the allocated value are compared
-    7. If the two values are unequal, an exception is thrown; otherwise, the value is deallocated and the fraction pointer is turned back into the unit type, and `COLF` finishes execution
-    8. The inner product combinator is exited, and the CPU returns to the root product cell after transitioning from the contexts that were previously pushed onto the stack
-    9. `ID` is executed on the second value, and the root product combinator is exited
+1. The root product combinator is entered, and the processor begins executing on the first value
+2. `UNITI` begins executing; a new product cell containing of type `(1 * 1)` is allocated and the first value of the current product cell is updated to point to the new value. The data pointer is updated to point to the new product cell. The size register is updated and `UNITI` finishes
+3. The next product combinator is entered, and `ID` is executed on the first value of our newly created product cell
+4. The second part of the combinator is entered, and `EXPF` begins execution; a new product cell is allocated containing a pointer to the fractional value and a pointer to where the new value will be allocated, and the second field of the previous product cell is updated to point to the new cell
+5. The CPU allocates the new value into the location, and `EXPF` finishes executing
+6. `COLF` begins execution; all the primtypes contained in the fraction value and the allocated value are compared
+7. If the two values are unequal, an exception is thrown; otherwise, the value is deallocated and the fraction pointer is turned back into the unit type, and `COLF` finishes execution
+8. The inner product combinator is exited, and the CPU returns to the root product cell after transitioning from the contexts that were previously pushed onto the stack
+9. `ID` is executed on the second value, and the root product combinator is exited
 
 #### Negative Types
 The negative type isomorphism `EXPN/COLN` is interesting because it is the only isomorphism in IRIS which is partial between the forward and backward evaluators. `EXPN` can only be performed when executing backwards, and `COLN` only when executing forwards. Both of these instructions flip the direction bit and the direction of execution when performed.
@@ -147,9 +152,15 @@ Polymorphic functions can be written IRIS, which are instantiated as overloaded 
 Despite the strong typing of IRIS allowing for the elimination of many runtime errors that are possible in other assembly languages, there are still some scenarios in which the attempted execution of certain instructions may result in the CPU throwing an exception. Some of the most common are:
 
 `ERRFRAC` - failed unification of a fraction and a value
+
 `ERRALLOC` - not enough space left to perform allocation
+
 `ERRZERO` - encountered a function which expects a value of type 0
+
 `ERRISIZE` - integer overflow
+
 `ERRDIV0` - attempted integer division by 0
+
 `ERRMUL0` - attempted integer multiplication by 0 (irreversible)
+
 `ERREXT` - code contains instructions/datatypes from an extension not supported by the current environment
