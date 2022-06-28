@@ -1,3 +1,5 @@
+use crate::mem::blocks::BlockError;
+
 pub trait AllocRaw {
     type Header: AllocHeader;
 
@@ -13,6 +15,15 @@ pub trait AllocRaw {
 pub enum AllocError {
     BadRequest,
     OutOfMemory,
+}
+
+impl From<BlockError> for AllocError {
+    fn from(error: BlockError) -> AllocError {
+        match error {
+            BlockError::BadRequest => AllocError::BadRequest,
+            BlockError::OutOfMemory => AllocError::OutOfMemory,
+        }
+    }
 }
 
 pub struct RawPtr<T: Sized> {
