@@ -1,7 +1,12 @@
 use std::cell::UnsafeCell;
 use std::marker::PhantomData;
+use std::mem::{replace, size_of};
+use std::ptr::{write, NonNull};
+use std::slice::from_raw_parts_mut;
 
-use crate::blocks::BlockList;
+use crate::mem::constants;
+use crate::mem::blocks::{BumpBlock, BlockList};
+use crate::mem::api::*;
 
 pub struct StickyImmixHeap<H> {
     blocks: UnsafeCell<BlockList>,
@@ -119,7 +124,149 @@ impl<H: AllocHeader> AllocRaw for StickyImmixHeap<H> {
     }
 
     // to get object, add header size to header pointer
-    fn get_header(object: NonNull<Self::Header>) -> NonNull<()> {
+    fn get_object(header: NonNull<Self::Header>) -> NonNull<()> {
         unsafe { NonNull::new_unchecked(header.as_ptr().offset(1).cast::<()>()) }
+    }
+}
+
+impl<H> Default for StickImmixHeap<H> {
+    fn default() -> StickyImmixHeap<H> {
+        StickyImmixHeap::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::mem::api::*;
+    use crate::data::*;
+    use std::slice::from_raw_parts;
+
+    #[test]
+    fn test_memory() {
+        let mem = StickyImmixHeap::<ITypeHeader>::new();
+
+        match mem.alloc(69 as i32) {
+            Ok(i) => {
+                let orig = unsafe { i.as_ref() };
+                assert!(*orig == 69);
+            },
+            Err(_) => panic!("Allocation failed"),
+        }
+    }
+
+    #[test]
+    fn test_many_obs() {
+        let mem = StickyImmixHeap::<ITypeHeader>::new();
+        let obs = Vec::new();
+
+        for i in 0..(constants::BLOCK_SIZE * 3) {
+            match mem.alloc(i as i32) {
+                Ok(ptr) => obs.push(ptr),
+                Err(_) => assert!(false, "Allocation failed unexpectedly"),
+            }
+        }
+
+        for (i, ob) in obs.iter().enumerate() {
+            println!("{} {}", i, unsafe { ob.as_ref() });
+            assert!(i == unsafe { *ob.as_ref() })
+        }
+    }
+
+    #[test]
+    fn test_array() {
+        let mem = StickyImmixHeap::<ITypeHeader>::new();
+        let size = 2048;
+
+        match mem.alloc_array(size) {
+            Ok(ptr) => {
+                let ptr = ptr.as_ptr();
+                let array = unsafe { from_raw_parts(ptr, size as usize) };
+
+                for byte in array {
+                    assert!(*byte == 0);
+                }
+            },
+            Err(_) => assert!(false, "Allocation failed unexpectedly"),
+        }
+    }
+
+    #[test]
+    fn test_header() {
+        let mem = StickyImmixHeap::<ITypeHeader>::new();
+
+        match mem.alloc(69 as i32) {
+            Ok(i) => {
+                let untyped_ptr = i.as_untyped();
+                let header_ptr = StickyImmixHeap::<ITypeHeader>::get_header(untyped_ptr);
+                dbg!(header_ptr);
+                let header = unsafe { &*header_ptr.as_ptr() as &ITypeHeader };
+
+                assert!(header.type_id() == ITypeId::Int);
+            },
+            Err(_) => panic!("Allocation failed"),
+        }
+    }
+
+    // Testing large allocations
+    struct TestHeader {
+        size_class: SizeClass,
+        type_id: TestTypeId,
+        size_bytes: u32,
+    }
+
+    #[derive(Copy, Clone, PartialEq)]
+    enum TestTypeId {
+        Big,
+        Array,
+    }
+
+    impl AllocTypeId for TestTypeId {}
+    impl AllocHeader for TestHeader {
+        type TypeId = TestTypeId;
+
+        fn new<O: AllocObject<Self::TypeId>>(size: u32, size_class: SizeClass) -> Self {
+            TestHeader {
+                size_class,
+                type_id: O::TYPE_ID,
+                size_bytes: size,
+            }
+        }
+
+        fn new_array(size: u32, size_class: SizeClass) -> Self {
+            TestHeader {
+                size_class,
+                type_id: TestTypeId::Array,
+                size_bytes: size,
+            }
+        }
+
+        fn mark(&mut self) {}
+        fn is_marked(&self) -> bool { true }
+        fn size_class(&self) -> SizeClass { SizeClass::Small }
+        fn size(&self) -> u32 { 8 }
+        fn type_id(&self) -> TestTypeId { self.type_id }
+    }
+
+    struct Big {
+        _huge: [u8; constants::BLOCK_SIZE + 1],
+    }
+
+    impl Big {
+        fn make() -> Big {
+            Big {
+                _huge: [0u8; constants::BLOCK_SIZE + 1],
+            }
+        }
+    }
+
+    impl AllocObject<TestTypeId> for Big {
+        const TYPE_ID: TestTypeId = TestTypeId::Big;
+    }
+
+    #[test]
+    fn test_too_big() {
+        let mem = StickyImmixHeap::<TestHeader>::new();
+        assert!(mem.alloc(Big::make()) == Err(AllocError::BadRequest));
     }
 }
