@@ -1,4 +1,3 @@
-use std::mem::{replace, size_of};
 use std::ptr::{NonNull, write};
 
 use crate::mem::constants;
@@ -31,7 +30,7 @@ impl Block {
     }
 
     pub fn into_mut_ptr(self) -> BlockPtr { self.ptr }
-    pub fn size(&self) -> BlockPtr { self.size }
+    pub fn size(&self) -> BlockSize { self.size }
     
     pub unsafe fn from_raw_parts(ptr: BlockPtr, size: BlockSize) -> Block {
         Block { ptr, size }
@@ -53,14 +52,14 @@ pub struct BumpBlock {
     cursor: usize,
     limit: usize,
     block: Block,
-    meta: BlockMeta,
+    meta: Box<BlockMeta>,
 }
 
 impl BumpBlock {
     pub fn new() -> Result<BumpBlock, AllocError> {
         let mut block = BumpBlock {
             cursor: constants::BLOCK_SIZE,
-            limit: FIRST_OBJECT_OFFSET,
+            limit: constants::FIRST_OBJECT_OFFSET,
             block: Block::new(constants::BLOCK_SIZE)?,
             meta: BlockMeta::new_boxed(),
         };
@@ -71,15 +70,23 @@ impl BumpBlock {
         Ok(block)
     }
 
+    unsafe fn write<T>(&mut self, object: T, offset: usize) -> *const T {
+        let p = self.block.as_ptr().add(offset) as *mut T;
+        write(p, object);
+        p
+    }
+
     pub fn inner_alloc(&mut self, alloc_size: usize) -> Option<*const u8> {
         let next_bump = self.cursor - alloc_size;
 
         if next_bump < self.limit {
-            if self.limit > constants::BLOCK_START {
+            if self.limit > constants::FIRST_OBJECT_OFFSET {
                 if let Some((cursor, limit)) = self.meta.find_next_available_hole(self.limit) {
                     self.cursor = cursor;
                     self.limit = limit;
-                    return self.inner_alloc(alloc_size);
+                    if !(self.cursor == constants::FIRST_OBJECT_OFFSET) {
+                        return self.inner_alloc(alloc_size);
+                    }
                 }
             }
 
@@ -92,6 +99,8 @@ impl BumpBlock {
             }
         }
     }
+
+    pub fn current_hole_size(&self) -> usize { self.cursor - self.limit }
 }
 
 pub struct BlockMeta {
@@ -108,7 +117,7 @@ impl BlockMeta {
     }
 
     pub fn mark_line(&mut self, index: usize) {
-        self.line_mark[constants::LINE_COUNT - index] = true;
+        self.line_mark[index] = true;
     }
 
     /*
@@ -133,9 +142,11 @@ impl BlockMeta {
         let mut count = 0;
         let mut start: Option<usize> = None;
         let mut stop: usize = 0;
+        let starting_line = starting_at / constants::LINE_SIZE;
 
-        let starting_line = constants::LINE_COUNT - (starting_at / constants::LINE_SIZE);
-        for (index, marked) in self.line_mark[..starting_line].iter().rev().enumerate() {
+        for (index, marked) in self.line_mark[(constants::LINE_COUNT - starting_line)..]
+            .iter().enumerate()
+        {
             let abs_index = starting_line - index;
 
             // count unmarked lines
@@ -159,7 +170,11 @@ impl BlockMeta {
             if count > 0 && (*marked || stop <= constants::BLOCK_START) {
                 if let Some(start) = start {
                     let cursor = start * constants::LINE_SIZE;
-                    let limit = stop * constants::LINE_SIZE;
+                    let limit = if stop == 0 {
+                        constants::FIRST_OBJECT_OFFSET
+                    } else {
+                        stop * constants::LINE_SIZE
+                    };
 
                     return Some((cursor, limit));
                 }
@@ -173,49 +188,6 @@ impl BlockMeta {
         }
 
         None
-    }
-}
-
-struct BlockList {
-    head: Option<BumpBlock>,
-    overflow: Option<BumpBlock>,
-    rest: Vec<BumpBlock>,
-}
-
-impl BlockList {
-    fn new() -> BlockList {
-        BlockList {
-            head: None,
-            overflow: None,
-            rest: Vec::new(),
-        }
-    }
-
-    fn overflow_alloc(&mut self, alloc_size: usize) -> Result<*const u8, AllocError> {
-        match self.overflow {
-            Some(ref mut overflow) => {
-                match overflow.inner_alloc(alloc_size) {
-                    Some(space) => space,
-                    None => {
-                        let previous = replace(overflow, BumpBlock::new()?);
-
-                        self.rest.push(previous);
-                        overflow.inner_alloc(alloc_size)
-                            .expect("Object size larger than block size")
-                    }
-                }
-            },
-            None => {
-                let mut overflow = BumpBlock::new()?;
-
-                let space = overflow
-                    .inner_alloc(alloc_size)
-                    .expect("Object size larger than block size");
-
-                self.overflow = Some(overflow);
-                space
-            }
-        }
     }
 }
 
@@ -237,7 +209,7 @@ mod internal {
         }
     }
 
-    fn dealloc_block(ptr: BlockPtr, size: BlockSize) {
+    pub fn dealloc_block(ptr: BlockPtr, size: BlockSize) {
         unsafe {
             let layout = Layout::from_size_align_unchecked(size, size);
 
@@ -297,10 +269,13 @@ mod tests {
         meta.mark_line(4);
         meta.mark_line(10);
 
-        let expect = Some((6 * constants::LINE_SIZE, 10 * constants::LINE_SIZE));
-        let got = meta.find_next_available_hole(0);
+        let expect = Some((
+                (constants::LINE_COUNT - 6) * constants::LINE_SIZE,
+                (constants::LINE_COUNT - 10) * constants::LINE_SIZE
+        ));
+        let got = meta.find_next_available_hole(constants::BLOCK_SIZE);
 
-        println!("test_find_next_hole got {:?}, expected {:?}", got, expected);
+        println!("test_find_next_hole got {:?}, expected {:?}", got, expect);
         assert!(got == expect)
     }
 
@@ -312,10 +287,13 @@ mod tests {
         meta.mark_line(4);
         meta.mark_line(5);
 
-        let expect = Some((0, 3 * constants::LINE_SIZE));
-        let got = meta.find_next_available_hole(0);
+        let expect = Some((
+                constants::LINE_COUNT * constants::LINE_SIZE,
+                (constants::LINE_COUNT - 3) * constants::LINE_SIZE
+        ));
+        let got = meta.find_next_available_hole(constants::BLOCK_SIZE);
 
-        println!("test_find_next_hole_at_first_line got {:?}, expected {:?}", got, expected);
+        println!("test_find_next_hole_at_first_line got {:?}, expected {:?}", got, expect);
         assert!(got == expect)
     }
 
@@ -328,10 +306,10 @@ mod tests {
             meta.mark_line(i);
         }
 
-        let expect = Some(((halfway + 1) * constants::LINE_SIZE, constants::BLOCK_SIZE));
-        let got = meta.find_next_available_hole(0);
+        let expect = Some(((halfway - 1) * constants::LINE_SIZE, constants::FIRST_OBJECT_OFFSET));
+        let got = meta.find_next_available_hole(constants::BLOCK_SIZE);
 
-        println!("test_find_next_hole_at_block_end got {:?}, expected {:?}", got, expected);
+        println!("test_find_next_hole_at_block_end got {:?}, expected {:?}", got, expect);
         assert!(got == expect)
     }
 
@@ -345,7 +323,7 @@ mod tests {
             }
         }
 
-        let got = meta.find_next_available_hole(0);
+        let got = meta.find_next_available_hole(constants::BLOCK_SIZE);
         
         println!("test_find_next_hole_all_conservatively_marked got {:?}, expected None", got);
         assert!(got == None);
@@ -353,12 +331,12 @@ mod tests {
 
     #[test]
     fn test_find_entire_block() {
-        let mut meta = BlockMeta::new_boxed();
+        let meta = BlockMeta::new_boxed();
 
-        let expect = Some((0, constants::BLOCK_SIZE));
-        let got = meta.find_next_available_hole(0);
+        let expect = Some((constants::BLOCK_SIZE, constants::FIRST_OBJECT_OFFSET));
+        let got = meta.find_next_available_hole(constants::BLOCK_SIZE);
 
-        println!("test_find_entire_block got {:?}, expected {:?}", got, expected);
+        println!("test_find_entire_block got {:?}, expected {:?}", got, expect);
         assert!(got == expect);
     }
 
@@ -374,7 +352,7 @@ mod tests {
         let mut index = 0;
 
         loop {
-            println!("cursor={}, limit={}", block.cursor, block.limit);
+            //println!("cursor={}, limit={}", block.cursor, block.limit);
             if let Some(ptr) = block.inner_alloc(TEST_UNIT_SIZE) {
                 let u32ptr = ptr as *mut u32;
                 assert!(!v.contains(&u32ptr));
@@ -398,7 +376,7 @@ mod tests {
     fn test_empty_block() {
         let mut block = BumpBlock::new().unwrap();
 
-        let count = loop_check_allocate(&mut block);
+        let count = loop_check_allocated(&mut block);
         let expect = (constants::BLOCK_SIZE - constants::FIRST_OBJECT_OFFSET) / TEST_UNIT_SIZE;
 
         println!("expect={}, count={}", expect, count);
@@ -415,8 +393,11 @@ mod tests {
 
         block.limit = block.cursor;     // block is recycled
 
-        let count = loop_check_allocate(&mut block);
-        let expect = (((constants::LINE_COUNT / 2) - 1) * constants::LINE_SIZE) / TEST_UNIT_SIZE;
+        let count = loop_check_allocated(&mut block);
+        let expect = ((((constants::LINE_COUNT / 2) - 1)
+            * constants::LINE_SIZE)
+            - constants::FIRST_OBJECT_OFFSET)
+            / TEST_UNIT_SIZE;
 
         println!("expect={}, count={}", expect, count);
         assert!(count == expect);
@@ -434,7 +415,7 @@ mod tests {
 
         block.limit = block.cursor;     // block is recycled
 
-        let count = loop_check_allocate(&mut block);
+        let count = loop_check_allocated(&mut block);
 
         println!("count={}", count);
         assert!(count == 0);

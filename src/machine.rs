@@ -1,4 +1,5 @@
-use data::*;
+/*
+use crate::data::*;
 
 enum Context {
     Fst,
@@ -30,3 +31,4 @@ impl Machine {
     {
     }
 }
+*/

@@ -1,4 +1,4 @@
-use crate::alloc::api::*;
+use crate::mem::api::*;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum ITypeId {
@@ -24,13 +24,25 @@ pub struct ITypeHeader {
 impl AllocHeader for ITypeHeader {
     type TypeId = ITypeId;
 
-    fn new<O: AllocObject<Self::TypeId>>(size: u32, size_class: SizeClass) -> {
+    fn new<O: AllocObject<Self::TypeId>>(size: u32, size_class: SizeClass) -> ITypeHeader {
         ITypeHeader {
             size,
             size_class,
             type_id: O::TYPE_ID,
         }
     }
+
+    fn new_array(size: u32, size_class: SizeClass) -> Self {
+        ITypeHeader {
+            size,
+            size_class,
+            type_id: ITypeId::Array,
+        }
+    }
+
+    fn size_class(&self) -> SizeClass { self.size_class }
+    fn size(&self) -> u32 { self.size }
+    fn type_id(&self) -> Self::TypeId { self.type_id }
 }
 
 /* Primitive Types */
@@ -60,46 +72,46 @@ impl AllocObject<ITypeId> for Bool {
 }
 
 /* Algebraic Data Types */
-pub struct Fraction<O: AllocObject<Self::TypeId>>(RawPtr<O>);
-impl<O: AllocObject<Self::TypeId>> AllocObject<ITypeId> for Fraction<O> {
+pub struct Fraction<O: AllocObject<ITypeId>>(RawPtr<O>);
+impl<O: AllocObject<ITypeId>> AllocObject<ITypeId> for Fraction<O> {
     const TYPE_ID: ITypeId = ITypeId::Frac;
 }
 
-pub struct Negative<O: AllocObject<Self::TypeId>>(RawPtr<O>);
-impl<O: AllocObject<Self::TypeId>> AllocObject<ITypeId> for Negative<O> {
+pub struct Negative<O: AllocObject<ITypeId>>(RawPtr<O>);
+impl<O: AllocObject<ITypeId>> AllocObject<ITypeId> for Negative<O> {
     const TYPE_ID: ITypeId = ITypeId::Neg;
 }
 
-pub enum Sum<L: AllocObject<Self::TypeId>, R: AllocObject<Self::TypeId>> {
+pub enum Sum<L: AllocObject<ITypeId>, R: AllocObject<ITypeId>> {
     Left(RawPtr<L>),
     Right(RawPtr<R>),
 }
 
-impl<L: AllocObject<Self::TypeId>,
-     R: AllocObject<Self::TypeId>> AllocObject<ITypeId> for Sum<L, R> {
+impl<L: AllocObject<ITypeId>,
+     R: AllocObject<ITypeId>> AllocObject<ITypeId> for Sum<L, R> {
     const TYPE_ID: ITypeId = ITypeId::Sum;
 }
 
-pub struct Product<F: AllocObject<Self::TypeId>, S: AllocObject<Self::TypeId>> {
+pub struct Product<F: AllocObject<ITypeId>, S: AllocObject<ITypeId>> {
     fst: RawPtr<F>,
     snd: RawPtr<S>,
 }
 
-impl<F: AllocObject<Self::TypeId>, S: AllocObject<Self::TypeId>> Product<F, S> {
-    pub fn new(first: RawPtr<F>, second: RawPtr<S>) -> Product<F, S> {
-        Product { first, second }
+impl<F: AllocObject<ITypeId>, S: AllocObject<ITypeId>> Product<F, S> {
+    pub fn new(fst: RawPtr<F>, snd: RawPtr<S>) -> Product<F, S> {
+        Product { fst, snd }
     }
 }
 
-impl<F: AllocObject<Self::TypeId>,
-     S: AllocObject<Self::TypeId>> AllocObject<ITypeId> for Product<F, S> {
+impl<F: AllocObject<ITypeId>,
+     S: AllocObject<ITypeId>> AllocObject<ITypeId> for Product<F, S> {
     const TYPE_ID: ITypeId = ITypeId::Prod;
 }
 
 /*
  * Helper functions
  */
-pub fn is_atom<T: AllocObject<Self::TypeId>>(object: &T) -> bool {
+pub fn is_atom<T: AllocObject<ITypeId>>(_object: &T) -> bool {
     match T::TYPE_ID {
         ITypeId::Unit => true,
         ITypeId::Int => true,

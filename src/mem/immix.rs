@@ -5,8 +5,10 @@ use std::ptr::{write, NonNull};
 use std::slice::from_raw_parts_mut;
 
 use crate::mem::constants;
-use crate::mem::blocks::{BumpBlock, BlockList};
-use crate::mem::api::*;
+use crate::mem::blocks::BumpBlock;
+use crate::mem::api::{
+    alloc_size_of, AllocError, AllocHeader, AllocObject, AllocRaw, ArraySize, SizeClass, RawPtr
+};
 
 pub struct StickyImmixHeap<H> {
     blocks: UnsafeCell<BlockList>,
@@ -80,7 +82,7 @@ impl<H: AllocHeader> AllocRaw for StickyImmixHeap<H> {
         let size_class = SizeClass::get_for_size(alloc_size)?;
 
         let space = self.find_space(alloc_size, size_class)?;
-        let header = Self::Header::new::<T>(object_size, size_class);
+        let header = Self::Header::new::<T>(object_size as u32, size_class);
 
         // write header into front of allocated space
         unsafe { write(space as *mut Self::Header, header); }
@@ -94,8 +96,7 @@ impl<H: AllocHeader> AllocRaw for StickyImmixHeap<H> {
 
     fn alloc_array(&self, size_bytes: ArraySize) -> Result<RawPtr<u8>, AllocError> {
         let header_size = size_of::<Self::Header>();
-        let object_size = size_of::<T>();
-        let total_size = header_size + object_size;
+        let total_size = header_size + size_bytes as usize;
 
         // round size to next word boundary for alignment
         let alloc_size = alloc_size_of(total_size);
@@ -129,9 +130,56 @@ impl<H: AllocHeader> AllocRaw for StickyImmixHeap<H> {
     }
 }
 
-impl<H> Default for StickImmixHeap<H> {
+impl<H> Default for StickyImmixHeap<H> {
     fn default() -> StickyImmixHeap<H> {
         StickyImmixHeap::new()
+    }
+}
+
+pub struct BlockList {
+    head: Option<BumpBlock>,
+    overflow: Option<BumpBlock>,
+    rest: Vec<BumpBlock>,
+}
+
+impl BlockList {
+    pub fn new() -> BlockList {
+        BlockList {
+            head: None,
+            overflow: None,
+            rest: Vec::new(),
+        }
+    }
+
+    pub fn overflow_alloc(&mut self, alloc_size: usize) -> Result<*const u8, AllocError> {
+        assert!(alloc_size <= constants::BLOCK_CAPACITY);
+
+        let space = match self.overflow {
+            Some(ref mut overflow) => {
+                match overflow.inner_alloc(alloc_size) {
+                    Some(space) => space,
+                    None => {
+                        let previous = replace(overflow, BumpBlock::new()?);
+
+                        self.rest.push(previous);
+                        overflow.inner_alloc(alloc_size)
+                            .expect("Object size larger than block size")
+                    }
+                }
+            },
+            None => {
+                let mut overflow = BumpBlock::new()?;
+
+                let space = overflow
+                    .inner_alloc(alloc_size)
+                    .expect("Object size larger than block size");
+
+                self.overflow = Some(overflow);
+                space
+            }
+        } as *const u8;
+
+        Ok(space)
     }
 }
 
@@ -158,7 +206,7 @@ mod tests {
     #[test]
     fn test_many_obs() {
         let mem = StickyImmixHeap::<ITypeHeader>::new();
-        let obs = Vec::new();
+        let mut obs = Vec::new();
 
         for i in 0..(constants::BLOCK_SIZE * 3) {
             match mem.alloc(i as i32) {
@@ -166,10 +214,11 @@ mod tests {
                 Err(_) => assert!(false, "Allocation failed unexpectedly"),
             }
         }
+        println!("Finished allocating");
 
         for (i, ob) in obs.iter().enumerate() {
             println!("{} {}", i, unsafe { ob.as_ref() });
-            assert!(i == unsafe { *ob.as_ref() })
+            assert!(i as i32 == unsafe { *ob.as_ref() })
         }
     }
 
@@ -241,8 +290,6 @@ mod tests {
             }
         }
 
-        fn mark(&mut self) {}
-        fn is_marked(&self) -> bool { true }
         fn size_class(&self) -> SizeClass { SizeClass::Small }
         fn size(&self) -> u32 { 8 }
         fn type_id(&self) -> TestTypeId { self.type_id }
