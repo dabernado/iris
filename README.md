@@ -54,11 +54,11 @@ IRIS uses a register-based memory architecture, but instead of addressing regist
 
 ### Data Types
 #### Primitive Types
-Besides the four algebraic data types, there are five primitive types in IRIS: `int`, `uint`, `bool`, `1` (the unit type) and `0` (the empty type). Since there are no possible values of type `0`, it can only be used to define sum types in which only one of the two variants can be instantiated. The only value of type `1` is "()", or the unit value.
+Besides the four algebraic data types, there are four primitive types in IRIS: `int`, `uint`, `1` (the unit type) and `0` (the empty type). Since there are no possible values of type `0`, it can only be used to define sum types in which only one of the two variants can be instantiated. The only value of type `1` is "()", or the unit value.
 
 The numerical primtypes `int` and `uint` are actually represented by 15 and 31 bits on 32-bit and 64-bit platforms respectively, in order to be able to fit into product type values. IRIS can be extended with full-precision numerical types, but since they won't fit inside of a product cell, they can't be considered as primtypes.
 
-Some other primtypes which can be added to IRIS via extension are arrays (`int[]`, `bool[]`, etc.) provided by the vector extension, and the floating-point numerical type `float` provided by the floating-point extension.
+Some other primtypes which can be added to IRIS via extension are arrays (`int[]`, `1[]`, etc.) provided by the vector extension, and the floating-point numerical type `float` provided by the floating-point extension.
 
 #### Sum Types
 Sum types are represented by an additional integer indicating which variant of the type the value is, along with the value itself. The amount of memory allocated is equal to the size of the largest variant of the type. For example, a value of 'left (right v)' of type `((int + int) + int)` would be represented as such:

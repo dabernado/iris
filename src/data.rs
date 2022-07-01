@@ -8,7 +8,7 @@ pub enum ITypeId {
     Int,
     UInt,
     Float,
-    Bool,
+    //Bool,
     Sum,
     Prod,
     Frac,
@@ -71,10 +71,14 @@ impl AllocObject<ITypeId> for Float {
     const TYPE_ID: ITypeId = ITypeId::Float;
 }
 
+/*
+ * bool is implemented via the 1 + 1 type, so
+ * is unneeded as a primtype
 pub type Bool = bool;
 impl AllocObject<ITypeId> for Bool {
     const TYPE_ID: ITypeId = ITypeId::Bool;
 }
+*/
 
 /* Algebraic Data Types */
 pub struct Fraction<O: AllocObject<ITypeId>>(CellPtr<O>);
@@ -134,12 +138,6 @@ pub enum Context {
 
 impl AllocObject<ITypeId> for Context {
     const TYPE_ID: ITypeId = ITypeId::Context;
-}
-
-pub enum Opcode {}
-
-impl AllocObject<ITypeId> for Opcode {
-    const TYPE_ID: ITypeId = ITypeId::Opcode;
 }
 
 /*
