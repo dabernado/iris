@@ -1,6 +1,8 @@
-use crate::mem::api::*;
+use crate::alloc::api::*;
+use crate::safeptr::{CellPtr, UntypedPtr};
 
-#[derive(PartialEq, Copy, Clone)]
+#[repr(u16)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum ITypeId {
     Unit,
     Int,
@@ -12,6 +14,9 @@ pub enum ITypeId {
     Frac,
     Neg,
     Array,
+    Func,
+    Context,
+    Opcode,
 }
 impl AllocTypeId for ITypeId {}
 
@@ -72,40 +77,69 @@ impl AllocObject<ITypeId> for Bool {
 }
 
 /* Algebraic Data Types */
-pub struct Fraction<O: AllocObject<ITypeId>>(RawPtr<O>);
+pub struct Fraction<O: AllocObject<ITypeId>>(CellPtr<O>);
 impl<O: AllocObject<ITypeId>> AllocObject<ITypeId> for Fraction<O> {
     const TYPE_ID: ITypeId = ITypeId::Frac;
 }
 
-pub struct Negative<O: AllocObject<ITypeId>>(RawPtr<O>);
+pub struct Negative<O: AllocObject<ITypeId>>(CellPtr<O>);
 impl<O: AllocObject<ITypeId>> AllocObject<ITypeId> for Negative<O> {
     const TYPE_ID: ITypeId = ITypeId::Neg;
 }
 
 pub enum Sum<L: AllocObject<ITypeId>, R: AllocObject<ITypeId>> {
-    Left(RawPtr<L>),
-    Right(RawPtr<R>),
+    Left(CellPtr<L>),
+    Right(CellPtr<R>),
 }
 
-impl<L: AllocObject<ITypeId>,
-     R: AllocObject<ITypeId>> AllocObject<ITypeId> for Sum<L, R> {
+impl<L: AllocObject<ITypeId>, R: AllocObject<ITypeId>> AllocObject<ITypeId>
+for Sum<L, R> {
     const TYPE_ID: ITypeId = ITypeId::Sum;
 }
 
 pub struct Product<F: AllocObject<ITypeId>, S: AllocObject<ITypeId>> {
-    fst: RawPtr<F>,
-    snd: RawPtr<S>,
+    fst: CellPtr<F>,
+    snd: CellPtr<S>,
 }
 
-impl<F: AllocObject<ITypeId>, S: AllocObject<ITypeId>> Product<F, S> {
-    pub fn new(fst: RawPtr<F>, snd: RawPtr<S>) -> Product<F, S> {
-        Product { fst, snd }
+impl<F: AllocObject<ITypeId>, S: AllocObject<ITypeId>> AllocObject<ITypeId>
+for Product<F, S> {
+    const TYPE_ID: ITypeId = ITypeId::Prod;
+}
+
+/* Machine Types (not exposed to programmer) */
+pub enum Context {
+    Nil,
+    First {
+        snd_op_index: ArraySize,
+        snd_val: UntypedPtr,
+        root_val: UntypedPtr,
+    },
+    Second {
+        fst_op_index: ArraySize,
+        fst_val: UntypedPtr,
+        root_val: UntypedPtr,
+    },
+    Left(ArraySize),
+    Right(ArraySize),
+    Indirect {
+        last: UntypedPtr,
+        current: UntypedPtr,
+    },
+    Call {
+        last: ArraySize,
+        current: ArraySize,
     }
 }
 
-impl<F: AllocObject<ITypeId>,
-     S: AllocObject<ITypeId>> AllocObject<ITypeId> for Product<F, S> {
-    const TYPE_ID: ITypeId = ITypeId::Prod;
+impl AllocObject<ITypeId> for Context {
+    const TYPE_ID: ITypeId = ITypeId::Context;
+}
+
+pub enum Opcode {}
+
+impl AllocObject<ITypeId> for Opcode {
+    const TYPE_ID: ITypeId = ITypeId::Opcode;
 }
 
 /*
