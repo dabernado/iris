@@ -119,6 +119,13 @@ pub struct RawArray<T: Sized> {
 }
 
 impl<T: Sized> RawArray<T> {
+    pub fn new() -> RawArray<T> {
+        RawArray {
+            capacity: 0,
+            ptr: None,
+        }
+    }
+
     pub fn with_capacity<'scope>(
         mem: &'scope MutatorView,
         capacity: u32
@@ -205,6 +212,16 @@ impl<T: Sized> RawArray<T> {
         match self.ptr {
             Some(ptr) => Some(ptr.as_ptr()),
             None => None,
+        }
+    }
+}
+
+impl<T: Sized> Copy for RawArray<T> {}
+impl<T: Sized> Clone for RawArray<T> {
+    fn clone(&self) -> Self {
+        RawArray {
+            capacity: self.capacity,
+            ptr: self.ptr,
         }
     }
 }
@@ -408,5 +425,129 @@ impl<T: Sized + Clone> SliceableContainer<T> for Array<T> {
         let result = f(slice);
         self.borrow.set(INTERIOR_ONLY);
         result
+    }
+}
+
+/* Helper functions */
+pub fn default_array_growth(capacity: ArraySize) -> Result<ArraySize, RuntimeError> {
+    if capacity == 0 {
+        Ok(DEFAULT_ARRAY_SIZE)
+    } else {
+        capacity
+            .checked_add(capacity / 2)
+            .ok_or(RuntimeError::new(ErrorKind::BadAllocationRequest))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::memory::{Memory, Mutator, MutatorView};
+
+    #[test]
+    fn array_generic_push_and_pop() {
+        let mem = Memory::new();
+
+        struct Test {}
+        impl Mutator for Test {
+            type Input = ();
+            type Output = ();
+
+            fn run(
+                &self,
+                view: &MutatorView,
+                _input: Self::Input,
+            ) -> Result<Self::Output, RuntimeError> {
+                let array: Array<i32> = Array::new();
+
+                for i in 0..1000 {
+                    array.push(view, i)?;
+                }
+
+                for i in 0..1000 {
+                    assert!(array.pop(view)? == 999 - i);
+                }
+
+                Ok(())
+            }
+        }
+
+        let test = Test {};
+        mem.mutate(&test, ()).unwrap();
+    }
+
+    #[test]
+    fn array_generic_indexing() {
+        let mem = Memory::new();
+
+        struct Test {}
+        impl Mutator for Test {
+            type Input = ();
+            type Output = ();
+
+            fn run(
+                &self,
+                view: &MutatorView,
+                _input: Self::Input,
+            ) -> Result<Self::Output, RuntimeError> {
+                let array: Array<i32> = Array::new();
+
+                for i in 0..12 {
+                    array.push(view, i)?;
+                }
+
+                assert!(array.get(view, 0) == Ok(0));
+                assert!(array.get(view, 4) == Ok(4));
+
+                for i in 12..1000 {
+                    match array.get(view, i) {
+                        Ok(_) => panic!("Array index should have been out of bounds!"),
+                        Err(e) => assert!(*e.error_kind() == ErrorKind::BoundsError),
+                    }
+                }
+
+                Ok(())
+            }
+        }
+
+        let test = Test {};
+        mem.mutate(&test, ()).unwrap();
+    }
+
+    #[test]
+    fn array_with_capacity_and_realloc() {
+        let mem = Memory::new();
+
+        struct Test {}
+        impl Mutator for Test {
+            type Input = ();
+            type Output = ();
+
+            fn run(
+                &self,
+                view: &MutatorView,
+                _input: Self::Input,
+            ) -> Result<Self::Output, RuntimeError> {
+                let array: Array<i32> = Array::with_capacity(view, 256)?;
+
+                let ptr_before = array.data.get().as_ptr();
+
+                for _ in 0..256 {
+                    StackContainer::push(&array, view, 0)?;
+                }
+
+                let ptr_after = array.data.get().as_ptr();
+                assert!(ptr_before == ptr_after);
+
+                StackContainer::push(&array, view, 0)?;
+                let ptr_realloc = array.data.get().as_ptr();
+                assert!(ptr_before != ptr_realloc);
+
+                Ok(())
+            }
+        }
+
+        let test = Test {};
+        mem.mutate(&test, ()).unwrap();
     }
 }
