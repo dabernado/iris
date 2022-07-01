@@ -31,6 +31,12 @@ UNITI <-> UNITE		: ?a <-> (?a * 1)
  * @a = register to load unit value into
  */
 
+FUNCI f <-> FUNCE f	: ?a <-> (?a * (?b <-> ?c))
+/*
+ * Introduce/eliminate function pointer 
+ * f = function which pointer points to
+ */
+
 SWAPP <-> SWAPP 	: (?a * ?b) <-> (?b * ?a)
 /*
  * Swap the first and second values
@@ -54,9 +60,10 @@ EXPN <-> COLN		: 0 <-> (-?a + ?a)
  * Reverse type sign and direction of execution
  */
 
-EXPF <-> COLF		: 1 <-> (1/?a * ?a)
+EXPF *v <-> COLF *v	: 1 <-> (1/?a * ?a)
 /*
  * Allocate/deallocate new variable
+ * v = pointer to value being introduced
  * s = size of allocated/deallocated type
  */
 
