@@ -11,6 +11,10 @@ pub struct MutatorView<'memory> {
 }
 
 impl<'memory> MutatorView<'memory> {
+    fn new(mem: &'memory Memory) -> MutatorView<'memory> {
+        MutatorView { heap: &mem.heap }
+    }
+
     pub fn alloc<T>(&self, object: T) -> Result<ScopedPtr<'_, T>, RuntimeError>
         where T: AllocObject<ITypeId>,
     {
@@ -18,6 +22,13 @@ impl<'memory> MutatorView<'memory> {
             self,
             self.heap.alloc(object)?.scoped_ref(self),
         ))
+    }
+
+    pub fn alloc_array(
+        &self,
+        capacity: ArraySize
+    ) -> Result<RawPtr<u8>, RuntimeError> {
+        self.heap.alloc_array(capacity)
     }
 }
 
