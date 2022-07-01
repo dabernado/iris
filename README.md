@@ -23,15 +23,15 @@ The context stack tells an IRIS computer what they are doing, and stores necessa
 
 **!**; the terminal symbol, simply represented by a value of 0, with the first bit of a context value indicating whether it is terminal or non-terminal
 
-**Fst @i @a 0|1**; the context for processing the first value of a product
+**Fst @i @a @b**; the context for processing the first value of a product
 - @i = pointer to first instruction of the second part of the product combinator, which is compared to the instruction pointer before each instruction is executed. When the instruction pointer reaches this value, the Fst context is popped off the stack and a Snd context is pushed
-- @n = pointer to the second value of the product, which is pushed onto the data stack once the current context is finished
-- 0|1 = indicates whether or not the current value being processed is a primtype contained within the product value
+- @a = pointer to the second value of the product, which is pushed onto the data stack once the current context is finished
+- @b = pointer to root product
 
-**Snd @i @a 0|1**; the context for processing the second value of a product
+**Snd @i @a @b**; the context for processing the second value of a product
 - @i = pointer to last instruction of the first part of the product combinator, which when executing in reverse behaves exactly like the instruction pointer in the Fst context. When the instruction pointer reaches the end of the product combinator, the Snd context is popped off the stack.
-- @n = pointer to the first value of the product, which is pushed onto the data stack once the current context is finished and the current value is popped
-- 0|1 = indicates whether or not the current value being processed is a primtype contained within the product value
+- @a = pointer to the first value of the product, which is pushed onto the data stack once the current context is finished and the current value is popped
+- @b = pointer to root product
 
 **Left @i**; the context for processing the left value of a sum
 - @i = pointer to first instruction of the right part of the sum combinator, which is compared to the instruction pointer before each instruction is executed. When the instruction pointer reaches this value, the Left context is popped off the stack and the instruction pointer moves down the program without executing anything until it reaches the end of the sum combinator.
@@ -43,8 +43,9 @@ The context stack tells an IRIS computer what they are doing, and stores necessa
 - @a = pointer to last object from which the process came from
 - @b = pointer to current object
 
-**Call @i**; the context for calling a function
+**Call @i @j**; the context for calling a function
 - @i = pointer to the next instruction after the `CALL/UNCALL` or `EVAL/DEVAL` which prompted the function call
+- @j = pointer to location called (either the beginning or end of current function)
 
 Context values contain a 3-bit tag which indicates what context it is, with the rest of the word divided up between whatever fields the context value holds (15/31-bit instruction pointer and 14/30-bit data pointer for product contexts, 29/61-bit instruction pointer for sum contexts).
 
