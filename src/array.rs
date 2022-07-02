@@ -1,5 +1,7 @@
 use std::ptr::{read, write};
 
+use crate::context::StackContainer;
+
 pub type ArraySize = u32;
 const DEFAULT_ARRAY_SIZE: ArraySize = 8;
 
@@ -266,69 +268,6 @@ impl<T: Sized + Clone> Container<T> for Array<T> {
             data: Cell::new(RawArray::with_capacity(mem, capacity)?),
             borrow: Cell::new(INTERIOR_ONLY),
         })
-    }
-}
-
-// mostly for implementing the context stack
-pub trait StackContainer<T: Sized + Clone>: Container<T> {
-    fn push<'guard>(&self, mem: &'guard MutatorView, item: T) -> Result<(), RuntimeError>;
-    fn pop<'guard>(&self, _guard: &'guard dyn MutatorScope) -> Result<T, RuntimeError>;
-    fn top<'guard>(&self, _guard: &'guard dyn MutatorScope) -> Result<T, RuntimeError>;
-}
-
-impl <T: Sized + Clone> StackContainer<T> for Array<T> {
-    fn push<'guard>(&self, mem: &'guard MutatorView, item: T) -> Result<(), RuntimeError> {
-        if self.borrow.get() != INTERIOR_ONLY {
-            return Err(RuntimeError::new(ErrorKind::MutableBorrowError));
-        }
-
-        let length = self.length.get();
-        let mut array = self.data.get();
-        let capacity = array.capacity();
-
-        if length == capacity {
-            if capacity == 0 {
-                array.resize(mem, DEFAULT_ARRAY_SIZE)?;
-            } else {
-                array.resize(mem, default_array_growth(capacity)?)?;
-            }
-
-            self.data.set(array);
-        }
-
-        self.length.set(length + 1);
-        self.write(mem, length, item);
-        Ok(())
-    }
-
-    fn pop<'guard>(&self, mem: &'guard MutatorView, item: T) -> Result<T, RuntimeError> {
-        if self.borrow.get() != INTERIOR_ONLY {
-            return Err(RuntimeError::new(ErrorKind::MutableBorrowError));
-        }
-
-        let length = self.length.get();
-        if length == 0 {
-            return Err(RuntimeError::new(ErrorKind::BoundsError));
-        } else {
-            let last = length - 1;
-            let item = self.read(guard, last)?;
-            self.length.set(last)
-            Ok(item)
-        }
-    }
-
-    fn top<'guard>(&self, mem: &'guard MutatorView, item: T) -> Result<T, RuntimeError> {
-        if self.borrow.get() != INTERIOR_ONLY {
-            return Err(RuntimeError::new(ErrorKind::MutableBorrowError));
-        }
-
-        let length = self.length.get();
-        if length == 0 {
-            return Err(RuntimeError::new(ErrorKind::BoundsError));
-        } else {
-            let item = self.read(guard, length - 1)?;
-            Ok(item)
-        }
     }
 }
 
