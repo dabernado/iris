@@ -28,21 +28,11 @@ ASSRS <-> ASSLS		: (?a + (?b + ?c)) <-> ((?a + ?b) + ?c)
 UNITI <-> UNITE		: ?a <-> (?a * 1)
 /*
  * Introduce/eliminate product with unit type
- * @a = register to load unit value into
- */
-
-FUNCI f <-> FUNCE f	: ?a <-> (?a * (?b <-> ?c))
-/*
- * Introduce/eliminate function pointer 
- * f = function which pointer points to
  */
 
 SWAPP <-> SWAPP 	: (?a * ?b) <-> (?b * ?a)
 /*
  * Swap the first and second values
- * @a = starting register of first value
- * @b = starting register of second value
- * s = size of second value
  */
 
 ASSRP <-> ASSLP		: (?a * (?b * ?c)) <-> ((?a * ?b) * ?c)
@@ -127,7 +117,8 @@ RRI n <-> RLI n		: int <-> int
 +{
 /*
  * Left hand sum combinator delimiter
- * @i = pointer to first instruction of right half of combinator
+ * i = offset to first instruction of right half of combinator
+ * n = division value of sum type
  */
 
 + // Division point of combinator
@@ -135,13 +126,14 @@ RRI n <-> RLI n		: int <-> int
 }+
 /*
  * Right hand sum combinator delimiter
- * @i = pointer to first instruction of left half of combinator
+ * i = offset to first instruction of left half of combinator
+ * n = division value of sum type
  */
 
 *{
 /*
  * First product combinator delimiter
- * @i = pointer to first instruction of second half of combinator
+ * i = offset to first instruction of second half of combinator
  * @n = pointer to second value of product
  */
 
@@ -150,7 +142,7 @@ RRI n <-> RLI n		: int <-> int
 }*
 /*
  * Second product combinator delimiter
- * @i = pointer to first instruction of first half of combinator
+ * i = offset to first instruction of first half of combinator
  * @n = pointer to first value of product
  */
 
@@ -169,7 +161,6 @@ START <-> RETURN		: ?a <-> ?a
 EVAL <-> DEVAL			: ((?a <-> ?b) * ?a) <-> ((?a <-> ?b) * ?b)
 /*
  * Invoke a function dynamically
- * @a = pointer to second value of product (the function argument)
  */
 
 // Example Code
@@ -184,7 +175,6 @@ function: data0 <-> data1		-- function definition
 	+
         SWAPP
     }+
-    BLFT 2
     FACT
     *{			-- fst = @r0, snd = @r1
         +{
@@ -196,3 +186,42 @@ function: data0 <-> data1		-- function definition
 	ADDI 69
     }*
     RETURN
+
+// Instruction Encoding
+/*
+ * I-Type
+ *
+ * 31				6 5	   0
+ * [		imm		] [ opcode ]
+ *	        26b		      6b
+ *
+ * Instructions that do not contain additional information or
+ * contain a constant value are represented by the I-Type
+ * encoding. Most IRIS instructions are I-Type encoded.
+ */
+
+/*
+ * C-Type
+ *
+ * 31	       19 18		6 5	   0
+ * [  imm|ptr	] [   	ptr	] [ opcode ]
+ *      13b	        13b	      6b
+ *
+ * The C-Type encoding is for the combinator and EXPF/COLF
+ * instructions, which contain a pointer to some location
+ * in program memory and some constant value or pointer.
+ */
+
+/*
+ * S-Type
+ *
+ * 31 30 29	 22 21     14 13      6 5	 0
+ * [ 0 ] [ offset ] [  div  ] [ total ] [ opcode ]
+ *  2b       8b	       8b	 8b	    6b
+ *
+ * The only instructions with the S-Type encoding are ASSRS/ASSLS
+ * and SWAPS, which contain the total number of possible variants
+ * for a given type, the division point between variants on the
+ * left and right hand side, and an offset value, each represented
+ * as an 8-bit integer. The last two bits are used as padding.
+ */
