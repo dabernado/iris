@@ -17,6 +17,7 @@ pub enum ITypeId {
     Func,
     Context,
     Opcode,
+    Ptr,
 }
 impl AllocTypeId for ITypeId {}
 

@@ -3,10 +3,13 @@ use std::fmt;
 use std::ops::Deref;
 use std::ptr::NonNull;
 
-use crate::alloc::api::RawPtr;
+use crate::alloc::api::{RawPtr, AllocObject, ITypeId};
 use crate::memory::MutatorScope;
 
 pub type UntypedPtr = NonNull<()>;
+impl AllocObject<ITypeId> for UntypedPtr {
+    const TYPE_ID: ITypeId = ITypeId::Ptr;
+}
 
 /* Scoped Pointers */
 pub struct ScopedPtr<'guard, T: Sized> {
@@ -49,6 +52,9 @@ impl<'guard, T: Sized + PartialEq> PartialEq for ScopedPtr<'guard, T> {
 #[derive(Clone)]
 pub struct CellPtr<T: Sized> {
     inner: Cell<RawPtr<T>>,
+}
+impl AllocObject<ITypeId> for CellPtr {
+    const TYPE_ID: ITypeId = ITypeId::Ptr;
 }
 
 impl<T: Sized> CellPtr<T> {
