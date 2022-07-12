@@ -74,3 +74,7 @@ pub const OP_SWAPS: u8 = 2;
 pub const OP_SWAPS_R: u8 = !OP_SWAPS ^ (OP_MASK as u8);
 pub const OP_ASSRS: u8 = 3;
 pub const OP_ASSLS: u8 = !OP_ASSRS ^ (OP_MASK as u8);
+
+// Maximums/Minimums
+pub const MAX_ITYPE_FIELD: u32 = 67108864;
+pub const MAX_CTYPE_FIELD: u16 = 8192

@@ -45,7 +45,7 @@ The context stack tells an IRIS computer what they are doing, and stores necessa
 
 **Call @i @j**; the context for calling a function
 - @i = pointer to the next instruction after the `CALL/UNCALL` or `EVAL/DEVAL` which prompted the function call
-- @j = pointer to location called (either the beginning or end of current function)
+- @j = pointer to end of function; machine returns from context when instruction pointer is equal to this value
 
 Context values contain a 3-bit tag which indicates what context it is, with the rest of the word divided up between whatever fields the context value holds (15/31-bit instruction pointer and 14/30-bit data pointer for product contexts, 29/61-bit instruction pointer for sum contexts).
 

@@ -6,9 +6,15 @@ use std::ptr::NonNull;
 use crate::alloc::api::{RawPtr, AllocObject, ITypeId};
 use crate::memory::MutatorScope;
 
+// Pointer Data Types
 pub type UntypedPtr = NonNull<()>;
 impl AllocObject<ITypeId> for UntypedPtr {
     const TYPE_ID: ITypeId = ITypeId::Ptr;
+}
+
+pub type FuncPtr = (ArraySize, ArraySize);
+impl AllocObject<ITypeId> for FuncPtr {
+    const TYPE_ID: ITypeId = ITypeId::Func;
 }
 
 /* Scoped Pointers */
