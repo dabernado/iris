@@ -181,6 +181,12 @@ CALL f <-> UNCALL f		: ?a <-> ?b
  * f = index in function list to invoked function
  */
 
+SYSC f <-> USYSC f		: ?a <-> ?b
+/*
+ * Invoke system call forwards/backwards on datatype
+ * f = id of system function
+ */
+
 FOLW <-> RET			: int <-> ?a
 /*
  * Return from/follow word-size pointer to object

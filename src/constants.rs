@@ -60,6 +60,8 @@ pub const OP_START: u8 = 29;
 pub const OP_END: u8 = !OP_START ^ (OP_MASK as u8);
 pub const OP_EVAL: u8 = 30;
 pub const OP_DEVAL: u8 = !OP_EVAL ^ (OP_MASK as u8);
+pub const OP_SYSC: u8 = 31;
+pub const OP_USYSC: u8 = !OP_SYSC ^ (OP_MASK as u8);
 
 // C-Type
 pub const OP_EXPF: u8 = 9;
