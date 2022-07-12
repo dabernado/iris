@@ -1,3 +1,13 @@
+// Primitive Types
+0
+1
+int
+uint
+float
+aint	:= int || uint
+prim	:= 1 || int || uint || float
+prim[]
+
 // Functions
 ID <-> ID		: ?a <-> ?a
 /*
@@ -53,7 +63,7 @@ EXPN <-> COLN		: 0 <-> (-?a + ?a)
 EXPF i <-> COLF i	: 1 <-> (1/?a * ?a)
 /*
  * Allocate/deallocate new variable
- * i = offset to value in program memory being introduced
+ * i = index of fractions to value being introduced
  * s = size of allocated/deallocated type in bytes
  */
 
@@ -78,37 +88,57 @@ MULI n <-> DIVI n	: int <-> int
  * Multiply/divide integer with/by constant
  */
 
-XOR <-> XOR		: (int * int) <-> (int * int)
+UADD <-> USUB		: (uint * uint) <-> (uint * uint)
+/*
+ * Add/subtract two unsigned integers, with result placed in first value
+ */
+
+UADDI n <-> USUBI n	: uint <-> uint
+/*
+ * Add/subtract constant to/from unsigned integer
+ */
+
+UMUL <-> UDIV		: (uint * uint) <-> (uint * uint)
+/*
+ * Multiply/divide two unsigned integers, with result placed in first value
+ */
+
+UMULI n <-> UDIVI n	: uint <-> uint
+/*
+ * Multiply/divide unsigned integer with/by constant
+ */
+
+XOR <-> XOR		: (aint * uint) <-> (aint * uint)
 /*
  * Exclusive-or on two integers, result placed in first value
  */
 
-XORI n <-> XORI n 	: int <-> int
+XORI n <-> XORI n 	: aint <-> aint
 /*
  * Exclusive-or integer with constant
  */
 
-NEG <-> NEG 		: int <-> int
+NEG <-> NEG 		: aint <-> aint
 /*
- * Flip sign of integer
+ * Bitwise negation of integer
  */
 
-CSWAP <-> CSWAP		: ((int * int) * int) <-> ((int * int) * int)
+CSWAP <-> CSWAP		: ((aint * aint) * uint) <-> ((aint * aint) * uint)
 /*
  * Controlled swap on two integers, with second value as control
  */
 
-CSWAPI n <-> CSWAPI n	: (int * int) <-> (int * int)
+CSWAPI n <-> CSWAPI n	: (aint * aint) <-> (aint * aint)
 /*
  * Controlled swap on two integers, with constant as control
  */
 
-RR <-> RL		: (int * int) <-> (int * int)
+RR <-> RL		: (aint * uint) <-> (aint * uint)
 /*
  * Rotate bits of an integer left/right
  */
 
-RRI n <-> RLI n		: int <-> int
+RRI n <-> RLI n		: aint <-> aint
 /*
  * Rotate bits of an integer left/right by constant value
  */
@@ -148,13 +178,12 @@ RRI n <-> RLI n		: int <-> int
 CALL f <-> UNCALL f		: ?a <-> ?b
 /*
  * Invoke function forwards/backwards on datatype
- * @f = pointer to invoked function
+ * f = index in function list to invoked function
  */
 
-FOLW *a <-> RET			: int <-> ?a
+FOLW <-> RET			: int <-> ?a
 /*
- * Return from/follow pointer to object
- * *a = pointer to object
+ * Return from/follow word-size pointer to object
  */
 
 START <-> END			: ?a <-> ?a
@@ -196,7 +225,7 @@ function: data0 <-> data1		-- function definition
  * I-Type
  *
  * 31				6 5	   0
- * [	      imm/ptr		] [ opcode ]
+ * [	        imm		] [ opcode ]
  *	        26b		      6b
  *
  * Instructions that do not contain additional information or
