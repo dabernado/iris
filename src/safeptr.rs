@@ -3,7 +3,9 @@ use std::fmt;
 use std::ops::Deref;
 use std::ptr::NonNull;
 
-use crate::alloc::api::{RawPtr, AllocObject, ITypeId};
+use crate::array::ArraySize;
+use crate::alloc::api::{RawPtr, AllocObject};
+use crate::data::ITypeId;
 use crate::memory::MutatorScope;
 
 // Pointer Data Types

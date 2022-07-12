@@ -1,12 +1,11 @@
-use crate::alloc::api::{AllocObject, ITypeId};
-use crate::safeptr::{UntypedPtr, CellPtr, ScopedPtr};
-use crate::array::{Array, ArraySize};
+use std::cell::Cell;
+
+use crate::safeptr::{UntypedPtr, CellPtr, ScopedPtr, FuncPtr};
+use crate::array::{Array, ArraySize, IndexedContainer};
+use crate::memory::{MutatorView, MutatorScope};
 use crate::constants::*;
 
 pub type Opcode = u32;
-impl AllocObject<ITypeId> for Opcode {
-    const TYPE_ID: ITypeId = ITypeId::Opcode;
-}
 
 #[derive(Clone)]
 pub struct Bytecode {
@@ -20,8 +19,8 @@ impl Bytecode {
         mem: &'guard MutatorView,
     ) -> Result<ScopedPtr<'guard, Bytecode>, RuntimeError> {
         mem.alloc(Bytecode {
-            fractions: Array<UntypedPtr>::new(),
-            code: Array<Opcode>::new(),
+            fractions: Array::<UntypedPtr>::new(),
+            code: Array::<Opcode>::new(),
         })
     }
 
@@ -118,21 +117,21 @@ impl InstructionStream {
 // Decoding Functions
 pub fn get_opcode(instr: &Opcode) -> u8 { instr ^ OP_MASK }
 pub fn decode_i(instr: &Opcode) -> u32 {
-    (instr ^ I_MASK) >>> I_MASK
+    (instr ^ I_MASK) >> I_MASK
 }
 
 pub fn decode_c(instr: &Opcode) -> (u16, u16) {
     (
-        (instr ^ C_OFF_MASK) >>> 0x3F,
-        (instr ^ C_CONST_MASK) >>> C_CONST_MASK
+        (instr ^ C_OFF_MASK) >> 0x3F,
+        (instr ^ C_CONST_MASK) >> C_CONST_MASK
     )
 }
 
 pub fn decode_s(instr: &Opcode) -> (u8, u8, u8) {
     (
-        (instr ^ S_TOTAL_MASK) >>> 0x3F,
-        (instr ^ S_DIV_MASK) >>> 0x3FFF,
-        (instr ^ S_OFF_MASK) >>> S_OFF_MASK 
+        (instr ^ S_TOTAL_MASK) >> 0x3F,
+        (instr ^ S_DIV_MASK) >> 0x3FFF,
+        (instr ^ S_OFF_MASK) >> S_OFF_MASK 
     )
 }
 
@@ -140,7 +139,7 @@ pub fn decode_s(instr: &Opcode) -> (u8, u8, u8) {
 pub fn encode_i(op: u8, imm: u32) -> Result<Opcode, CompileError> {
     // check if within bounds
     if imm <= MAX_ITYPE_FIELD {
-        Ok((imm <<< 6) ^ (op as u32))
+        Ok((imm << 6) ^ (op as u32))
     } else {
         Err(CompileError::new(ErrorKind::IntOverflow))
     }
@@ -149,53 +148,59 @@ pub fn encode_i(op: u8, imm: u32) -> Result<Opcode, CompileError> {
 pub fn encode_c(op: u8, off: u16, val: u16) -> Result<Opcode, CompileError> {
     // check if within bounds
     if off <= MAX_CTYPE_FIELD && val <= MAX_CTYPE_FIELD {
-        Ok(((0 ^ (val as u32 <<< 19)) ^ (off as u32 <<< 6)) ^ op as u32)
+        let padded_val = (val as u32) << 19;
+        let padded_off = (off as u32) << 6;
+
+        Ok(((0 ^ padded_val) ^ padded_off) ^ (op as u32))
     } else {
         Err(CompileError::new(ErrorKind::IntOverflow))
     }
 }
 
 pub fn encode_s(op: u8, total: u8, div: u8, off: u8) -> Opcode {
+    let padded_total = (total as u32) << 6;
+    let padded_div = (div as u32) << 14;
+    let padded_off = (off as u32) << 22;
+
     Ok(
-        (((0 ^ (off as u32 <<< 22))
-        ^ (div as u32 <<< 14))
-        ^ (total as u32 <<< 6))
-        ^ op as u32
+        (((0 ^ padded_off)
+        ^ padded_div)
+        ^ padded_total)
+        ^ (op as u32)
     )
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::constants::*;
 
     // Encoding/Decoding Tests
     #[test]
     fn test_get_opcode() {
-        assert!(OP_ADD, get_opcode(10));
+        assert!(OP_ADD == get_opcode(10));
     }
 
     #[test]
     fn test_itype() {
         let instr = encode_i(OP_ADDI, 2);
 
-        assert!(OP_ADDI, get_opcode(instr));
-        assert!(2, decode_i(instr));
+        assert!(OP_ADDI == get_opcode(instr));
+        assert!(2 == decode_i(instr));
     }
 
     #[test]
     fn test_ctype() {
         let instr = encode_c(OP_SUMC, 4, 2);
 
-        assert!(OP_SUMC, get_opcode(instr));
-        assert!((4, 2), decode_c(instr));
+        assert!(OP_SUMC == get_opcode(instr));
+        assert!((4, 2) == decode_c(instr));
     }
 
     #[test]
     fn test_stype() {
         let instr = encode_s(OP_SWAPS, 4, 2, 0);
 
-        assert!(OP_SWAPS, get_opcode(instr));
-        assert!((4, 2, 0), decode_s(instr));
+        assert!(OP_SWAPS == get_opcode(instr));
+        assert!((4, 2, 0) == decode_s(instr));
     }
 }

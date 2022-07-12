@@ -52,7 +52,8 @@ ASSRP <-> ASSLP		: (?a * (?b * ?c)) <-> ((?a * ?b) * ?c)
 
 DIST <-> FACT		: ((?a + ?b) * ?c) <-> ((?a * ?c) + (?b * ?c))
 /*
- * Distribute inner sum over both product values/Factor inner sum into first value
+ * Distribute inner sum over both product values/Factor inner
+ * sum into first value
  */
 
 EXPN <-> COLN		: 0 <-> (-?a + ?a)
@@ -80,7 +81,8 @@ ADDI n <-> SUBI n	: int <-> int
 
 MUL <-> DIV		: (int * int) <-> (int * int)
 /*
- * Multiply/divide two integers, with result placed in first value
+ * Multiply/divide two integers, with result placed in first
+ * value
  */
 
 MULI n <-> DIVI n	: int <-> int
@@ -90,7 +92,8 @@ MULI n <-> DIVI n	: int <-> int
 
 UADD <-> USUB		: (uint * uint) <-> (uint * uint)
 /*
- * Add/subtract two unsigned integers, with result placed in first value
+ * Add/subtract two unsigned integers, with result placed in
+ * first value
  */
 
 UADDI n <-> USUBI n	: uint <-> uint
@@ -100,7 +103,8 @@ UADDI n <-> USUBI n	: uint <-> uint
 
 UMUL <-> UDIV		: (uint * uint) <-> (uint * uint)
 /*
- * Multiply/divide two unsigned integers, with result placed in first value
+ * Multiply/divide two unsigned integers, with result placed
+ * in first value
  */
 
 UMULI n <-> UDIVI n	: uint <-> uint
@@ -183,7 +187,8 @@ CALL f <-> UNCALL f		: ?a <-> ?b
 
 SYSC f <-> USYSC f		: ?a <-> ?b
 /*
- * Invoke system call forwards/backwards on datatype
+ * Invoke system call forwards/backwards on datatype; used for
+ * ISA extensions and I/O ops
  * f = id of system function
  */
 

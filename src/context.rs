@@ -1,5 +1,15 @@
-use crate::array::ArraySize;
-use crate::safeptr::UntyptedPtr;
+use crate::array::{
+    Array,
+    ArraySize,
+    DEFAULT_ARRAY_SIZE,
+    INTERIOR_ONLY,
+    default_array_growth,
+    Container,
+};
+use crate::alloc::api::AllocObject;
+use crate::data::ITypeId;
+use crate::safeptr::UntypedPtr;
+use crate::memory::{MutatorView, MutatorScope};
 
 /* Context Type */
 pub enum Context {
@@ -72,8 +82,8 @@ impl <T: Sized + Clone> StackContainer<T> for Array<T> {
             return Err(RuntimeError::new(ErrorKind::BoundsError));
         } else {
             let last = length - 1;
-            let item = self.read(guard, last)?;
-            self.length.set(last)
+            let item = self.read(mem, last)?;
+            self.length.set(last);
             Ok(item)
         }
     }
@@ -87,7 +97,7 @@ impl <T: Sized + Clone> StackContainer<T> for Array<T> {
         if length == 0 {
             return Err(RuntimeError::new(ErrorKind::BoundsError));
         } else {
-            let item = self.read(guard, length - 1)?;
+            let item = self.read(mem, length - 1)?;
             Ok(item)
         }
     }

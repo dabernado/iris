@@ -49,7 +49,7 @@ impl SizeClass {
     }
 }
 
-pub type ArraySize = u32;
+type ArraySize = u32;
 
 pub trait AllocTypeId: Copy + Clone {}
 pub trait AllocObject<T: AllocTypeId> {

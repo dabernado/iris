@@ -1,5 +1,5 @@
 use crate::alloc::api::*;
-use crate::safeptr::{CellPtr, UntypedPtr};
+use crate::safeptr::CellPtr;
 
 #[repr(u16)]
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -16,7 +16,6 @@ pub enum ITypeId {
     Array,
     Func,
     Context,
-    Opcode,
     Ptr,
 }
 impl AllocTypeId for ITypeId {}

@@ -79,4 +79,4 @@ pub const OP_ASSLS: u8 = !OP_ASSRS ^ (OP_MASK as u8);
 
 // Maximums/Minimums
 pub const MAX_ITYPE_FIELD: u32 = 67108864;
-pub const MAX_CTYPE_FIELD: u16 = 8192
+pub const MAX_CTYPE_FIELD: u16 = 8192;

@@ -4,6 +4,7 @@ use std::mem::{replace, size_of};
 use std::ptr::{write, NonNull};
 use std::slice::from_raw_parts_mut;
 
+use crate::array::ArraySize;
 use crate::alloc::constants;
 use crate::alloc::blocks::BumpBlock;
 use crate::alloc::api::*;

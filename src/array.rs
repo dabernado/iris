@@ -1,13 +1,20 @@
-use std::ptr::{read, write};
+use std::ptr::{read, write, NonNull};
+use std::cell::Cell;
+use std::mem::size_of;
+use std::slice::from_raw_parts_mut;
 
+use crate::alloc::api::AllocObject;
 use crate::context::StackContainer;
+use crate::data::ITypeId;
+use crate::memory::{MutatorView, MutatorScope};
+use crate::safeptr::ScopedPtr;
 
 pub type ArraySize = u32;
-const DEFAULT_ARRAY_SIZE: ArraySize = 8;
+pub const DEFAULT_ARRAY_SIZE: ArraySize = 8;
 
 type BorrowFlag = isize;
-const INTERIOR_ONLY: BorrowFlag = 0;
-const EXPOSED_MUTABLY: BorrowFlag = 1;
+pub const INTERIOR_ONLY: BorrowFlag = 0;
+pub const EXPOSED_MUTABLY: BorrowFlag = 1;
 
 /* Safe Array */
 #[derive(Clone)]
@@ -161,6 +168,7 @@ impl<T: Sized> RawArray<T> {
 
         match self.ptr {
             Some(old_ptr) => {
+                let old_capacity = self.capacity;
                 let old_capacity_bytes = size_of::<T>() as ArraySize * self.capacity;
                 let old_ptr = old_ptr.as_ptr();
 
@@ -193,7 +201,7 @@ impl<T: Sized> RawArray<T> {
                         ptr: NonNull::new(
                             unsafe { old_ptr.offset(new_capacity as isize) as *mut T }
                         ),
-                    }
+                    };
                     self.ptr = NonNull::new(new_ptr);
                     self.capacity = new_capacity;
 
@@ -288,7 +296,8 @@ impl<T: Sized + Clone> FillContainer<T> for Array<T> {
         size: ArraySize,
         item: T,
     ) -> Result<(), RuntimeError> {
-        if self.length() > size {
+        let length = self.length();
+        if length > size {
             Ok(())
         } else {
             let mut array = self.data.get();
@@ -334,13 +343,13 @@ pub trait IndexedContainer<T: Sized + Clone>: Container<T> {
 impl<T: Sized + Clone> IndexedContainer<T> for Array<T> {
     fn get<'guard>(
         &self,
-        _guard: &'guard dyn MutatorScope,
+        guard: &'guard dyn MutatorScope,
         index: ArraySize,
     ) -> Result<T, RuntimeError> { self.read(guard, index) }
 
     fn set<'guard>(
         &self,
-        _guard: &'guard dyn MutatorScope,
+        guard: &'guard dyn MutatorScope,
         index: ArraySize,
         item: T,
     ) -> Result<(), RuntimeError> {
@@ -356,7 +365,7 @@ pub trait SliceableContainer<T: Sized + Clone>: IndexedContainer<T> {
 }
 
 impl<T: Sized + Clone> SliceableContainer<T> for Array<T> {
-    fn access_slice<'guard, F, R>(&self, _guard: &'guard dyn MutatorScope, f: F) -> R
+    fn access_slice<'guard, F, R>(&self, guard: &'guard dyn MutatorScope, f: F) -> R
         where F: FnOnce(&mut [T]) -> R
     {
         self.borrow.set(EXPOSED_MUTABLY);
@@ -364,6 +373,29 @@ impl<T: Sized + Clone> SliceableContainer<T> for Array<T> {
         let result = f(slice);
         self.borrow.set(INTERIOR_ONLY);
         result
+    }
+}
+
+// for converting a slice into an array
+pub trait ContainerFromSlice<T: Sized + Clone>: Container<T> {
+    fn from_slice<'guard>(
+        mem: &'guard MutatorView,
+        data: &[T],
+    ) -> Result<ScopedPtr<'guard, Self>, RuntimeError>;
+}
+
+impl<T: Sized + Clone> ContainerFromSlice<T> for Array<T>
+    where Array<T>: AllocObject<ITypeId>,
+{
+    fn from_slice<'guard>(
+        mem: &'guard MutatorView,
+        data: &[T],
+    ) -> Result<ScopedPtr<'guard, Self>, RuntimeError> {
+        let array = Array::alloc_with_capacity(mem, data.len() as ArraySize)?;
+        let slice = unsafe { array.as_capacity_slice(mem) };
+        slice.clone_from_slice(data);
+        array.length.set(data.len() as ArraySize);
+        Ok(array)
     }
 }
 
