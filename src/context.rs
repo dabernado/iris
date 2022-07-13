@@ -8,6 +8,7 @@ use crate::array::{
 };
 use crate::alloc::api::AllocObject;
 use crate::data::ITypeId;
+use crate::error::{RuntimeError, ErrorKind};
 use crate::safeptr::UntypedPtr;
 use crate::memory::{MutatorView, MutatorScope};
 

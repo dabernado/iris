@@ -1,7 +1,7 @@
 use std::mem::size_of;
 use std::ptr::NonNull;
 
-use crate::alloc::blocks::BlockError;
+use crate::alloc::BlockError;
 use crate::alloc::constants;
 
 pub trait AllocRaw {

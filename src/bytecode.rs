@@ -2,6 +2,7 @@ use std::cell::Cell;
 
 use crate::safeptr::{UntypedPtr, CellPtr, ScopedPtr, FuncPtr};
 use crate::array::{Array, ArraySize, IndexedContainer};
+use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::{MutatorView, MutatorScope};
 use crate::constants::*;
 
@@ -136,16 +137,16 @@ pub fn decode_s(instr: &Opcode) -> (u8, u8, u8) {
 }
 
 // Encoding Functions
-pub fn encode_i(op: u8, imm: u32) -> Result<Opcode, CompileError> {
+pub fn encode_i(op: u8, imm: u32) -> Result<Opcode, RuntimeError> {
     // check if within bounds
     if imm <= MAX_ITYPE_FIELD {
         Ok((imm << 6) ^ (op as u32))
     } else {
-        Err(CompileError::new(ErrorKind::IntOverflow))
+        Err(RuntimeError::new(ErrorKind::IntOverflow))
     }
 }
 
-pub fn encode_c(op: u8, off: u16, val: u16) -> Result<Opcode, CompileError> {
+pub fn encode_c(op: u8, off: u16, val: u16) -> Result<Opcode, RuntimeError> {
     // check if within bounds
     if off <= MAX_CTYPE_FIELD && val <= MAX_CTYPE_FIELD {
         let padded_val = (val as u32) << 19;
@@ -153,7 +154,7 @@ pub fn encode_c(op: u8, off: u16, val: u16) -> Result<Opcode, CompileError> {
 
         Ok(((0 ^ padded_val) ^ padded_off) ^ (op as u32))
     } else {
-        Err(CompileError::new(ErrorKind::IntOverflow))
+        Err(RuntimeError::new(ErrorKind::IntOverflow))
     }
 }
 

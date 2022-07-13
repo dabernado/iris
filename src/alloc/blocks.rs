@@ -2,15 +2,10 @@ use std::ptr::{NonNull, write};
 
 use crate::alloc::constants;
 use crate::alloc::api::AllocError;
+use crate::alloc::BlockError;
 
 pub type BlockPtr = NonNull<u8>;
 pub type BlockSize = usize;
-
-#[derive(Debug, PartialEq)]
-pub enum BlockError {
-    BadRequest,
-    OutOfMemory,
-}
 
 pub struct Block {
     ptr: BlockPtr,

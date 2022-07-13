@@ -6,6 +6,7 @@ use std::slice::from_raw_parts_mut;
 use crate::alloc::api::AllocObject;
 use crate::context::StackContainer;
 use crate::data::ITypeId;
+use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::{MutatorView, MutatorScope};
 use crate::safeptr::ScopedPtr;
 

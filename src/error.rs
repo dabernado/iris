@@ -2,8 +2,8 @@ use std::error::Error;
 use std::fmt;
 use std::io;
 
-use crate::alloc::immix::AllocError;
-use crate::alloc::blocks::BlockError;
+use crate::alloc::api::AllocError;
+use crate::alloc::BlockError;
 
 // source code position
 #[derive(Copy, Clone, Debug, PartialEq)]

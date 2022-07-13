@@ -1,5 +1,6 @@
 use crate::array::ArraySize;
 use crate::data::{ITypeId, ITypeHeader};
+use crate::error::RuntimeError;
 use crate::safeptr::ScopedPtr;
 use crate::alloc::api::{AllocObject, RawPtr};
 use crate::alloc::immix::StickyImmixHeap;
