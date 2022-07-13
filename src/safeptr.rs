@@ -7,6 +7,7 @@ use crate::array::ArraySize;
 use crate::alloc::api::{RawPtr, AllocObject};
 use crate::data::ITypeId;
 use crate::memory::MutatorScope;
+use crate::printer::Print;
 
 // Pointer Data Types
 pub type UntypedPtr = NonNull<()>;
