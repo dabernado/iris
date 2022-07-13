@@ -7,6 +7,7 @@ mod array;
 mod bytecode;
 mod context;
 mod constants;
+mod error;
 
 fn main() {
     println!("Hello, world!");
