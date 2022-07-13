@@ -1,5 +1,8 @@
+use std::fmt;
+
 use crate::alloc::api::*;
 use crate::safeptr::CellPtr;
+use crate::printer::*;
 
 #[repr(u16)]
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -55,29 +58,65 @@ pub type Unit = ();
 impl AllocObject<ITypeId> for Unit {
     const TYPE_ID: ITypeId = ITypeId::Unit;
 }
+impl Print for Unit {
+    fn print<'guard>(
+        &self,
+        guard: &'guard dyn MutatorScope,
+        f: &mut fmt::Formatter,
+    ) -> fmt::Result { write!(f, "()") }
+}
 
 pub type Int = i32;
 impl AllocObject<ITypeId> for Int {
     const TYPE_ID: ITypeId = ITypeId::Int;
+}
+impl Print for Int {
+    fn print<'guard>(
+        &self,
+        guard: &'guard dyn MutatorScope,
+        f: &mut fmt::Formatter,
+    ) -> fmt::Result { write!(f, "{}", self) }
 }
 
 pub type UInt = u32;
 impl AllocObject<ITypeId> for UInt {
     const TYPE_ID: ITypeId = ITypeId::UInt;
 }
+impl Print for UInt {
+    fn print<'guard>(
+        &self,
+        guard: &'guard dyn MutatorScope,
+        f: &mut fmt::Formatter,
+    ) -> fmt::Result { write!(f, "{}", self) }
+}
 
 pub type Float = f32;
 impl AllocObject<ITypeId> for Float {
     const TYPE_ID: ITypeId = ITypeId::Float;
 }
+impl Print for Float {
+    fn print<'guard>(
+        &self,
+        guard: &'guard dyn MutatorScope,
+        f: &mut fmt::Formatter,
+    ) -> fmt::Result { write!(f, "{}", self) }
+}
 
 /*
- * bool is implemented via the 1 + 1 type, so
- * is not exposed to the programmer
+ * bool is implemented in IRIS via the
+ * 1 + 1 type, so this is not exposed
+ * to the programmer
  */
 pub type Bool = bool;
 impl AllocObject<ITypeId> for Bool {
     const TYPE_ID: ITypeId = ITypeId::Bool;
+}
+impl Print for Bool {
+    fn print<'guard>(
+        &self,
+        guard: &'guard dyn MutatorScope,
+        f: &mut fmt::Formatter,
+    ) -> fmt::Result { write!(f, "{}", self) }
 }
 
 /* Algebraic Data Types */
@@ -85,30 +124,72 @@ pub struct Fraction<O: AllocObject<ITypeId>>(CellPtr<O>);
 impl<O: AllocObject<ITypeId>> AllocObject<ITypeId> for Fraction<O> {
     const TYPE_ID: ITypeId = ITypeId::Frac;
 }
+impl<O: AllocObject<ITypeId>> Print for Fraction<O> {
+    fn print<'guard>(
+        &self,
+        guard: &'guard dyn MutatorScope,
+        f: &mut fmt::Formatter,
+    ) -> fmt::Result { write!(f, "1/{}", self.0.get(guard)) }
+}
 
 pub struct Negative<O: AllocObject<ITypeId>>(CellPtr<O>);
 impl<O: AllocObject<ITypeId>> AllocObject<ITypeId> for Negative<O> {
     const TYPE_ID: ITypeId = ITypeId::Neg;
+}
+impl<O: AllocObject<ITypeId>> Print for Negative<O> {
+    fn print<'guard>(
+        &self,
+        guard: &'guard dyn MutatorScope,
+        f: &mut fmt::Formatter,
+    ) -> fmt::Result { write!(f, "-{}", self.0.get(guard)) }
 }
 
 pub enum Sum<L: AllocObject<ITypeId>, R: AllocObject<ITypeId>> {
     Left(CellPtr<L>),
     Right(CellPtr<R>),
 }
-
 impl<L: AllocObject<ITypeId>, R: AllocObject<ITypeId>> AllocObject<ITypeId>
 for Sum<L, R> {
     const TYPE_ID: ITypeId = ITypeId::Sum;
+}
+impl<L: AllocObject<ITypeId>, R: AllocObject<ITypeId>> Print for Sum<L, R> {
+    fn print<'guard>(
+        &self,
+        guard: &'guard dyn MutatorScope,
+        f: &mut fmt::Formatter,
+    ) -> fmt::Result {
+        match self {
+            Sum::Left(ptr) => write!(f, "left {}", ptr.get(guard)),
+            Sum::Right(ptr) => write!(f, "right {}", ptr.get(guard)),
+        }
+    }
 }
 
 pub struct Product<F: AllocObject<ITypeId>, S: AllocObject<ITypeId>> {
     fst: CellPtr<F>,
     snd: CellPtr<S>,
 }
-
 impl<F: AllocObject<ITypeId>, S: AllocObject<ITypeId>> AllocObject<ITypeId>
 for Product<F, S> {
     const TYPE_ID: ITypeId = ITypeId::Prod;
+}
+impl<F: AllocObject<ITypeId>, S: AllocObject<ITypeId>> Print for Product<F, S> {
+    fn print<'guard>(
+        &self,
+        guard: &'guard dyn MutatorScope,
+        f: &mut fmt::Formatter,
+    ) -> fmt::Result {
+        let mut tail = ScopedPtr::new(guard, self);
+
+        write!(f, "({}", tail.fst.get(guard))?;
+
+        while let Product { fst, snd } = *tail.snd.get(guard) {
+            tail = next;
+            write!(f, " {}", tail.fst.get(guard))?;
+        }
+
+        write!(f, ", {})", tail.snd.get(guard));
+    }
 }
 
 /*
