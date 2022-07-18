@@ -7,10 +7,13 @@ use crate::array::{
     Container,
 };
 use crate::alloc::api::AllocObject;
+use crate::array::Array;
 use crate::data::ITypeId;
 use crate::error::{RuntimeError, ErrorKind};
 use crate::safeptr::UntypedPtr;
 use crate::memory::{MutatorView, MutatorScope};
+
+pub type ContextStack = Array<Context>;
 
 /* Context Type */
 pub enum Context {

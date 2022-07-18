@@ -15,9 +15,9 @@ impl AllocObject<ITypeId> for UntypedPtr {
     const TYPE_ID: ITypeId = ITypeId::Ptr;
 }
 
-pub type FuncPtr = (ArraySize, ArraySize);
+pub type FuncPtr = CellPtr<Function>;
 impl AllocObject<ITypeId> for FuncPtr {
-    const TYPE_ID: ITypeId = ITypeId::Func;
+    const TYPE_ID: ITypeId = ITypeId::Ptr;
 }
 
 /* Scoped Pointers */

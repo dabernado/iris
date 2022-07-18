@@ -64,7 +64,7 @@ EXPN <-> COLN		: 0 <-> (-?a + ?a)
 EXPF i <-> COLF i	: 1 <-> (1/?a * ?a)
 /*
  * Allocate/deallocate new variable
- * i = index of fractions to value being introduced
+ * i = index of fraction array to value being introduced
  * s = size of allocated/deallocated type in bytes
  */
 
@@ -120,11 +120,6 @@ XOR <-> XOR		: (aint * uint) <-> (aint * uint)
 XORI n <-> XORI n 	: aint <-> aint
 /*
  * Exclusive-or integer with constant
- */
-
-NEG <-> NEG 		: aint <-> aint
-/*
- * Bitwise negation of integer
  */
 
 CSWAP <-> CSWAP		: ((aint * aint) * uint) <-> ((aint * aint) * uint)
@@ -185,7 +180,7 @@ CALL f <-> UNCALL f		: ?a <-> ?b
  * f = index in function list to invoked function
  */
 
-SYSC f <-> USYSC f		: ?a <-> ?b
+SYSC f <-> RSYSC f		: ?a <-> ?b
 /*
  * Invoke system call forwards/backwards on datatype; used for
  * ISA extensions and I/O ops
@@ -202,7 +197,7 @@ START <-> END			: ?a <-> ?a
  * Designates beginning/end of function; operationally equivalent to ID
  */
 
-EVAL <-> DEVAL			: ((?a <-> ?b) * ?a) <-> ((?a <-> ?b) * ?b)
+EVAL <-> DEVAL			: (?a * uint) <-> (?b * uint)
 /*
  * Invoke a function dynamically
  */

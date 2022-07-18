@@ -1,25 +1,29 @@
 use std::cell::Cell;
 
-use crate::safeptr::{UntypedPtr, CellPtr, ScopedPtr, FuncPtr};
+use crate::alloc::api::AllocObject;
 use crate::array::{Array, ArraySize, IndexedContainer};
+use crate::constants::*;
+use crate::data::ITypeId;
 use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::{MutatorView, MutatorScope};
-use crate::constants::*;
+use crate::safeptr::{UntypedPtr, CellPtr, ScopedPtr, FuncPtr};
 
 pub type Opcode = u32;
 
 #[derive(Clone)]
-pub struct Bytecode {
+pub struct Function {
     fractions: Array<UntypedPtr>,
-    functions: Array<FuncPtr>,
     code: Array<Opcode>,
 }
+impl AllocObject<ITypeId> for Function {
+    const TYPE_ID: ITypeId = ITypeId::Func;
+}
 
-impl Bytecode {
+impl Function {
     pub fn alloc<'guard>(
         mem: &'guard MutatorView,
-    ) -> Result<ScopedPtr<'guard, Bytecode>, RuntimeError> {
-        mem.alloc(Bytecode {
+    ) -> Result<ScopedPtr<'guard, Function>, RuntimeError> {
+        mem.alloc(Function {
             fractions: Array::<UntypedPtr>::new(),
             code: Array::<Opcode>::new(),
         })
@@ -42,41 +46,33 @@ impl Bytecode {
 }
 
 #[derive(Clone)]
-pub struct InstructionStream {
-    instructions: CellPtr<Bytecode>,
+pub struct Continuation {
+    function: FuncPtr,
     ip: Cell<ArraySize>,
     direction: Cell<bool>,
 }
 
-impl InstructionStream {
+impl Continuation {
     pub fn alloc<'guard>(
         mem: &'guard MutatorView,
-        code: ScopedPtr<'_, Bytecode>,
-    ) -> Result<ScopedPtr<'guard, InstructionStream>, RuntimeError> {
-        mem.alloc(InstructionStream {
-            instructions: CellPtr::new_with(code),
+        func: ScopedPtr<'_, Function>,
+    ) -> Result<ScopedPtr<'guard, Continuation>, RuntimeError> {
+        mem.alloc(Continuation {
+            function: CellPtr::new_with(func),
             ip: Cell::new(0),
             direction: Cell::new(false),
         })
     }
 
-    pub fn swap_frame(
+    pub fn switch_frame(
         &self,
-        code: ScopedPtr<'_, Bytecode>,
-        ip: ArraySize
-    ) -> InstructionStream {
-        let old = self.clone();
-
-        self.instructions.set(code);
+        code: ScopedPtr<'_, Function>,
+        ip: ArraySize,
+        dir: bool,
+    ) {
+        self.function.set(code);
         self.ip.set(ip);
-
-        old
-    }
-
-    pub fn switch_direction(&self) {
-        self.direction.set(
-            !self.direction.get()
-        );
+        self.direction.set(dir);
     }
 
     // TODO: Optimize (too many indirections)
@@ -86,7 +82,7 @@ impl InstructionStream {
     ) -> Result<Opcode, RuntimeError> {
         let current_ip = self.ip.get();
         let instr = self
-            .instructions
+            .function
             .get(guard)
             .code
             .get(guard, current_ip)?;
@@ -106,13 +102,15 @@ impl InstructionStream {
         index: ArraySize,
     ) -> Result<UntypedPtr, RuntimeError> {
         Ok(IndexedContainer::get(
-                &self.instructions.get(guard).fractions,
+                &self.function.get(guard).fractions,
                 guard,
                 index,
         )?)
     }
 
-    pub fn get_next_ip(&self) -> ArraySize { self.ip.get() }
+    pub fn ip(&self) -> ArraySize { self.ip.get() }
+    pub fn direction(&self) -> bool { self.direction.get() }
+    pub fn current_func(&self) -> CellPtr<Function> { self.function }
 }
 
 // Decoding Functions

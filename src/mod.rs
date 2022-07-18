@@ -9,3 +9,4 @@ mod context;
 mod constants;
 mod error;
 mod printer;
+mod vm;
