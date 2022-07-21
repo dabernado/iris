@@ -32,6 +32,20 @@ impl<'memory> MutatorView<'memory> {
     ) -> Result<RawPtr<u8>, RuntimeError> {
         self.heap.alloc_array(capacity)
     }
+
+    pub fn get_header(
+        &self,
+        object: UntypedPtr,
+    ) -> Result<ITypeHeader, RuntimeError> {
+        self.heap.get_header(object)
+    }
+
+    pub fn get_object(
+        &self,
+        header: NonNull<ITypeHeader>,
+    ) -> Result<UntypedPtr, RuntimeError> {
+        self.heap.get_object(header)
+    }
 }
 
 /* Mutator */

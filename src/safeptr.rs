@@ -5,7 +5,9 @@ use std::ptr::NonNull;
 
 use crate::array::ArraySize;
 use crate::alloc::api::{RawPtr, AllocObject};
+use crate::constants::type_of;
 use crate::data::ITypeId;
+use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::MutatorScope;
 use crate::printer::Print;
 
@@ -28,6 +30,16 @@ pub struct ScopedPtr<'guard, T: Sized> {
 impl<'guard, T: Sized> ScopedPtr<'guard, T> {
     pub fn new(_guard: &'guard dyn MutatorScope, value: &'guard T) -> ScopedPtr<'guard, T> {
         ScopedPtr { value }
+    }
+
+    pub fn as_untyped(&self, _guard: &'guard dyn MutatorScope)
+        -> Result<UntypedPtr, RuntimeError>
+    {
+        if let Some(ptr) = NonNull::new(self.value) {
+            Ok(ptr)
+        } else {
+            Err(RuntimeError::new(ErrorKind::NullPointer))
+        }
     }
 }
 
@@ -67,12 +79,34 @@ impl AllocObject<ITypeId> for CellPtr {
 }
 
 impl<T: Sized> CellPtr<T> {
-    pub fn new_with(source: ScopedPtr<T>) -> CellPtr<T> {
+    pub fn new_with(source: ScopedPtr<T>) -> Result<CellPtr<T>, RuntimeError> {
         if source.value == () {
-            CellPtr { inner: Cell::new(RawPtr::new_unit()) }
+            Ok(CellPtr { inner: Cell::new(RawPtr::new_unit()) })
+        } else if type_of(source.value) == "i32" {
+            match source.value {
+                -1073741823..=1073741823 => {
+                    Ok(CellPtr {
+                        inner: Cell::new(RawPtr::new_int(source.value))
+                    })
+                }
+                _ => Err(RuntimeError::new(ErrorKind::IntOverflow)),
+            }
+        } else if type_of(source.value) == "u32" {
+            match source.value {
+                0..=2147483648 => {
+                    Ok(CellPtr {
+                        inner: Cell::new(RawPtr::new_uint(source.value))
+                    })
+                }
+                _ => Err(RuntimeError::new(ErrorKind::IntOverflow)),
+            }
         } else {
-            CellPtr { inner: Cell::new(RawPtr::new(source.value)) }
+            Ok(CellPtr { inner: Cell::new(RawPtr::new(source.value)) })
         }
+    }
+
+    pub fn new_unit() -> CellPtr<Unit> {
+        CellPtr { inner: Cell::new(RawPtr::new_unit()) }
     }
 
     pub fn get<'guard>(&self, guard: &'guard dyn MutatorScope) -> ScopedPtr<'guard, T> {

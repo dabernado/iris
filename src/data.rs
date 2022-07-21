@@ -7,6 +7,7 @@ use crate::printer::*;
 #[repr(u16)]
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum ITypeId {
+    Zero,
     Unit,
     Int,
     UInt,
@@ -54,10 +55,27 @@ impl AllocHeader for ITypeHeader {
 }
 
 /* Primitive Types */
+// This type should NEVER be instantiated
+pub struct Zero;
+
+impl AllocObject<ITypeId> for Zero {
+    const TYPE_ID: ITypeId = ITypeId::Zero;
+}
+
+impl Print for Zero {
+    fn print<'guard>(
+        &self,
+        guard: &'guard dyn MutatorScope,
+        f: &mut fmt::Formatter,
+    ) -> fmt::Result { write!(f, "*") }
+}
+
 pub type Unit = ();
+
 impl AllocObject<ITypeId> for Unit {
     const TYPE_ID: ITypeId = ITypeId::Unit;
 }
+
 impl Print for Unit {
     fn print<'guard>(
         &self,
@@ -67,9 +85,11 @@ impl Print for Unit {
 }
 
 pub type Int = i32;
+
 impl AllocObject<ITypeId> for Int {
     const TYPE_ID: ITypeId = ITypeId::Int;
 }
+
 impl Print for Int {
     fn print<'guard>(
         &self,
@@ -79,9 +99,11 @@ impl Print for Int {
 }
 
 pub type UInt = u32;
+
 impl AllocObject<ITypeId> for UInt {
     const TYPE_ID: ITypeId = ITypeId::UInt;
 }
+
 impl Print for UInt {
     fn print<'guard>(
         &self,
@@ -91,9 +113,11 @@ impl Print for UInt {
 }
 
 pub type Float = f32;
+
 impl AllocObject<ITypeId> for Float {
     const TYPE_ID: ITypeId = ITypeId::Float;
 }
+
 impl Print for Float {
     fn print<'guard>(
         &self,
@@ -108,9 +132,11 @@ impl Print for Float {
  * to the programmer
  */
 pub type Bool = bool;
+
 impl AllocObject<ITypeId> for Bool {
     const TYPE_ID: ITypeId = ITypeId::Bool;
 }
+
 impl Print for Bool {
     fn print<'guard>(
         &self,
@@ -121,9 +147,11 @@ impl Print for Bool {
 
 /* Algebraic Data Types */
 pub struct Fraction<O: AllocObject<ITypeId>>(CellPtr<O>);
+
 impl<O: AllocObject<ITypeId>> AllocObject<ITypeId> for Fraction<O> {
     const TYPE_ID: ITypeId = ITypeId::Frac;
 }
+
 impl<O: AllocObject<ITypeId>> Print for Fraction<O> {
     fn print<'guard>(
         &self,
@@ -133,9 +161,11 @@ impl<O: AllocObject<ITypeId>> Print for Fraction<O> {
 }
 
 pub struct Negative<O: AllocObject<ITypeId>>(CellPtr<O>);
+
 impl<O: AllocObject<ITypeId>> AllocObject<ITypeId> for Negative<O> {
     const TYPE_ID: ITypeId = ITypeId::Neg;
 }
+
 impl<O: AllocObject<ITypeId>> Print for Negative<O> {
     fn print<'guard>(
         &self,
@@ -148,10 +178,12 @@ pub enum Sum<L: AllocObject<ITypeId>, R: AllocObject<ITypeId>> {
     Left(CellPtr<L>),
     Right(CellPtr<R>),
 }
+
 impl<L: AllocObject<ITypeId>, R: AllocObject<ITypeId>> AllocObject<ITypeId>
 for Sum<L, R> {
     const TYPE_ID: ITypeId = ITypeId::Sum;
 }
+
 impl<L: AllocObject<ITypeId>, R: AllocObject<ITypeId>> Print for Sum<L, R> {
     fn print<'guard>(
         &self,
@@ -169,10 +201,12 @@ pub struct Product<F: AllocObject<ITypeId>, S: AllocObject<ITypeId>> {
     fst: CellPtr<F>,
     snd: CellPtr<S>,
 }
+
 impl<F: AllocObject<ITypeId>, S: AllocObject<ITypeId>> AllocObject<ITypeId>
 for Product<F, S> {
     const TYPE_ID: ITypeId = ITypeId::Prod;
 }
+
 impl<F: AllocObject<ITypeId>, S: AllocObject<ITypeId>> Print for Product<F, S> {
     fn print<'guard>(
         &self,

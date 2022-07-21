@@ -1,3 +1,5 @@
+use std::any::type_name;
+
 // Bitmasks
 pub const OP_MASK: u32 = 0xFFFFFFC0;
 pub const I_MASK: u32 = 0x0000003F;
@@ -78,3 +80,8 @@ pub const OP_ASSLS: u8 = !OP_ASSRS ^ (OP_MASK as u8);
 // Maximums/Minimums
 pub const MAX_ITYPE_FIELD: u32 = 67108864;
 pub const MAX_CTYPE_FIELD: u16 = 8192;
+
+// Helper functions
+pub fn type_of(_: T) -> &'static str {
+    type_name::()
+}
