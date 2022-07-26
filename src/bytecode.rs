@@ -176,30 +176,30 @@ mod test {
     // Encoding/Decoding Tests
     #[test]
     fn test_get_opcode() {
-        assert!(OP_ADD == get_opcode(10));
+        assert!(OP_ADD == get_opcode(&10));
     }
 
     #[test]
     fn test_itype() {
-        let instr = encode_i(OP_ADDI, 2);
+        let instr = encode_i(OP_ADDI, 2).unwrap();
 
-        assert!(OP_ADDI == get_opcode(instr));
-        assert!(2 == decode_i(instr));
+        assert!(OP_ADDI == get_opcode(&instr));
+        assert!(2 == decode_i(&instr));
     }
 
     #[test]
     fn test_ctype() {
-        let instr = encode_c(OP_SUMC, 4, 2);
+        let instr = encode_c(OP_SUMC, 4, 2).unwrap();
 
-        assert!(OP_SUMC == get_opcode(instr));
-        assert!((4, 2) == decode_c(instr));
+        assert!(OP_SUMC == get_opcode(&instr));
+        assert!((4, 2) == decode_c(&instr));
     }
 
     #[test]
     fn test_stype() {
         let instr = encode_s(OP_SWAPS, 4, 2, 0);
 
-        assert!(OP_SWAPS == get_opcode(instr));
-        assert!((4, 2, 0) == decode_s(instr));
+        assert!(OP_SWAPS == get_opcode(&instr));
+        assert!((4, 2, 0) == decode_s(&instr));
     }
 }

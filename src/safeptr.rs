@@ -3,10 +3,10 @@ use std::fmt;
 use std::ops::Deref;
 use std::ptr::NonNull;
 
-use crate::array::ArraySize;
 use crate::alloc::api::{RawPtr, AllocObject};
+use crate::bytecode::Function;
 use crate::constants::type_of;
-use crate::data::ITypeId;
+use crate::data::{ITypeId, Unit};
 use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::MutatorScope;
 use crate::printer::Print;
@@ -18,9 +18,6 @@ impl AllocObject<ITypeId> for UntypedPtr {
 }
 
 pub type FuncPtr = CellPtr<Function>;
-impl AllocObject<ITypeId> for FuncPtr {
-    const TYPE_ID: ITypeId = ITypeId::Ptr;
-}
 
 /* Scoped Pointers */
 pub struct ScopedPtr<'guard, T: Sized> {
@@ -74,7 +71,7 @@ impl<'guard, T: Sized + PartialEq> PartialEq for ScopedPtr<'guard, T> {
 pub struct CellPtr<T: Sized> {
     inner: Cell<RawPtr<T>>,
 }
-impl AllocObject<ITypeId> for CellPtr {
+impl<T: Sized> AllocObject<ITypeId> for CellPtr<T> {
     const TYPE_ID: ITypeId = ITypeId::Ptr;
 }
 

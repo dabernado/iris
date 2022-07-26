@@ -1,7 +1,9 @@
+use std::ptr::NonNull;
+
 use crate::array::ArraySize;
 use crate::data::{ITypeId, ITypeHeader};
 use crate::error::RuntimeError;
-use crate::safeptr::ScopedPtr;
+use crate::safeptr::{ScopedPtr, UntypedPtr};
 use crate::alloc::api::{AllocObject, RawPtr};
 use crate::alloc::immix::StickyImmixHeap;
 
@@ -10,6 +12,16 @@ pub type Heap = StickyImmixHeap<ITypeHeader>;
 
 pub struct MutatorView<'memory> {
     heap: &'memory Heap,
+}
+
+/* Mutator */
+pub trait MutatorScope {}
+
+pub trait Mutator: Sized {
+    type Input;
+    type Output;
+
+    fn run(&self, mem: &MutatorView, input: Self::Input) -> Result<Self::Output, RuntimeError>;
 }
 
 impl<'memory> MutatorView<'memory> {
@@ -48,21 +60,17 @@ impl<'memory> MutatorView<'memory> {
     }
 }
 
-/* Mutator */
-pub trait MutatorScope {}
-
-pub trait Mutator: Sized {
-    type Input;
-    type Output;
-
-    fn run(&self, mem: &MutatorView, input: Self::Input) -> Result<Self::Output, RuntimeError>;
-}
+impl<'memory> MutatorScope for MutatorView<'memory> {}
 
 pub struct Memory {
     heap: Heap,
 }
 
 impl Memory {
+    pub fn new() -> Memory {
+        Memory { heap: StickyImmixHeap::<ITypeHeader>::new() }
+    }
+
     pub fn mutate<M: Mutator>(&self, m: &M, input: M::Input) -> Result<M::Output, RuntimeError> {
         let mut guard = MutatorView::new(self);
         m.run(&mut guard, input)

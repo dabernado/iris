@@ -82,6 +82,6 @@ pub const MAX_ITYPE_FIELD: u32 = 67108864;
 pub const MAX_CTYPE_FIELD: u16 = 8192;
 
 // Helper functions
-pub fn type_of(_: T) -> &'static str {
-    type_name::()
+pub fn type_of<T>(_: T) -> &'static str {
+    type_name()
 }

@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::alloc::api::AllocObject;
 use crate::data::ITypeId;
-use crate::safeptr::MutatorScope;
+use crate::memory::MutatorScope;
 
 pub trait Print {
     fn print<'guard>(

@@ -1,7 +1,8 @@
 use std::fmt;
 
 use crate::alloc::api::*;
-use crate::safeptr::CellPtr;
+use crate::memory::MutatorScope;
+use crate::safeptr::{CellPtr, ScopedPtr};
 use crate::printer::*;
 
 #[repr(u16)]
@@ -218,7 +219,7 @@ impl<F: AllocObject<ITypeId>, S: AllocObject<ITypeId>> Print for Product<F, S> {
         write!(f, "({}", tail.fst.get(guard))?;
 
         while let Product { fst, snd } = *tail.snd.get(guard) {
-            tail = next;
+            tail = snd;
             write!(f, " {}", tail.fst.get(guard))?;
         }
 

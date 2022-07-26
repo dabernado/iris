@@ -1,11 +1,15 @@
 use std::cell::Cell;
 
+use crate::alloc::api::RawPtr;
 use crate::array::{Array, ArraySize};
-use crate::bytecode::{Function, Continuation};
+use crate::bytecode::{Function, Continuation, get_opcode};
 use crate::constants::*;
+use crate::context::{Context, ContextStack};
+use crate::data::ITypeId;
 use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::{MutatorView, MutatorScope};
-use crate::safeptr::{UntypedPtr, ScopedPtr, FuncPtr};
+use crate::op::*;
+use crate::safeptr::{UntypedPtr, ScopedPtr, FuncPtr, CellPtr};
 
 #[derive(PartialEq)]
 pub enum EvalStatus {
@@ -32,7 +36,7 @@ impl Thread {
         let cont = Continuation::alloc(mem, empty_fn)?;
 
         mem.alloc(Thread {
-            functions: func,
+            functions: funcs,
             continuation: cont,
             cxt_stack: cxts,
             data: Cell::new(data),
@@ -49,7 +53,7 @@ impl Thread {
     }
 
     fn eval_next_instr<'guard>(&self, mem: &'guard MutatorView)
-        -> Result<EvalStatus<'guard>, RuntimeError>
+        -> Result<EvalStatus, RuntimeError>
     {
         let funcs = self.functions.get(mem);
         let cxt_stack = self.cxt_stack.get(mem);
@@ -180,8 +184,24 @@ impl Thread {
                     Err(RuntimeError::new(ErrorKind::TypeError))
                 }
             },
-            OP_ASSRS => {},
-            OP_ASSLS => {},
+            OP_ASSRS => {
+                if data_type == ITypeId::Sum {
+                    let data_ref = RawPtr::new(data.as_ptr());
+
+                    assrs(&data_ref);
+                } else {
+                    Err(RuntimeError::new(ErrorKind::TypeError))
+                }
+            },
+            OP_ASSLS => {
+                if data_type == ITypeId::Sum {
+                    let data_ref = RawPtr::new(data.as_ptr());
+
+                    assls(&data_ref);
+                } else {
+                    Err(RuntimeError::new(ErrorKind::TypeError))
+                }
+            },
             _ => {},
         }
     }

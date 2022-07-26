@@ -79,7 +79,8 @@ pub fn alloc_size_of(object_size: usize) -> usize {
  */
 pub enum RawPtr<T: Sized> {
     Unit,
-    Num(T),
+    Int(i32),
+    UInt(u32),
     Ptr { ptr: NonNull<T> },
 }
 
@@ -91,8 +92,8 @@ impl<T: Sized> RawPtr<T> {
     }
 
     pub fn new_unit() -> RawPtr<()> { RawPtr::Unit }
-    pub fn new_int(i: i32) -> RawPtr<i32> { RawPtr::Num(i) }
-    pub fn new_uint(i: u32) -> RawPtr<u32> { RawPtr::Num(i) }
+    pub fn new_int(i: i32) -> RawPtr<i32> { RawPtr::Int(i) }
+    pub fn new_uint(i: u32) -> RawPtr<u32> { RawPtr::UInt(i) }
 
     pub fn from_unit(&self, ptr: *const T) -> Result<RawPtr<T>, AllocError> {
         match self {

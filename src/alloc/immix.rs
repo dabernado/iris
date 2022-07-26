@@ -244,7 +244,7 @@ mod tests {
 
         match mem.alloc(69 as i32) {
             Ok(i) => {
-                let untyped_ptr = i.as_untyped();
+                let untyped_ptr = i.as_untyped().unwrap();
                 let header_ptr = StickyImmixHeap::<ITypeHeader>::get_header(untyped_ptr);
                 dbg!(header_ptr);
                 let header = unsafe { &*header_ptr.as_ptr() as &ITypeHeader };
