@@ -74,7 +74,7 @@ impl BumpBlock {
     pub fn inner_alloc(&mut self, alloc_size: usize) -> Option<*const u8> {
         let next_bump = self.cursor - alloc_size;
 
-        if next_bump < self.limit {
+        if next_bump < self.limit { // size of allocation larger than hole
             if self.limit > constants::FIRST_OBJECT_OFFSET {
                 if let Some((cursor, limit)) = self.meta.find_next_available_hole(self.limit) {
                     self.cursor = cursor;
@@ -94,6 +94,9 @@ impl BumpBlock {
             }
         }
     }
+
+    pub fn inner_dealloc(&mut self, cursor: usize, size: usize)
+    { self.meta.unmark_lines(cursor, size); }
 
     pub fn current_hole_size(&self) -> usize { self.cursor - self.limit }
 }
@@ -183,6 +186,15 @@ impl BlockMeta {
         }
 
         None
+    }
+
+    pub fn unmark_hole(&mut self, cursor: usize, size: usize) {
+        let starting_line = cursor / constants::LINE_SIZE;
+        let size_in_lines = size / constants::LINE_SIZE;
+
+        for i in starting_line..(starting_line + size_in_lines) {
+            self.line_mark[i] = false;
+        }
     }
 }
 

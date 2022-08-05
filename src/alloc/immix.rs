@@ -27,26 +27,29 @@ impl<H> StickyImmixHeap<H> {
         &self,
         alloc_size: usize,
         size_class: SizeClass
-    ) -> Result<*const u8, AllocError> {
+    ) -> Result<(*const u8, &BumpBlock), AllocError> {
         let blocks = unsafe { &mut *self.blocks.get() };
 
         if size_class == SizeClass::Large {
             return Err(AllocError::BadRequest);
         }
 
-        let space = match blocks.head {
+        let result = match blocks.head {
             Some(ref mut head) => {
                 if size_class == SizeClass::Medium && alloc_size > head.current_hole_size() {
                     return blocks.overflow_alloc(alloc_size);
                 }
 
                 match head.inner_alloc(alloc_size) {
-                    Some(space) => space,
+                    Some(space) => (space, head),
                     None => {
                         let previous = replace(head, BumpBlock::new()?);
 
                         blocks.rest.push(previous);
-                        head.inner_alloc(alloc_size).expect("New bump block unable to allocate")
+                        let space = head.inner_alloc(alloc_size)
+                            .expect("New bump block unable to allocate");
+
+                        (space, head)
                     }
                 }
             }
@@ -58,11 +61,11 @@ impl<H> StickyImmixHeap<H> {
                     .expect("Object size larger than block size");
 
                 blocks.head = Some(head);
-                space
+                (space, head)
             }
-        } as *const u8;
+        } as (*const u8, &BumpBlock);
 
-        Ok(space)
+        Ok(result)
     }
 }
 
@@ -80,8 +83,12 @@ impl<H: AllocHeader> AllocRaw for StickyImmixHeap<H> {
         let alloc_size = alloc_size_of(total_size);
         let size_class = SizeClass::get_for_size(alloc_size)?;
 
-        let space = self.find_space(alloc_size, size_class)?;
-        let header = Self::Header::new::<T>(object_size as u32, size_class);
+        let (space, block) = self.find_space(alloc_size, size_class)?;
+        let header = Self::Header::new::<T>(
+            object_size as u32,
+            size_class,
+            block
+        );
 
         // write header into front of allocated space
         unsafe { write(space as *mut Self::Header, header); }
@@ -91,6 +98,23 @@ impl<H: AllocHeader> AllocRaw for StickyImmixHeap<H> {
         unsafe { write(object_space as *mut T, object); }
 
         Ok(RawPtr::new(object_space as *const T))
+    }
+
+    fn dealloc<T>(&self, object: RawPtr<T>) -> Result<(), AllocError>
+        where T: AllocObject<<Self::Header as AllocHeader>::TypeId>,
+    {
+        let header_size = size_of::<Self::Header>();
+        let object_size = size_of::<T>();
+        let total_size = header_size + object_size;
+
+        // mark block lines as unallocated
+        let obj_ptr = object.as_ptr();
+        let block = self.get_header(object.as_untyped().unwrap()).get_block();
+
+        let cursor = obj_ptr.sub(block.as_ptr() as usize) as usize;
+        block.inner_dealloc(cursor, total_size);
+
+        Ok(())
     }
 
     fn alloc_array(&self, size_bytes: ArraySize) -> Result<RawPtr<u8>, AllocError> {
@@ -150,19 +174,23 @@ impl BlockList {
         }
     }
 
-    pub fn overflow_alloc(&mut self, alloc_size: usize) -> Result<*const u8, AllocError> {
+    pub fn overflow_alloc(&mut self, alloc_size: usize)
+        -> Result<(*const u8, &BumpBlock), AllocError>
+    {
         assert!(alloc_size <= constants::BLOCK_CAPACITY);
 
-        let space = match self.overflow {
+        let result = match self.overflow {
             Some(ref mut overflow) => {
                 match overflow.inner_alloc(alloc_size) {
-                    Some(space) => space,
+                    Some(space) => (space, overflow),
                     None => {
                         let previous = replace(overflow, BumpBlock::new()?);
 
                         self.rest.push(previous);
-                        overflow.inner_alloc(alloc_size)
-                            .expect("Object size larger than block size")
+                        let space = overflow.inner_alloc(alloc_size)
+                            .expect("Object size larger than block size");
+                        
+                        (space, overflow)
                     }
                 }
             },
@@ -174,12 +202,16 @@ impl BlockList {
                     .expect("Object size larger than block size");
 
                 self.overflow = Some(overflow);
-                space
+                (space, overflow)
             }
-        } as *const u8;
+        } as (*const u8, &BumpBlock);
 
-        Ok(space)
+        Ok(result)
     }
+
+    fn get_head(&self) -> &Option<BumpBlock> { self.head }
+    fn get_overflow(&self) -> &Option<BumpBlock> { self.overflow }
+    fn get_rest(&self) -> &Vec<BumpBlock> { self.rest }
 }
 
 #[cfg(test)]

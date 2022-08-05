@@ -67,6 +67,7 @@ pub trait AllocHeader: Sized {
     fn size_class(&self) -> SizeClass;
     fn size(&self) -> u32;
     fn type_id(&self) -> Self::TypeId;
+    fn get_block(&self) -> &BumpBlock
 }
 
 pub fn alloc_size_of(object_size: usize) -> usize {
