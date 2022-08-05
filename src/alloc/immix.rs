@@ -142,6 +142,9 @@ impl<H: AllocHeader> AllocRaw for StickyImmixHeap<H> {
         Ok(RawPtr::new(array_space as *const u8))
     }
 
+    fn dealloc_array(&self, array: RawPtr<u8>) -> Result<(), AllocError> {
+    }
+
     // to get header, subtract header size from object pointer
     fn get_header(object: NonNull<()>) -> NonNull<Self::Header> {
         unsafe { NonNull::new_unchecked(object.cast::<Self::Header>().as_ptr().offset(-1)) }
@@ -221,7 +224,7 @@ mod tests {
     use std::slice::from_raw_parts;
 
     #[test]
-    fn test_memory() {
+    fn test_alloc() {
         let mem = StickyImmixHeap::<ITypeHeader>::new();
 
         match mem.alloc(69 as i32) {
@@ -234,7 +237,18 @@ mod tests {
     }
 
     #[test]
-    fn test_many_obs() {
+    fn test_dealloc() {
+        let mem = StickyImmixHeap::<ITypeHeader>::new();
+
+        match mem.alloc(69 as i32) {
+            Ok(ptr) => {
+            },
+            Err(_) => panic!("Allocation failed"),
+        }
+    }
+
+    #[test]
+    fn test_many_obs_alloc() {
         let mem = StickyImmixHeap::<ITypeHeader>::new();
         let mut obs = Vec::new();
 
@@ -253,7 +267,24 @@ mod tests {
     }
 
     #[test]
-    fn test_array() {
+    fn test_many_obs_dealloc() {
+        let mem = StickyImmixHeap::<ITypeHeader>::new();
+        let mut obs = Vec::new();
+
+        for i in 0..(constants::BLOCK_SIZE * 3) {
+            match mem.alloc(i as i32) {
+                Ok(ptr) => obs.push(ptr),
+                Err(_) => assert!(false, "Allocation failed unexpectedly"),
+            }
+        }
+        println!("Finished allocating");
+
+        for (i, ob) in obs.iter().enumerate() {
+        }
+    }
+
+    #[test]
+    fn test_array_alloc() {
         let mem = StickyImmixHeap::<ITypeHeader>::new();
         let size = 2048;
 
@@ -265,6 +296,19 @@ mod tests {
                 for byte in array {
                     assert!(*byte == 0);
                 }
+            },
+            Err(_) => assert!(false, "Allocation failed unexpectedly"),
+        }
+    }
+
+    #[test]
+    fn test_array_dealloc() {
+        let mem = StickyImmixHeap::<ITypeHeader>::new();
+        let size = 2048;
+
+        match mem.alloc_array(size) {
+            Ok(ptr) => {
+                let ptr = ptr.as_ptr().unwrap();
             },
             Err(_) => assert!(false, "Allocation failed unexpectedly"),
         }
