@@ -125,8 +125,8 @@ impl<H: AllocHeader> AllocRaw for StickyImmixHeap<H> {
         let alloc_size = alloc_size_of(total_size);
         let size_class = SizeClass::get_for_size(alloc_size)?;
 
-        let space = self.find_space(alloc_size, size_class)?;
-        let header = Self::Header::new_array(size_bytes, size_class);
+        let (space, block) = self.find_space(alloc_size, size_class)?;
+        let header = Self::Header::new_array(size_bytes, size_class, block);
 
         // write header into front of allocated space
         unsafe { write(space as *mut Self::Header, header); }
@@ -143,6 +143,19 @@ impl<H: AllocHeader> AllocRaw for StickyImmixHeap<H> {
     }
 
     fn dealloc_array(&self, array: RawPtr<u8>) -> Result<(), AllocError> {
+        let header_size = size_of::<Self::Header>();
+        let header = self.get_header(array.as_untyped().unwrap());
+        let array_size = header.size();
+        let total_size = array_size + header_size;
+
+        // mark block lines as unallocated
+        let array_ptr = array.as_ptr();
+        let block = header.get_block();
+
+        let cursor = array_ptr.sub(block.as_ptr() as usize) as usize;
+        block.inner_dealloc(cursor, total_size);
+
+        Ok(())
     }
 
     // to get header, subtract header size from object pointer

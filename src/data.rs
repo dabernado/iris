@@ -60,6 +60,8 @@ impl AllocHeader for ITypeHeader {
     fn size_class(&self) -> SizeClass { self.size_class }
     fn size(&self) -> u32 { self.size }
     fn type_id(&self) -> Self::TypeId { self.type_id }
+    fn size(&self) -> u32 { self.size }
+    fn size_class(&self) -> SizeClass { self.size_class }
     fn get_block(&self) -> &BumpBlock { self.block }
 }
 
