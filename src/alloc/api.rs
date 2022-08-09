@@ -2,6 +2,7 @@ use std::mem::size_of;
 use std::ptr::NonNull;
 
 use crate::alloc::BlockError;
+use crate::alloc::blocks::BumpBlock;
 use crate::alloc::constants;
 
 pub trait AllocRaw {
@@ -15,6 +16,8 @@ pub trait AllocRaw {
     fn get_object(header: NonNull<Self::Header>) -> NonNull<()>;
 
     fn dealloc<T>(&self, object: RawPtr<T>) -> Result<(), AllocError>
+        where T: AllocObject<<Self::Header as AllocHeader>::TypeId>;
+    fn dealloc_array<T>(&self, object: RawPtr<u8>) -> Result<(), AllocError>
         where T: AllocObject<<Self::Header as AllocHeader>::TypeId>;
 }
 
@@ -67,7 +70,7 @@ pub trait AllocHeader: Sized {
     fn size_class(&self) -> SizeClass;
     fn size(&self) -> u32;
     fn type_id(&self) -> Self::TypeId;
-    fn get_block(&self) -> &BumpBlock
+    fn get_block(&self) -> &BumpBlock;
 }
 
 pub fn alloc_size_of(object_size: usize) -> usize {

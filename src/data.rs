@@ -29,7 +29,6 @@ pub struct ITypeHeader {
     size: u32,
     size_class: SizeClass,
     type_id: ITypeId,
-    block: &BumpBlock,
 }
 
 impl AllocHeader for ITypeHeader {
@@ -38,31 +37,25 @@ impl AllocHeader for ITypeHeader {
     fn new<O: AllocObject<Self::TypeId>>(
         size: u32,
         size_class: SizeClass,
-        block: &BumpBlock
     ) -> ITypeHeader {
         ITypeHeader {
             size,
             size_class,
             type_id: O::TYPE_ID,
-            block,
         }
     }
 
-    fn new_array(size: u32, size_class: SizeClass, block: &BumpBlock) -> Self {
+    fn new_array(size: u32, size_class: SizeClass) -> Self {
         ITypeHeader {
             size,
             size_class,
             type_id: ITypeId::Array,
-            block,
         }
     }
 
     fn size_class(&self) -> SizeClass { self.size_class }
-    fn size(&self) -> u32 { self.size }
     fn type_id(&self) -> Self::TypeId { self.type_id }
     fn size(&self) -> u32 { self.size }
-    fn size_class(&self) -> SizeClass { self.size_class }
-    fn get_block(&self) -> &BumpBlock { self.block }
 }
 
 /* Primitive Types */

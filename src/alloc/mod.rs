@@ -8,3 +8,5 @@ pub enum BlockError {
     BadRequest,
     OutOfMemory,
 }
+
+pub struct BumpBlock;
