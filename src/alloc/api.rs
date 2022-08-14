@@ -2,7 +2,6 @@ use std::mem::size_of;
 use std::ptr::NonNull;
 
 use crate::alloc::BlockError;
-use crate::alloc::blocks::BumpBlock;
 use crate::alloc::constants;
 
 pub trait AllocRaw {
@@ -17,8 +16,7 @@ pub trait AllocRaw {
 
     fn dealloc<T>(&self, object: RawPtr<T>) -> Result<(), AllocError>
         where T: AllocObject<<Self::Header as AllocHeader>::TypeId>;
-    fn dealloc_array<T>(&self, object: RawPtr<u8>) -> Result<(), AllocError>
-        where T: AllocObject<<Self::Header as AllocHeader>::TypeId>;
+    fn dealloc_array(&self, object: RawPtr<u8>) -> Result<(), AllocError>;
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -70,7 +68,6 @@ pub trait AllocHeader: Sized {
     fn size_class(&self) -> SizeClass;
     fn size(&self) -> u32;
     fn type_id(&self) -> Self::TypeId;
-    fn get_block(&self) -> &BumpBlock;
 }
 
 pub fn alloc_size_of(object_size: usize) -> usize {
@@ -81,95 +78,39 @@ pub fn alloc_size_of(object_size: usize) -> usize {
 /*
  * RawPtr API
  */
-pub enum RawPtr<T: Sized> {
-    Unit,
-    Int(i32),
-    UInt(u32),
-    Ptr { ptr: NonNull<T> },
+pub struct RawPtr<T: Sized> {
+    ptr: NonNull<T>
 }
 
 impl<T: Sized> RawPtr<T> {
     pub fn new(ptr: *const T) -> RawPtr<T> {
-        RawPtr::Ptr {
+        RawPtr {
             ptr: unsafe { NonNull::new_unchecked(ptr as *mut T) },
         }
     }
 
-    pub fn new_unit() -> RawPtr<()> { RawPtr::Unit }
-    pub fn new_int(i: i32) -> RawPtr<i32> { RawPtr::Int(i) }
-    pub fn new_uint(i: u32) -> RawPtr<u32> { RawPtr::UInt(i) }
-
-    pub fn from_unit(&self, ptr: *const T) -> Result<RawPtr<T>, AllocError> {
-        match self {
-            RawPtr::Ptr { ptr } => Err(AllocError::BadRequest),
-            RawPtr::Unit => {
-                Ok(RawPtr::Ptr {
-                    ptr: unsafe { NonNull::new_unchecked(ptr as *mut T) },
-                })
-            },
+    pub fn new_unit() -> RawPtr<()> {
+        RawPtr {
+            ptr: unsafe { NonNull::new_unchecked(&mut () as *mut ()) },
         }
     }
 
-    pub fn as_ptr(self) -> Option<*const T> {
-        if let RawPtr::Ptr { ptr } = self {
-            Some(ptr.as_ptr())
-        }
-
-        None
-    }
-
-    pub fn as_word(self) -> Option<usize> {
-        if let RawPtr::Ptr { ptr } = self {
-            Some(ptr.as_ptr() as usize)
-        }
-
-        None
-    }
-
-    pub fn as_untyped(self) -> Option<NonNull<()>> {
-        if let RawPtr::Ptr { ptr } = self {
-            Some(ptr.cast())
-        }
-
-        None
-    }
-
-    pub fn as_ref(&self) -> Option<&T> {
-        if let RawPtr::Ptr { ptr } = self {
-            Some(ptr.as_ref())
-        }
-
-        None
-    }
-
-    pub fn as_mut_ref(&mut self) -> Option<&mut T> {
-        if let RawPtr::Ptr { ptr } = self {
-            Some(ptr.as_mut())
-        }
-
-        None
-    }
+    pub fn as_ptr(self) -> *const T { self.ptr.as_ptr() }
+    pub fn as_word(self) -> usize { self.ptr.as_ptr() as usize }
+    pub fn as_untyped(self) -> NonNull<()> { self.ptr.cast() }
+    pub fn as_ref(&self) -> &T { self.ptr.as_ref() }
+    pub fn as_mut(&self) -> &mut T { self.ptr.as_mut() }
 }
 
 impl<T: Sized> Clone for RawPtr<T> {
-    fn clone(&self) -> RawPtr<T> {
-        match self {
-            RawPtr::Unit => RawPtr::Unit,
-            RawPtr::Ptr { ptr } => RawPtr::Ptr { ptr },
-        }
-    }
+    fn clone(&self) -> RawPtr<T> { RawPtr { ptr: self.ptr } }
 }
 
 impl<T: Sized> Copy for RawPtr<T> {}
 
 impl<T: Sized> PartialEq for RawPtr<T> {
     fn eq(&self, other: &RawPtr<T>) -> bool {
-        match self {
-            RawPtr::Unit => other == RawPtr::Unit,
-            RawPtr::Ptr { ptr } => match other {
-                RawPtr::Unit => false,
-                RawPtr::Ptr { other_ptr } => ptr == other_ptr,
-            }
-        }
+        let RawPtr { ptr: other_ptr } = other;
+        self.ptr == *other_ptr
     }
 }

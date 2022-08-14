@@ -72,7 +72,7 @@ impl Thread {
                 let data_ref = RawPtr::new(data.as_ptr());
 
                 let new_val = mem.alloc(
-                    zeroi(data_ref)
+                    zeroi(mem, data_ref)
                 )?;
 
                 self.data.set(new_val.as_untyped());
@@ -84,14 +84,14 @@ impl Thread {
                     let new_data = zeroe(mem, data_ref);
                     self.data.set(new_data.as_untyped());
                 } else {
-                    Err(RuntimeError::new(ErrorKind::TypeError))
+                    return Err(RuntimeError::new(ErrorKind::TypeError));
                 }
             },
             OP_UNITI => {
                 let data_ref = RawPtr::new(data.as_ptr());
 
                 let new_val = mem.alloc(
-                    uniti(data_ref)
+                    uniti(mem, data_ref)
                 )?;
 
                 self.data.set(new_val.as_untyped());
@@ -103,38 +103,56 @@ impl Thread {
                     let new_data = unite(mem, data_ref);
                     self.data.set(new_data.as_untyped());
                 } else {
-                    Err(RuntimeError::new(ErrorKind::TypeError))
+                    return Err(RuntimeError::new(ErrorKind::TypeError));
                 }
             },
             OP_SWAPP | OP_SWAPP_R => {
                 if data_type == ITypeId::Prod {
                     let data_ref = RawPtr::new(data.as_ptr());
 
-                    swapp(&data_ref);
+                    swapp(mem, &data_ref);
                 } else {
-                    Err(RuntimeError::new(ErrorKind::TypeError))
+                    return Err(RuntimeError::new(ErrorKind::TypeError));
                 }
             },
             OP_ASSRP => {
                 if data_type == ITypeId::Prod {
                     let data_ref = RawPtr::new(data.as_ptr());
 
-                    assrp(&data_ref);
+                    assrp(mem, &data_ref);
                 } else {
-                    Err(RuntimeError::new(ErrorKind::TypeError))
+                    return Err(RuntimeError::new(ErrorKind::TypeError));
                 }
             },
             OP_ASSLP => {
                 if data_type == ITypeId::Prod {
                     let data_ref = RawPtr::new(data.as_ptr());
 
-                    asslp(&data_ref);
+                    asslp(mem, &data_ref);
                 } else {
-                    Err(RuntimeError::new(ErrorKind::TypeError))
+                    return Err(RuntimeError::new(ErrorKind::TypeError));
                 }
             },
-            OP_DIST => {},
-            OP_FACT => {},
+            OP_DIST => {
+                if data_type == ITypeId::Prod {
+                    let data_ref = RawPtr::new(data.as_ptr());
+
+                    let new_data = dist(mem, data_ref);
+                    self.data.set(new_data.as_untyped());
+                } else {
+                    return Err(RuntimeError::new(ErrorKind::TypeError));
+                }
+            },
+            OP_FACT => {
+                if data_type == ITypeId::Sum {
+                    let data_ref = RawPtr::new(data.as_ptr());
+
+                    let new_data = fact(mem, data_ref);
+                    self.data.set(new_data.as_untyped());
+                } else {
+                    return Err(RuntimeError::new(ErrorKind::TypeError));
+                }
+            },
             OP_EXPN => {},
             OP_COLN => {},
             OP_ADD => {},
@@ -179,31 +197,33 @@ impl Thread {
                 if data_type == ITypeId::Sum {
                     let data_ref = RawPtr::new(data.as_ptr());
 
-                    swaps(&data_ref);
+                    swaps(mem, &data_ref);
                 } else {
-                    Err(RuntimeError::new(ErrorKind::TypeError))
+                    return Err(RuntimeError::new(ErrorKind::TypeError));
                 }
             },
             OP_ASSRS => {
                 if data_type == ITypeId::Sum {
                     let data_ref = RawPtr::new(data.as_ptr());
 
-                    assrs(&data_ref);
+                    assrs(mem, &data_ref);
                 } else {
-                    Err(RuntimeError::new(ErrorKind::TypeError))
+                    return Err(RuntimeError::new(ErrorKind::TypeError));
                 }
             },
             OP_ASSLS => {
                 if data_type == ITypeId::Sum {
                     let data_ref = RawPtr::new(data.as_ptr());
 
-                    assls(&data_ref);
+                    assls(mem, &data_ref);
                 } else {
-                    Err(RuntimeError::new(ErrorKind::TypeError))
+                    return Err(RuntimeError::new(ErrorKind::TypeError));
                 }
             },
             _ => {},
         }
+
+        Ok(EvalStatus::Pending)
     }
 }
 

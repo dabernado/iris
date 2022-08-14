@@ -8,6 +8,7 @@ use crate::array::ArraySize;
 use crate::alloc::constants;
 use crate::alloc::blocks::BumpBlock;
 use crate::alloc::api::*;
+use crate::data::ITypeHeader;
 
 pub struct StickyImmixHeap<H> {
     blocks: UnsafeCell<BlockList>,
@@ -68,23 +69,23 @@ impl<H> StickyImmixHeap<H> {
         Ok(result)
     }
 
-    fn get_block(word: usize) -> Option<&'static mut BumpBlock> {
-        let blocks = self.blocks.get();
+    fn get_block(&self, word: usize) -> Option<&'static mut BumpBlock> {
+        let blocks = self.blocks.get().as_ref().unwrap();
 
-        if let Some(ref mut head) = blocks.head() {
+        if let Some(head) = blocks.head() {
             let block_start = head.as_ptr() as usize;
             let block_end = block_start + constants::BLOCK_SIZE;
 
             match word {
-                block_start..block_end => return head,
+                block_start..block_end => return Some(&mut head),
                 _ => {},
             }
-        } else if let Some(ref mut overflow) = blocks.overflow() {
+        } else if let Some(overflow) = blocks.overflow() {
             let block_start = overflow.as_ptr() as usize;
             let block_end = block_start + constants::BLOCK_SIZE;
 
             match word {
-                block_start..block_end => return head,
+                block_start..block_end => return Some(&mut overflow),
                 _ => {},
             }
         } else {
@@ -93,7 +94,7 @@ impl<H> StickyImmixHeap<H> {
                 let block_end = block_start + constants::BLOCK_SIZE;
 
                 match word {
-                    block_start..block_end => return head,
+                    block_start..block_end => return Some(&mut block),
                     _ => continue,
                 }
             }
@@ -142,7 +143,7 @@ impl<H: AllocHeader> AllocRaw for StickyImmixHeap<H> {
 
         // mark block lines as unallocated
         let obj_ptr = object.as_ptr();
-        let block = self.get_block(object.as_word().unwrap()).unwrap();
+        let block = self.get_block(object.as_word()).unwrap();
 
         let cursor = obj_ptr.sub(block.as_ptr() as usize) as usize;
         block.inner_dealloc(cursor, total_size);
@@ -177,13 +178,14 @@ impl<H: AllocHeader> AllocRaw for StickyImmixHeap<H> {
 
     fn dealloc_array(&self, array: RawPtr<u8>) -> Result<(), AllocError> {
         let header_size = size_of::<Self::Header>();
-        let header = self.get_header(array.as_untyped().unwrap());
-        let array_size = header.size();
+        let header = StickyImmixHeap::<ITypeHeader>::get_header(
+            array.as_untyped()).as_ref();
+        let array_size = header.size() as usize;
         let total_size = array_size + header_size;
 
         // mark block lines as unallocated
         let array_ptr = array.as_ptr();
-        let block = self.get_block(array.as_word().unwrap()).unwrap();
+        let block = self.get_block(array.as_word()).unwrap();
 
         let cursor = array_ptr.sub(block.as_ptr() as usize) as usize;
         block.inner_dealloc(cursor, total_size);
@@ -198,7 +200,9 @@ impl<H: AllocHeader> AllocRaw for StickyImmixHeap<H> {
 
     // to get object, add header size to header pointer
     fn get_object(header: NonNull<Self::Header>) -> NonNull<()> {
-        unsafe { NonNull::new_unchecked(header.as_ptr().offset(1).cast::<()>()) }
+        unsafe {
+            NonNull::new_unchecked(header.as_ptr().offset(1).cast::<()>())
+        }
     }
 }
 
@@ -258,9 +262,9 @@ impl BlockList {
         Ok(result)
     }
 
-    fn head(&self) -> &Option<BumpBlock> { self.head }
-    fn overflow(&self) -> &Option<BumpBlock> { self.overflow }
-    fn rest(&self) -> &Vec<BumpBlock> { self.rest }
+    fn head(&self) -> &Option<BumpBlock> { &self.head }
+    fn overflow(&self) -> &Option<BumpBlock> { &self.overflow }
+    fn rest(&self) -> &Vec<BumpBlock> { &self.rest }
 }
 
 #[cfg(test)]
@@ -275,7 +279,7 @@ mod tests {
 
         match mem.alloc(69 as i32) {
             Ok(i) => {
-                let orig = unsafe { i.as_ref().unwrap() };
+                let orig = unsafe { i.as_ref() };
                 assert!(*orig == 69);
             },
             Err(_) => panic!("Allocation failed"),
@@ -307,8 +311,8 @@ mod tests {
         println!("Finished allocating");
 
         for (i, ob) in obs.iter().enumerate() {
-            println!("{} {}", i, unsafe { ob.as_ref().unwrap() });
-            assert!(i as i32 == unsafe { *ob.as_ref().unwrap() })
+            println!("{} {}", i, unsafe { ob.as_ref() });
+            assert!(i as i32 == unsafe { *ob.as_ref() })
         }
     }
 
@@ -336,7 +340,7 @@ mod tests {
 
         match mem.alloc_array(size) {
             Ok(ptr) => {
-                let ptr = ptr.as_ptr().unwrap();
+                let ptr = ptr.as_ptr();
                 let array = unsafe { from_raw_parts(ptr, size as usize) };
 
                 for byte in array {
@@ -354,7 +358,7 @@ mod tests {
 
         match mem.alloc_array(size) {
             Ok(ptr) => {
-                let ptr = ptr.as_ptr().unwrap();
+                let ptr = ptr.as_ptr();
             },
             Err(_) => assert!(false, "Allocation failed unexpectedly"),
         }
@@ -366,7 +370,7 @@ mod tests {
 
         match mem.alloc(69 as i32) {
             Ok(i) => {
-                let untyped_ptr = i.as_untyped().unwrap();
+                let untyped_ptr = i.as_untyped();
                 let header_ptr = StickyImmixHeap::<ITypeHeader>::get_header(untyped_ptr);
                 dbg!(header_ptr);
                 let header = unsafe { &*header_ptr.as_ptr() as &ITypeHeader };

@@ -4,7 +4,6 @@ use std::mem::size_of;
 use std::slice::from_raw_parts_mut;
 
 use crate::alloc::api::AllocObject;
-use crate::context::StackContainer;
 use crate::data::ITypeId;
 use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::{MutatorView, MutatorScope};
@@ -49,7 +48,7 @@ impl<T: Sized + Clone> Array<T> {
     ) -> Result<ScopedPtr<'guard, Array<T>>, RuntimeError>
         where Array<T>: AllocObject<ITypeId>
     {
-        mem.alloc(Array::with_capacity(mem, capacity))
+        mem.alloc(Array::with_capacity(mem, capacity)?)
     }
 
     fn get_offset(&self, index: ArraySize) -> Result<*mut T, RuntimeError> {
@@ -146,7 +145,10 @@ impl<T: Sized> RawArray<T> {
 
         Ok(RawArray {
             capacity: capacity,
-            ptr: NonNull::new(mem.alloc_array(capacity_bytes)?.as_ptr() as *mut T),
+            ptr: NonNull::new(
+                mem.alloc_array(capacity_bytes)?
+                .as_ptr()
+                as *mut T),
         })
     }
 
@@ -176,7 +178,9 @@ impl<T: Sized> RawArray<T> {
                 let new_capacity_bytes = new_capacity
                     .checked_mul(size_of::<T>() as ArraySize)
                     .ok_or(RuntimeError::new(ErrorKind::BadAllocationRequest))?;
-                let new_ptr = mem.alloc_array(new_capacity_bytes)?.as_ptr() as *mut T;
+                let new_ptr = mem.alloc_array(new_capacity_bytes)?
+                    .as_ptr()
+                    as *mut T;
 
                 let (old_slice, new_slice) = unsafe {
                     (
@@ -277,6 +281,79 @@ impl<T: Sized + Clone> Container<T> for Array<T> {
             data: Cell::new(RawArray::with_capacity(mem, capacity)?),
             borrow: Cell::new(INTERIOR_ONLY),
         })
+    }
+}
+
+// mostly for implementing the context stack
+pub trait StackContainer<T: Sized + Clone>: Container<T> {
+    fn push<'guard>(&self, mem: &'guard MutatorView, item: T) -> Result<(), RuntimeError>;
+    fn pop<'guard>(&self, _guard: &'guard dyn MutatorScope) -> Result<T, RuntimeError>;
+    fn top<'guard>(&self, _guard: &'guard dyn MutatorScope) -> Result<T, RuntimeError>;
+}
+
+impl <T: Sized + Clone> StackContainer<T> for Array<T> {
+    fn push<'guard>(
+        &self,
+        mem: &'guard MutatorView,
+        item: T
+    ) -> Result<(), RuntimeError> {
+        if self.borrow.get() != INTERIOR_ONLY {
+            return Err(RuntimeError::new(ErrorKind::MutableBorrowError));
+        }
+
+        let length = self.length.get();
+        let mut array = self.data.get();
+        let capacity = array.capacity();
+
+        if length == capacity {
+            if capacity == 0 {
+                array.resize(mem, DEFAULT_ARRAY_SIZE)?;
+            } else {
+                array.resize(mem, default_array_growth(capacity)?)?;
+            }
+
+            self.data.set(array);
+        }
+
+        self.length.set(length + 1);
+        self.write(mem, length, item);
+        Ok(())
+    }
+
+    fn pop<'guard>(
+        &self,
+        _guard: &'guard dyn MutatorScope
+    ) -> Result<T, RuntimeError> {
+        if self.borrow.get() != INTERIOR_ONLY {
+            return Err(RuntimeError::new(ErrorKind::MutableBorrowError));
+        }
+
+        let length = self.length.get();
+        if length == 0 {
+            return Err(RuntimeError::new(ErrorKind::BoundsError));
+        } else {
+            let last = length - 1;
+            let item = self.read(_guard, last)?;
+            self.length.set(last);
+            Ok(item)
+        }
+    }
+
+    fn top<'guard>(
+        &self,
+        _guard: &'guard dyn MutatorScope
+    ) -> Result<T, RuntimeError> {
+        if self.borrow.get() != INTERIOR_ONLY {
+            return Err(RuntimeError::new(ErrorKind::MutableBorrowError));
+        }
+
+        let length = self.length.get();
+        if length == 0 {
+            return Err(RuntimeError::new(ErrorKind::BoundsError));
+        } else {
+            let item = self.read(_guard, length - 1)?;
+            Ok(item)
+        }
     }
 }
 

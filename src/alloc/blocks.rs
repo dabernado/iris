@@ -96,9 +96,11 @@ impl BumpBlock {
     }
 
     pub fn inner_dealloc(&mut self, cursor: usize, size: usize)
-    { self.meta.unmark_lines(cursor, size); }
+    { self.meta.unmark_hole(cursor, size); }
 
     pub fn current_hole_size(&self) -> usize { self.cursor - self.limit }
+
+    pub fn as_ptr(&self) -> *const u8 { self.block.as_ptr() }
 }
 
 pub struct BlockMeta {

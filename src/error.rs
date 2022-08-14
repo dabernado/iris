@@ -29,6 +29,8 @@ pub enum ErrorKind {
     OutOfMemory,
     BoundsError,
     MutableBorrowError,
+    TypeError,
+    NullPointer,
 }
 
 #[derive(Debug, PartialEq)]
@@ -158,7 +160,7 @@ pub fn err_parser(reason: &str) -> RuntimeError {
 }
 
 pub fn err_parser_wpos(reason: &str, pos: SourcePos) -> RuntimeError {
-    RuntimeError::new(ErrorKind::ParseError(String::from(reason)), pos)
+    RuntimeError::with_pos(ErrorKind::ParseError(String::from(reason)), pos)
 }
 
 pub fn err_eval(reason: &str) -> RuntimeError {

@@ -223,3 +223,40 @@ pub fn assls<'guard,
         }
     }
 }
+
+pub fn dist<'guard, 
+    A: AllocObject<ITypeId>,
+    B: AllocObject<ITypeId>, 
+    C: AllocObject<ITypeId>>
+(
+    mem: &'guard MutatorView,
+    old_val: RawPtr<Prod<Sum<A, B>, C>>
+) -> Result<RawPtr<Sum<Prod<A, C>, Prod<B, C>>>, RuntimeError> {
+    if let Some(prod_ref) = old_val.as_mut_ref() {
+        let first = prod_ref.fst;
+        let second = prod_ref.snd;
+
+        match first.get(mem).as_untyped().as_ref() {
+            Sum::Left(inner_val) => {
+                let new_prod = mem.alloc(Product {
+                    fst: inner_val,
+                    snd: second,
+                })?.scoped_ref();
+
+                let new_sum = mem.alloc(Sum::Left(ScopedPtr::new(new_prod)))?;
+                mem.dealloc(old_val)?;
+                return new_sum;
+            },
+            Sum::Right(inner_val) => {
+                let new_prod = mem.alloc(Product {
+                    fst: inner_val,
+                    snd: second,
+                })?.scoped_ref();
+
+                let new_sum = mem.alloc(Sum::Right(ScopedPtr::new(new_prod)))?;
+                mem.dealloc(old_val)?;
+                return new_sum;
+            },
+        }
+    }
+}

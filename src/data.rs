@@ -8,23 +8,27 @@ use crate::printer::*;
 #[repr(u16)]
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum ITypeId {
-    Zero,
     Unit,
     Int,
     UInt,
     Float,
-    Bool,
     Sum,
     Prod,
     Frac,
     Neg,
     Array,
+
+    // Not exposed to programmer
+    Zero,
+    Bool,
     Func,
     Context,
+    Continuation,
     Ptr,
 }
 impl AllocTypeId for ITypeId {}
 
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub struct ITypeHeader {
     size: u32,
     size_class: SizeClass,
@@ -156,7 +160,7 @@ impl<O: AllocObject<ITypeId>> AllocObject<ITypeId> for Fraction<O> {
     const TYPE_ID: ITypeId = ITypeId::Frac;
 }
 
-impl<O: AllocObject<ITypeId>> Print for Fraction<O> {
+impl<O: AllocObject<ITypeId> + Print> Print for Fraction<O> {
     fn print<'guard>(
         &self,
         guard: &'guard dyn MutatorScope,
@@ -170,7 +174,7 @@ impl<O: AllocObject<ITypeId>> AllocObject<ITypeId> for Negative<O> {
     const TYPE_ID: ITypeId = ITypeId::Neg;
 }
 
-impl<O: AllocObject<ITypeId>> Print for Negative<O> {
+impl<O: AllocObject<ITypeId> + Print> Print for Negative<O> {
     fn print<'guard>(
         &self,
         guard: &'guard dyn MutatorScope,
@@ -188,7 +192,8 @@ for Sum<L, R> {
     const TYPE_ID: ITypeId = ITypeId::Sum;
 }
 
-impl<L: AllocObject<ITypeId>, R: AllocObject<ITypeId>> Print for Sum<L, R> {
+impl<L: AllocObject<ITypeId> + Print, R: AllocObject<ITypeId> + Print>
+Print for Sum<L, R> {
     fn print<'guard>(
         &self,
         guard: &'guard dyn MutatorScope,
@@ -211,22 +216,17 @@ for Product<F, S> {
     const TYPE_ID: ITypeId = ITypeId::Prod;
 }
 
-impl<F: AllocObject<ITypeId>, S: AllocObject<ITypeId>> Print for Product<F, S> {
+impl<F: AllocObject<ITypeId> + Print, S: AllocObject<ITypeId> + Print>
+Print for Product<F, S> {
     fn print<'guard>(
         &self,
         guard: &'guard dyn MutatorScope,
         f: &mut fmt::Formatter,
     ) -> fmt::Result {
-        let mut tail = ScopedPtr::new(guard, self);
+        let mut prod = ScopedPtr::new(guard, self);
 
-        write!(f, "({}", tail.fst.get(guard))?;
-
-        while let Product { fst, snd } = *tail.snd.get(guard) {
-            tail = snd;
-            write!(f, " {}", tail.fst.get(guard))?;
-        }
-
-        write!(f, ", {})", tail.snd.get(guard));
+        write!(f, "({}", prod.fst.get(guard))?;
+        write!(f, ", {})", prod.snd.get(guard))
     }
 }
 

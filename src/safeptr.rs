@@ -5,7 +5,6 @@ use std::ptr::NonNull;
 
 use crate::alloc::api::{RawPtr, AllocObject};
 use crate::bytecode::Function;
-use crate::constants::type_of;
 use crate::data::{ITypeId, Unit};
 use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::MutatorScope;
@@ -37,6 +36,12 @@ impl<'guard, T: Sized> ScopedPtr<'guard, T> {
         } else {
             Err(RuntimeError::new(ErrorKind::NullPointer))
         }
+    }
+
+    pub fn as_rawptr(&self, _guard: &'guard dyn MutatorScope)
+        -> RawPtr<T>
+    {
+        RawPtr::new(self.value)
     }
 }
 
@@ -76,34 +81,12 @@ impl<T: Sized> AllocObject<ITypeId> for CellPtr<T> {
 }
 
 impl<T: Sized> CellPtr<T> {
-    pub fn new_with(source: ScopedPtr<T>) -> Result<CellPtr<T>, RuntimeError> {
-        if source.value == () {
-            Ok(CellPtr { inner: Cell::new(RawPtr::new_unit()) })
-        } else if type_of(source.value) == "i32" {
-            match source.value {
-                -1073741823..=1073741823 => {
-                    Ok(CellPtr {
-                        inner: Cell::new(RawPtr::new_int(source.value))
-                    })
-                }
-                _ => Err(RuntimeError::new(ErrorKind::IntOverflow)),
-            }
-        } else if type_of(source.value) == "u32" {
-            match source.value {
-                0..=2147483648 => {
-                    Ok(CellPtr {
-                        inner: Cell::new(RawPtr::new_uint(source.value))
-                    })
-                }
-                _ => Err(RuntimeError::new(ErrorKind::IntOverflow)),
-            }
-        } else {
-            Ok(CellPtr { inner: Cell::new(RawPtr::new(source.value)) })
-        }
+    pub fn new_with(source: ScopedPtr<T>) -> CellPtr<T> {
+        CellPtr { inner: Cell::new(RawPtr::new(source.value)) }
     }
 
     pub fn new_unit() -> CellPtr<Unit> {
-        CellPtr { inner: Cell::new(RawPtr::new_unit()) }
+        CellPtr { inner: Cell::new(RawPtr::<()>::new_unit()) }
     }
 
     pub fn get<'guard>(&self, guard: &'guard dyn MutatorScope) -> ScopedPtr<'guard, T> {
@@ -111,11 +94,7 @@ impl<T: Sized> CellPtr<T> {
     }
 
     pub fn set(&self, source: ScopedPtr<T>) {
-        if source.value == () {
-            self.inner.set(RawPtr::new_unit());
-        } else {
-            self.inner.set(RawPtr::new(source.value));
-        }
+        self.inner.set(RawPtr::new(source.value));
     }
 }
 
@@ -129,10 +108,10 @@ pub trait ScopedRef<T> {
 }
 
 impl<T> ScopedRef<T> for RawPtr<T> {
-    fn scoped_ref<'scope>(&self, _guard: &'scope dyn MutatorScope) -> &'scope T {
-        match self.as_ptr() {
-            Some(v) => unsafe { &*v },
-            None => &(),
-        }
+    fn scoped_ref<'scope>(
+        &self,
+        _guard: &'scope dyn MutatorScope
+    ) -> &'scope T {
+        &*self.as_ptr()
     }
 }

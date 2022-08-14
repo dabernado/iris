@@ -1,7 +1,11 @@
 use std::cell::Cell;
 
 use crate::alloc::api::AllocObject;
-use crate::array::{Array, ArraySize, IndexedContainer};
+use crate::array::{
+    Array,
+    ArraySize,
+    Container, IndexedContainer, StackContainer
+};
 use crate::constants::*;
 use crate::data::ITypeId;
 use crate::error::{RuntimeError, ErrorKind};
@@ -50,6 +54,9 @@ pub struct Continuation {
     function: FuncPtr,
     ip: Cell<ArraySize>,
     direction: Cell<bool>,
+}
+impl AllocObject<ITypeId> for Continuation {
+    const TYPE_ID: ITypeId = ITypeId::Continuation;
 }
 
 impl Continuation {
@@ -114,23 +121,23 @@ impl Continuation {
 }
 
 // Decoding Functions
-pub fn get_opcode(instr: &Opcode) -> u8 { instr ^ OP_MASK }
+pub fn get_opcode(instr: &Opcode) -> u8 { (instr ^ OP_MASK) as u8 }
 pub fn decode_i(instr: &Opcode) -> u32 {
     (instr ^ I_MASK) >> I_MASK
 }
 
 pub fn decode_c(instr: &Opcode) -> (u16, u16) {
     (
-        (instr ^ C_OFF_MASK) >> 0x3F,
-        (instr ^ C_CONST_MASK) >> C_CONST_MASK
+        ((instr ^ C_OFF_MASK) >> 0x3F) as u16,
+        ((instr ^ C_CONST_MASK) >> C_CONST_MASK) as u16
     )
 }
 
 pub fn decode_s(instr: &Opcode) -> (u8, u8, u8) {
     (
-        (instr ^ S_TOTAL_MASK) >> 0x3F,
-        (instr ^ S_DIV_MASK) >> 0x3FFF,
-        (instr ^ S_OFF_MASK) >> S_OFF_MASK 
+        ((instr ^ S_TOTAL_MASK) >> 0x3F) as u8,
+        ((instr ^ S_DIV_MASK) >> 0x3FFF) as u8,
+        ((instr ^ S_OFF_MASK) >> S_OFF_MASK) as u8
     )
 }
 
@@ -161,12 +168,10 @@ pub fn encode_s(op: u8, total: u8, div: u8, off: u8) -> Opcode {
     let padded_div = (div as u32) << 14;
     let padded_off = (off as u32) << 22;
 
-    Ok(
-        (((0 ^ padded_off)
-        ^ padded_div)
-        ^ padded_total)
-        ^ (op as u32)
-    )
+    (((0 ^ padded_off)
+      ^ padded_div)
+     ^ padded_total)
+    ^ (op as u32)
 }
 
 #[cfg(test)]
