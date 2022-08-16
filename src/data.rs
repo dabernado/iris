@@ -73,7 +73,7 @@ impl AllocObject<ITypeId> for Zero {
 impl Print for Zero {
     fn print<'guard>(
         &self,
-        guard: &'guard dyn MutatorScope,
+        _guard: &'guard dyn MutatorScope,
         f: &mut fmt::Formatter,
     ) -> fmt::Result { write!(f, "*") }
 }
@@ -87,7 +87,7 @@ impl AllocObject<ITypeId> for Unit {
 impl Print for Unit {
     fn print<'guard>(
         &self,
-        guard: &'guard dyn MutatorScope,
+        _guard: &'guard dyn MutatorScope,
         f: &mut fmt::Formatter,
     ) -> fmt::Result { write!(f, "()") }
 }
@@ -101,7 +101,7 @@ impl AllocObject<ITypeId> for Int {
 impl Print for Int {
     fn print<'guard>(
         &self,
-        guard: &'guard dyn MutatorScope,
+        _guard: &'guard dyn MutatorScope,
         f: &mut fmt::Formatter,
     ) -> fmt::Result { write!(f, "{}", self) }
 }
@@ -115,7 +115,7 @@ impl AllocObject<ITypeId> for UInt {
 impl Print for UInt {
     fn print<'guard>(
         &self,
-        guard: &'guard dyn MutatorScope,
+        _guard: &'guard dyn MutatorScope,
         f: &mut fmt::Formatter,
     ) -> fmt::Result { write!(f, "{}", self) }
 }
@@ -129,7 +129,7 @@ impl AllocObject<ITypeId> for Float {
 impl Print for Float {
     fn print<'guard>(
         &self,
-        guard: &'guard dyn MutatorScope,
+        _guard: &'guard dyn MutatorScope,
         f: &mut fmt::Formatter,
     ) -> fmt::Result { write!(f, "{}", self) }
 }
@@ -148,7 +148,7 @@ impl AllocObject<ITypeId> for Bool {
 impl Print for Bool {
     fn print<'guard>(
         &self,
-        guard: &'guard dyn MutatorScope,
+        _guard: &'guard dyn MutatorScope,
         f: &mut fmt::Formatter,
     ) -> fmt::Result { write!(f, "{}", self) }
 }
@@ -223,7 +223,7 @@ Print for Product<F, S> {
         guard: &'guard dyn MutatorScope,
         f: &mut fmt::Formatter,
     ) -> fmt::Result {
-        let mut prod = ScopedPtr::new(guard, self);
+        let prod = ScopedPtr::new(guard, self);
 
         write!(f, "({}", prod.fst.get(guard))?;
         write!(f, ", {})", prod.snd.get(guard))

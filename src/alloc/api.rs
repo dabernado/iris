@@ -91,15 +91,15 @@ impl<T: Sized> RawPtr<T> {
 
     pub fn new_unit() -> RawPtr<()> {
         RawPtr {
-            ptr: unsafe { NonNull::new_unchecked(&mut () as *mut ()) },
+            ptr: NonNull::new(&mut () as *mut ()).unwrap(),
         }
     }
 
     pub fn as_ptr(self) -> *const T { self.ptr.as_ptr() }
     pub fn as_word(self) -> usize { self.ptr.as_ptr() as usize }
     pub fn as_untyped(self) -> NonNull<()> { self.ptr.cast() }
-    pub fn as_ref(&self) -> &T { self.ptr.as_ref() }
-    pub fn as_mut(&self) -> &mut T { self.ptr.as_mut() }
+    pub fn as_ref(&self) -> &T { unsafe { self.ptr.as_ref() } }
+    pub fn as_mut(&mut self) -> &mut T { unsafe { self.ptr.as_mut() } }
 }
 
 impl<T: Sized> Clone for RawPtr<T> {

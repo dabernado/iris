@@ -69,33 +69,36 @@ impl<H> StickyImmixHeap<H> {
         Ok(result)
     }
 
-    fn get_block(&self, word: usize) -> Option<&'static mut BumpBlock> {
-        let blocks = self.blocks.get().as_ref().unwrap();
+    fn get_block(&self, word: usize) -> Option<&mut BumpBlock> {
+        //let blocks = unsafe { self.blocks.get().as_mut().unwrap() };
 
-        if let Some(head) = blocks.head() {
+        if let Some(head) = unsafe {
+            self.blocks.get().as_mut().unwrap().head()
+        } {
             let block_start = head.as_ptr() as usize;
             let block_end = block_start + constants::BLOCK_SIZE;
 
-            match word {
-                block_start..block_end => return Some(&mut head),
-                _ => {},
+            if (word >= block_start) && (word < block_end) {
+                return Some(head);
             }
-        } else if let Some(overflow) = blocks.overflow() {
+    } else if let Some(overflow) = unsafe {
+        self.blocks.get().as_mut().unwrap().overflow()
+    } {
             let block_start = overflow.as_ptr() as usize;
             let block_end = block_start + constants::BLOCK_SIZE;
 
-            match word {
-                block_start..block_end => return Some(&mut overflow),
-                _ => {},
+            if (word >= block_start) && (word < block_end) {
+                return Some(overflow);
             }
         } else {
-            for block in blocks.rest() {
+            for block in unsafe {
+                self.blocks.get().as_mut().unwrap().rest()
+            } {
                 let block_start = block.as_ptr() as usize;
                 let block_end = block_start + constants::BLOCK_SIZE;
 
-                match word {
-                    block_start..block_end => return Some(&mut block),
-                    _ => continue,
+                if (word >= block_start) && (word < block_end) {
+                    return Some(block);
                 }
             }
         }
@@ -145,7 +148,7 @@ impl<H: AllocHeader> AllocRaw for StickyImmixHeap<H> {
         let obj_ptr = object.as_ptr();
         let block = self.get_block(object.as_word()).unwrap();
 
-        let cursor = obj_ptr.sub(block.as_ptr() as usize) as usize;
+        let cursor = unsafe { obj_ptr.sub(block.as_ptr() as usize) } as usize;
         block.inner_dealloc(cursor, total_size);
 
         Ok(())
@@ -178,8 +181,11 @@ impl<H: AllocHeader> AllocRaw for StickyImmixHeap<H> {
 
     fn dealloc_array(&self, array: RawPtr<u8>) -> Result<(), AllocError> {
         let header_size = size_of::<Self::Header>();
-        let header = StickyImmixHeap::<ITypeHeader>::get_header(
-            array.as_untyped()).as_ref();
+        let header = unsafe {
+            StickyImmixHeap::<ITypeHeader>::get_header(
+                array.as_untyped()
+            ).as_ref()
+        };
         let array_size = header.size() as usize;
         let total_size = array_size + header_size;
 
@@ -187,7 +193,7 @@ impl<H: AllocHeader> AllocRaw for StickyImmixHeap<H> {
         let array_ptr = array.as_ptr();
         let block = self.get_block(array.as_word()).unwrap();
 
-        let cursor = array_ptr.sub(block.as_ptr() as usize) as usize;
+        let cursor = unsafe { array_ptr.sub(block.as_ptr() as usize) } as usize;
         block.inner_dealloc(cursor, total_size);
 
         Ok(())
@@ -262,9 +268,9 @@ impl BlockList {
         Ok(result)
     }
 
-    fn head(&self) -> &Option<BumpBlock> { &self.head }
-    fn overflow(&self) -> &Option<BumpBlock> { &self.overflow }
-    fn rest(&self) -> &Vec<BumpBlock> { &self.rest }
+    fn head(&mut self) -> Option<&mut BumpBlock> { self.head.as_mut() }
+    fn overflow(&mut self) -> Option<&mut BumpBlock> { self.overflow.as_mut() }
+    fn rest(&mut self) -> &mut Vec<BumpBlock> { self.rest.as_mut() }
 }
 
 #[cfg(test)]
@@ -279,7 +285,7 @@ mod tests {
 
         match mem.alloc(69 as i32) {
             Ok(i) => {
-                let orig = unsafe { i.as_ref() };
+                let orig = i.as_ref();
                 assert!(*orig == 69);
             },
             Err(_) => panic!("Allocation failed"),
@@ -311,8 +317,8 @@ mod tests {
         println!("Finished allocating");
 
         for (i, ob) in obs.iter().enumerate() {
-            println!("{} {}", i, unsafe { ob.as_ref() });
-            assert!(i as i32 == unsafe { *ob.as_ref() })
+            println!("{} {}", i, ob.as_ref());
+            assert!(i as i32 == *ob.as_ref())
         }
     }
 

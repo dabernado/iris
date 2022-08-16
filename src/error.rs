@@ -100,6 +100,8 @@ impl fmt::Display for RuntimeError {
             ErrorKind::IntOverflow => write!(f, "Integer overflow"),
             ErrorKind::OutOfMemory => write!(f, "Out of memory"),
             ErrorKind::BoundsError => write!(f, "Indexing bounds error"),
+            ErrorKind::TypeError => write!(f, "Type error"),
+            ErrorKind::NullPointer => write!(f, "Null pointer error"),
             ErrorKind::MutableBorrowError => write!(f,
                 "Attempted to modify container that is already mutably borrowed"
             ),

@@ -117,7 +117,10 @@ impl Continuation {
 
     pub fn ip(&self) -> ArraySize { self.ip.get() }
     pub fn direction(&self) -> bool { self.direction.get() }
-    pub fn current_func(&self) -> CellPtr<Function> { self.function }
+    pub fn current_func<'guard>(
+        &self,
+        guard: &'guard dyn MutatorScope,
+    ) -> ScopedPtr<'guard, Function> { self.function.get(guard) }
 }
 
 // Decoding Functions

@@ -6,7 +6,6 @@ use std::ptr::NonNull;
 use crate::alloc::api::{RawPtr, AllocObject};
 use crate::bytecode::Function;
 use crate::data::{ITypeId, Unit};
-use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::MutatorScope;
 use crate::printer::Print;
 
@@ -28,15 +27,17 @@ impl<'guard, T: Sized> ScopedPtr<'guard, T> {
         ScopedPtr { value }
     }
 
+    /*
     pub fn as_untyped(&self, _guard: &'guard dyn MutatorScope)
         -> Result<UntypedPtr, RuntimeError>
     {
-        if let Some(ptr) = NonNull::new(self.value) {
+        if let Some(ptr) = NonNull::new(self.value as *const T) {
             Ok(ptr)
         } else {
             Err(RuntimeError::new(ErrorKind::NullPointer))
         }
     }
+    */
 
     pub fn as_rawptr(&self, _guard: &'guard dyn MutatorScope)
         -> RawPtr<T>
@@ -112,6 +113,6 @@ impl<T> ScopedRef<T> for RawPtr<T> {
         &self,
         _guard: &'scope dyn MutatorScope
     ) -> &'scope T {
-        &*self.as_ptr()
+        unsafe { &*self.as_ptr() }
     }
 }
