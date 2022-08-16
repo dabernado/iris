@@ -170,3 +170,5 @@ Despite the strong typing of IRIS allowing for the elimination of many runtime e
 `ERRSYSC` - attempted invalid syscall
 
 `ERRTYPE` - types of attempted operation and data do not match
+
+`ERRCALL` - attempted CALL/GCALL with invalid function pointer
