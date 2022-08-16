@@ -126,21 +126,21 @@ impl Continuation {
 // Decoding Functions
 pub fn get_opcode(instr: &Opcode) -> u8 { (instr ^ OP_MASK) as u8 }
 pub fn decode_i(instr: &Opcode) -> u32 {
-    (instr ^ I_MASK) >> I_MASK
+    (instr ^ I_MASK) >> 6
 }
 
 pub fn decode_c(instr: &Opcode) -> (u16, u16) {
     (
-        ((instr ^ C_OFF_MASK) >> 0x3F) as u16,
-        ((instr ^ C_CONST_MASK) >> C_CONST_MASK) as u16
+        ((instr ^ C_OFF_MASK) >> 6) as u16,
+        ((instr ^ C_CONST_MASK) >> 19) as u16
     )
 }
 
 pub fn decode_s(instr: &Opcode) -> (u8, u8, u8) {
     (
-        ((instr ^ S_TOTAL_MASK) >> 0x3F) as u8,
-        ((instr ^ S_DIV_MASK) >> 0x3FFF) as u8,
-        ((instr ^ S_OFF_MASK) >> S_OFF_MASK) as u8
+        ((instr ^ S_TOTAL_MASK) >> 6) as u8,
+        ((instr ^ S_DIV_MASK) >> 14) as u8,
+        ((instr ^ S_OFF_MASK) >> 22) as u8
     )
 }
 
