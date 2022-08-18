@@ -1,4 +1,5 @@
 use std::ptr::{NonNull, write};
+use std::vec::Vec;
 
 use crate::alloc::constants;
 use crate::alloc::api::AllocError;
@@ -95,12 +96,16 @@ impl BumpBlock {
         }
     }
 
-    pub fn inner_dealloc(&mut self, cursor: usize, size: usize)
-    { self.meta.unmark_hole(cursor, size); }
+    pub fn inner_dealloc(&mut self, cursor: usize, size: usize) {
+        self.meta.unmark_hole(cursor, size);
+        self.cursor = self.cursor + size;
+    }
 
     pub fn current_hole_size(&self) -> usize { self.cursor - self.limit }
-
     pub fn as_ptr(&self) -> *const u8 { self.block.as_ptr() }
+    pub fn get_lines(&self, cursor: usize, size: usize) -> Vec<bool> {
+        self.meta.get_lines(cursor, size)
+    }
 }
 
 pub struct BlockMeta {
@@ -197,6 +202,15 @@ impl BlockMeta {
         for i in starting_line..(starting_line + size_in_lines) {
             self.line_mark[i] = false;
         }
+    }
+
+    // mainly for testing
+    pub fn get_lines(&self, cursor: usize, size: usize) -> Vec<bool> {
+        let start = cursor / constants::LINE_SIZE;
+        let size_in_lines = size / constants::LINE_SIZE;
+        let end = start + size_in_lines;
+
+        Vec::from(&self.line_mark[start..end])
     }
 }
 

@@ -70,36 +70,35 @@ impl<H> StickyImmixHeap<H> {
     }
 
     fn get_block(&self, word: usize) -> Option<&mut BumpBlock> {
-        //let blocks = unsafe { self.blocks.get().as_mut().unwrap() };
-
         if let Some(head) = unsafe {
             self.blocks.get().as_mut().unwrap().head()
         } {
             let block_start = head.as_ptr() as usize;
             let block_end = block_start + constants::BLOCK_SIZE;
+            println!("{} - {}", block_start, block_end);
 
             if (word >= block_start) && (word < block_end) {
                 return Some(head);
             }
-    } else if let Some(overflow) = unsafe {
-        self.blocks.get().as_mut().unwrap().overflow()
-    } {
+        } else if let Some(overflow) = unsafe {
+            self.blocks.get().as_mut().unwrap().overflow()
+        } {
             let block_start = overflow.as_ptr() as usize;
             let block_end = block_start + constants::BLOCK_SIZE;
 
             if (word >= block_start) && (word < block_end) {
                 return Some(overflow);
             }
-        } else {
-            for block in unsafe {
-                self.blocks.get().as_mut().unwrap().rest()
-            } {
-                let block_start = block.as_ptr() as usize;
-                let block_end = block_start + constants::BLOCK_SIZE;
+        }
 
-                if (word >= block_start) && (word < block_end) {
-                    return Some(block);
-                }
+        for block in unsafe {
+            self.blocks.get().as_mut().unwrap().rest()
+        } {
+            let block_start = block.as_ptr() as usize;
+            let block_end = block_start + constants::BLOCK_SIZE;
+
+            if (word >= block_start) && (word < block_end) {
+                return Some(block);
             }
         }
 
@@ -143,13 +142,14 @@ impl<H: AllocHeader> AllocRaw for StickyImmixHeap<H> {
         let header_size = size_of::<Self::Header>();
         let object_size = size_of::<T>();
         let total_size = header_size + object_size;
+        let alloc_size = alloc_size_of(total_size);
 
         // mark block lines as unallocated
         let obj_ptr = object.as_ptr();
         let block = self.get_block(object.as_word()).unwrap();
 
-        let cursor = unsafe { obj_ptr.sub(block.as_ptr() as usize) } as usize;
-        block.inner_dealloc(cursor, total_size);
+        let cursor = obj_ptr as usize - block.as_ptr() as usize;
+        block.inner_dealloc(cursor, alloc_size);
 
         Ok(())
     }
@@ -189,12 +189,15 @@ impl<H: AllocHeader> AllocRaw for StickyImmixHeap<H> {
         let array_size = header.size() as usize;
         let total_size = array_size + header_size;
 
+        // round size to next word boundary for alignment
+        let alloc_size = alloc_size_of(total_size);
+
         // mark block lines as unallocated
         let array_ptr = array.as_ptr();
         let block = self.get_block(array.as_word()).unwrap();
 
-        let cursor = unsafe { array_ptr.sub(block.as_ptr() as usize) } as usize;
-        block.inner_dealloc(cursor, total_size);
+        let cursor = array_ptr as usize - block.as_ptr() as usize;
+        block.inner_dealloc(cursor, alloc_size);
 
         Ok(())
     }
@@ -298,6 +301,78 @@ mod tests {
 
         match mem.alloc(69 as i32) {
             Ok(ptr) => {
+                let header_size = size_of::<ITypeHeader>();
+                let object_size = size_of::<i32>();
+                let total_size = header_size + object_size;
+
+                let orig = ptr.as_ptr();
+                let block = mem.get_block(ptr.as_word()).unwrap();
+                let cursor = orig as usize - block.as_ptr() as usize;
+
+                // deallocate object
+                mem.dealloc(ptr);
+
+                // assert that lines are unmarked
+                let lines = block.get_lines(cursor, total_size);
+                for line in lines {
+                    assert!(line == false);
+                }
+            },
+            Err(_) => panic!("Allocation failed"),
+        }
+    }
+
+    #[test]
+    fn test_realloc() {
+        let mem = StickyImmixHeap::<ITypeHeader>::new();
+
+        match mem.alloc(69 as i32) {
+            Ok(ptr) => {
+                assert!(*ptr.as_ref() == 69);
+                
+                let header_size = size_of::<ITypeHeader>();
+                let object_size = size_of::<i32>();
+                let total_size = header_size + object_size;
+                let alloc_size = alloc_size_of(total_size);
+
+                let orig = ptr.as_ptr();
+                let block = mem.get_block(ptr.as_word()).unwrap();
+                let cursor = orig as usize - block.as_ptr() as usize;
+
+                // assert that lines are marked
+                let alloc_lines = block.get_lines(cursor, alloc_size);
+                for line in alloc_lines {
+                    assert!(line == true);
+                }
+
+                // deallocate object
+                mem.dealloc(ptr);
+
+                // assert that lines are unmarked
+                let dealloc_lines = block.get_lines(cursor, alloc_size);
+                for line in dealloc_lines {
+                    assert!(line == false);
+                }
+
+                // reallocate object
+                match mem.alloc(420 as i32) {
+                    Ok(new_ptr) => {
+                        let new_orig = new_ptr.as_ptr();
+                        let new_block = mem.get_block(new_ptr.as_word())
+                            .unwrap();
+                        let new_cursor = new_orig as usize - new_block.as_ptr() as usize;
+
+                        assert!(block.as_ptr() == new_block.as_ptr());
+                        assert!(*new_ptr.as_ref() == 420);
+                        assert!(cursor == new_cursor);
+
+                        let realloc_lines = block.get_lines(new_cursor, alloc_size);
+                        for line in realloc_lines {
+                            assert!(line == true);
+                        }
+                    },
+                    Err(_) => panic!("Allocation failed"),
+                }
             },
             Err(_) => panic!("Allocation failed"),
         }
@@ -336,6 +411,22 @@ mod tests {
         println!("Finished allocating");
 
         for (i, ob) in obs.iter().enumerate() {
+            let header_size = size_of::<ITypeHeader>();
+            let object_size = size_of::<i32>();
+            let total_size = header_size + object_size;
+
+            let orig = ob.as_ptr();
+            let block = mem.get_block(ob.as_word()).unwrap();
+            let cursor = orig as usize - block.as_ptr() as usize;
+
+            // deallocate object
+            mem.dealloc(*ob);
+
+            // assert that lines are unmarked
+            let lines = block.get_lines(cursor, total_size);
+            for line in lines {
+                assert!(line == false);
+            }
         }
     }
 
@@ -364,7 +455,18 @@ mod tests {
 
         match mem.alloc_array(size) {
             Ok(ptr) => {
-                let ptr = ptr.as_ptr();
+                let orig = ptr.as_ptr();
+                let block = mem.get_block(ptr.as_word()).unwrap();
+                let cursor = orig as usize - block.as_ptr() as usize;
+
+                // deallocate object
+                mem.dealloc_array(ptr);
+
+                // assert that lines are unmarked
+                let lines = block.get_lines(cursor, size as usize);
+                for line in lines {
+                    assert!(line == false);
+                }
             },
             Err(_) => assert!(false, "Allocation failed unexpectedly"),
         }
