@@ -80,7 +80,9 @@ impl<H> StickyImmixHeap<H> {
             if (word >= block_start) && (word < block_end) {
                 return Some(head);
             }
-        } else if let Some(overflow) = unsafe {
+        }
+
+        if let Some(overflow) = unsafe {
             self.blocks.get().as_mut().unwrap().overflow()
         } {
             let block_start = overflow.as_ptr() as usize;
