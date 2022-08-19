@@ -10,8 +10,8 @@ mod context;
 mod constants;
 mod error;
 mod printer;
-//mod op;
-//mod vm;
+mod op;
+mod vm;
 
 fn main() {
     println!("Hello, world!");
