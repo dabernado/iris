@@ -4,7 +4,6 @@ use std::mem::size_of;
 use std::slice::from_raw_parts_mut;
 
 use crate::alloc::api::AllocObject;
-use crate::data::ITypeId;
 use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::{MutatorView, MutatorScope};
 use crate::safeptr::ScopedPtr;
@@ -24,11 +23,13 @@ pub struct Array<T: Sized + Clone> {
     borrow: Cell<BorrowFlag>,
 }
 
+impl<T: Sized + Clone> AllocObject for Array<T> {}
+
 impl<T: Sized + Clone> Array<T> {
     pub fn alloc<'guard>(
         mem: &'guard MutatorView,
     ) -> Result<ScopedPtr<'guard, Array<T>>, RuntimeError>
-        where Array<T>: AllocObject<ITypeId>
+        where Array<T>: AllocObject
     {
         mem.alloc(Array::new())
     }
@@ -37,7 +38,7 @@ impl<T: Sized + Clone> Array<T> {
         mem: &'guard MutatorView,
         from_array: ScopedPtr<'guard, Array<T>>
     ) -> Result<ScopedPtr<'guard, Array<T>>, RuntimeError>
-        where Array<T>: AllocObject<ITypeId> + ContainerFromSlice<T>
+        where Array<T>: AllocObject + ContainerFromSlice<T>
     {
         from_array.access_slice(mem, |items| ContainerFromSlice::from_slice(mem, items))
     }
@@ -46,7 +47,7 @@ impl<T: Sized + Clone> Array<T> {
         mem: &'guard MutatorView,
         capacity: ArraySize
     ) -> Result<ScopedPtr<'guard, Array<T>>, RuntimeError>
-        where Array<T>: AllocObject<ITypeId>
+        where Array<T>: AllocObject
     {
         mem.alloc(Array::with_capacity(mem, capacity)?)
     }
@@ -463,7 +464,7 @@ pub trait ContainerFromSlice<T: Sized + Clone>: Container<T> {
 }
 
 impl<T: Sized + Clone> ContainerFromSlice<T> for Array<T>
-    where Array<T>: AllocObject<ITypeId>,
+    where Array<T>: AllocObject,
 {
     fn from_slice<'guard>(
         mem: &'guard MutatorView,

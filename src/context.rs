@@ -1,7 +1,6 @@
 use crate::array::{Array, ArraySize};
 use crate::alloc::api::AllocObject;
-use crate::data::ITypeId;
-use crate::safeptr::UntypedPtr;
+use crate::safeptr::UntypedCellPtr;
 
 pub type ContextStack = Array<Context>;
 
@@ -11,19 +10,19 @@ pub enum Context {
     Nil,
     First {
         snd_op_index: ArraySize,
-        snd_val: UntypedPtr,
-        root_val: UntypedPtr,
+        snd_val: UntypedCellPtr,
+        root_val: UntypedCellPtr,
     },
     Second {
         fst_op_index: ArraySize,
-        fst_val: UntypedPtr,
-        root_val: UntypedPtr,
+        fst_val: UntypedCellPtr,
+        root_val: UntypedCellPtr,
     },
     Left(ArraySize),
     Right(ArraySize),
     Indirect {
-        last: UntypedPtr,
-        current: UntypedPtr,
+        last: UntypedCellPtr,
+        current: UntypedCellPtr,
     },
     Call {
         last: ArraySize,
@@ -31,6 +30,4 @@ pub enum Context {
     }
 }
 
-impl AllocObject<ITypeId> for Context {
-    const TYPE_ID: ITypeId = ITypeId::Context;
-}
+impl AllocObject for Context {}

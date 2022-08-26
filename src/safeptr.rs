@@ -1,11 +1,11 @@
 use std::cell::Cell;
 use std::fmt;
+use std::mem;
 use std::ops::Deref;
-use std::ptr::NonNull;
 
-use crate::alloc::api::{RawPtr, UntypedPtr, AllocObject};
+use crate::alloc::api::{RawPtr, AllocObject};
 use crate::bytecode::Function;
-use crate::data::{ITypeId, Unit};
+use crate::data::Unit;
 use crate::memory::MutatorScope;
 use crate::printer::Print;
 
@@ -16,27 +16,34 @@ pub struct ScopedPtr<'guard, T: Sized> {
     value: &'guard T,
 }
 
+pub type UntypedScopedPtr<'guard> = ScopedPtr<'guard, ()>;
+
 impl<'guard, T: Sized> ScopedPtr<'guard, T> {
     pub fn new(_guard: &'guard dyn MutatorScope, value: &'guard T) -> ScopedPtr<'guard, T> {
         ScopedPtr { value }
     }
 
-    /*
-    pub fn as_untyped(&self, _guard: &'guard dyn MutatorScope)
-        -> Result<UntypedPtr, RuntimeError>
+    pub unsafe fn cast<U>(self, guard: &'guard dyn MutatorScope)
+        -> ScopedPtr<'guard, U>
+        where U: Sized
     {
-        if let Some(ptr) = NonNull::new(self.value as *const T) {
-            Ok(ptr)
-        } else {
-            Err(RuntimeError::new(ErrorKind::NullPointer))
-        }
+        ScopedPtr::new(guard, mem::transmute::<&T, &U>(self.value))
     }
-    */
+
+    pub fn as_untyped(self, guard: &'guard dyn MutatorScope)
+        -> UntypedScopedPtr
+    {
+        unsafe { self.cast(guard) }
+    }
 
     pub fn as_rawptr(&self, _guard: &'guard dyn MutatorScope)
         -> RawPtr<T>
     {
         RawPtr::new(self.value)
+    }
+
+    pub fn as_ref(&self, _guard: &'guard dyn MutatorScope) -> &'guard T {
+        self.value
     }
 }
 
@@ -71,17 +78,17 @@ impl<'guard, T: Sized + PartialEq> PartialEq for ScopedPtr<'guard, T> {
 pub struct CellPtr<T: Sized> {
     inner: Cell<RawPtr<T>>,
 }
-impl<T: Sized> AllocObject<ITypeId> for CellPtr<T> {
-    const TYPE_ID: ITypeId = ITypeId::Ptr;
-}
+impl<T: Sized> AllocObject for CellPtr<T> {}
+
+pub type UntypedCellPtr = CellPtr<()>;
 
 impl<T: Sized> CellPtr<T> {
-    pub fn new_with(source: ScopedPtr<T>) -> CellPtr<T> {
-        CellPtr { inner: Cell::new(RawPtr::new(source.value)) }
+    pub fn new(source: RawPtr<T>) -> CellPtr<T> {
+        CellPtr { inner: Cell::new(source) }
     }
 
-    pub fn new_with(source: RawPtr<T>) -> CellPtr<T> {
-        CellPtr { inner: Cell::new(source) }
+    pub fn new_with(source: ScopedPtr<T>) -> CellPtr<T> {
+        CellPtr { inner: Cell::new(RawPtr::new(source.value)) }
     }
 
     pub fn new_unit() -> CellPtr<Unit> {

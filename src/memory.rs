@@ -1,14 +1,11 @@
-use std::ptr::NonNull;
-
 use crate::alloc::api::{AllocRaw, AllocObject, RawPtr};
 use crate::alloc::immix::StickyImmixHeap;
 use crate::array::ArraySize;
-use crate::data::{ITypeId, ITypeHeader};
 use crate::error::RuntimeError;
-use crate::safeptr::{ScopedPtr, ScopedRef, UntypedPtr};
+use crate::safeptr::{ScopedPtr, ScopedRef};
 
 /* Immix Heap */
-pub type Heap = StickyImmixHeap<ITypeHeader>;
+pub type Heap = StickyImmixHeap;
 
 pub struct MutatorView<'memory> {
     heap: &'memory Heap,
@@ -30,7 +27,7 @@ impl<'memory> MutatorView<'memory> {
     }
 
     pub fn alloc<T>(&self, object: T) -> Result<ScopedPtr<'_, T>, RuntimeError>
-        where T: AllocObject<ITypeId>,
+        where T: AllocObject,
     {
         Ok(ScopedPtr::new(
             self,
@@ -40,7 +37,7 @@ impl<'memory> MutatorView<'memory> {
 
     pub fn dealloc<T>(&self, object: ScopedPtr<'_, T>)
         -> Result<(), RuntimeError>
-        where T: AllocObject<ITypeId>,
+        where T: AllocObject,
     {
         self.heap.dealloc(object.as_rawptr(self))?;
         Ok(())
@@ -55,24 +52,11 @@ impl<'memory> MutatorView<'memory> {
 
     pub fn dealloc_array(
         &self,
-        array: RawPtr<u8>
+        array: RawPtr<u8>,
+        size: ArraySize
     ) -> Result<(), RuntimeError> {
-        self.heap.dealloc_array(array)?;
+        self.heap.dealloc_array(array, size)?;
         Ok(())
-    }
-
-    pub fn get_header(
-        &self,
-        object: UntypedPtr,
-    ) -> NonNull<ITypeHeader> {
-        StickyImmixHeap::<ITypeHeader>::get_header(object)
-    }
-
-    pub fn get_object(
-        &self,
-        header: NonNull<ITypeHeader>,
-    ) -> UntypedPtr {
-        StickyImmixHeap::<ITypeHeader>::get_object(header)
     }
 }
 
@@ -84,7 +68,7 @@ pub struct Memory {
 
 impl Memory {
     pub fn new() -> Memory {
-        Memory { heap: StickyImmixHeap::<ITypeHeader>::new() }
+        Memory { heap: StickyImmixHeap::new() }
     }
 
     pub fn mutate<M: Mutator>(&self, m: &M, input: M::Input) -> Result<M::Output, RuntimeError> {

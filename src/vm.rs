@@ -1,15 +1,13 @@
-use std::cell::Cell;
-
-use crate::alloc::api::RawPtr;
+use crate::alloc::api::AllocObject;
 use crate::array::{Array, ArraySize};
 use crate::bytecode::{Function, Continuation, get_opcode};
 use crate::constants::*;
 use crate::context::{Context, ContextStack};
-use crate::data::ITypeId;
+use crate::data::*;
 use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::{MutatorView, MutatorScope};
 use crate::op::*;
-use crate::safeptr::{UntypedPtr, ScopedPtr, FuncPtr, CellPtr};
+use crate::safeptr::{ScopedPtr, FuncPtr, CellPtr, UntypedCellPtr};
 
 #[derive(PartialEq)]
 pub enum EvalStatus {
@@ -19,14 +17,19 @@ pub enum EvalStatus {
 }
 
 pub struct Thread {
-    functions: Array<FuncPtr>,
-    continuation: Cell<Continuation>,
+    functions: CellPtr<Array<FuncPtr>>,
+    continuation: CellPtr<Continuation>,
     cxt_stack: CellPtr<ContextStack>,
-    data: Cell<UntypedPtr>,
+    data: UntypedCellPtr,
 }
 
+impl AllocObject for Thread {}
+
 impl Thread {
-    pub fn alloc_with_arg<'guard>(mem: &'guard MutatorView, data: UntypedPtr)
+    pub fn alloc_with_arg<'guard>(
+        mem: &'guard MutatorView,
+        data: UntypedCellPtr
+    )
         -> Result<ScopedPtr<'guard, Thread>, RuntimeError>
     {
         let funcs = Array::<FuncPtr>::alloc_with_capacity(mem, 128)?;
@@ -36,10 +39,10 @@ impl Thread {
         let cont = Continuation::alloc(mem, empty_fn)?;
 
         mem.alloc(Thread {
-            functions: funcs,
-            continuation: cont,
-            cxt_stack: cxts,
-            data: Cell::new(data),
+            functions: CellPtr::new_with(funcs),
+            continuation: CellPtr::new_with(cont),
+            cxt_stack: CellPtr::new_with(cxts),
+            data: data,
         })
     }
 
@@ -47,36 +50,35 @@ impl Thread {
         &self,
         guard: &'guard dyn MutatorScope,
         index: ArraySize
-    ) -> Result<UntypedPtr, RuntimeError>
+    ) -> Result<UntypedCellPtr, RuntimeError>
     {
-        self.continuation.get().get_frac(guard, index)
+        self.continuation.get(guard)
+            .as_ref(guard)
+            .get_frac(guard, index)
     }
 
     fn eval_next_instr<'guard>(&self, mem: &'guard MutatorView)
         -> Result<EvalStatus, RuntimeError>
     {
-        let funcs = self.functions.get(mem);
+        let cont = self.continuation.get(mem)
+            .as_ref(mem);
         let cxt_stack = self.cxt_stack.get(mem);
-        let cont = self.continuation.get(mem);
         let data = self.data.get(mem);
 
-        let op = cont.get_next_opcode(mem)?;
-        let opcode = get_opcode(op);
+        let op = cont.get_next_op(mem)?;
+        let opcode = get_opcode(&op);
 
         match opcode {
             OP_ID | OP_ID_R => {},
             OP_ZEROI => {
                 let new_data = mem.alloc(zeroi(data))?;
-                self.data.set(new_data.as_untyped());
+                self.data.set(new_data.as_untyped(mem));
             },
             OP_ZEROE => {
-                let cast_ptr = unsafe { data.cast::<Sum<Zero, ()>>() };
-                let inner = zeroe(&cast_ptr)?;
-                let new_data = inner
-                    .get(mem)
-                    .as_rawptr(mem);
+                let cast_ptr = unsafe { data.cast::<Sum<Zero, ()>>(mem) };
+                let inner = zeroe(cast_ptr, mem)?;
 
-                self.data.set(new_data.as_untyped());
+                self.data.set(inner.as_untyped(mem));
                 mem.dealloc(data)?;
             },
             OP_UNITI => {},

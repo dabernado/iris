@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::alloc::api::*;
+use crate::alloc::api::AllocObject;
 use crate::memory::MutatorScope;
 use crate::safeptr::{CellPtr, ScopedPtr};
 use crate::printer::*;
@@ -74,7 +74,7 @@ impl Print for Bool {
 
 /* Algebraic Data Types */
 pub struct Fraction<O: AllocObject>(CellPtr<O>);
-impl AllocObject for Fraction {}
+impl<O: AllocObject> AllocObject for Fraction<O> {}
 
 impl<O: AllocObject + Print> Print for Fraction<O> {
     fn print<'guard>(
@@ -85,7 +85,7 @@ impl<O: AllocObject + Print> Print for Fraction<O> {
 }
 
 pub struct Negative<O: AllocObject>(CellPtr<O>);
-impl AllocObject for Negative {}
+impl<O: AllocObject> AllocObject for Negative<O> {}
 
 impl<O: AllocObject + Print> Print for Negative<O> {
     fn print<'guard>(
@@ -99,7 +99,7 @@ pub enum Sum<L: AllocObject, R: AllocObject> {
     Left(CellPtr<L>),
     Right(CellPtr<R>),
 }
-impl AllocObject for Sum {}
+impl<L: AllocObject, R: AllocObject> AllocObject for Sum<L, R> {}
 
 impl<L: AllocObject + Print, R: AllocObject + Print> Print for Sum<L, R> {
     fn print<'guard>(
@@ -118,7 +118,7 @@ pub struct Product<F: AllocObject, S: AllocObject> {
     fst: CellPtr<F>,
     snd: CellPtr<S>,
 }
-impl AllocObject for Product {}
+impl<F: AllocObject, S: AllocObject> AllocObject for Product<F, S> {}
 
 impl<F: AllocObject + Print, S: AllocObject + Print> Print for Product<F, S> {
     fn print<'guard>(

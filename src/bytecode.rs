@@ -7,16 +7,15 @@ use crate::array::{
     Container, IndexedContainer, StackContainer
 };
 use crate::constants::*;
-use crate::data::ITypeId;
 use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::{MutatorView, MutatorScope};
-use crate::safeptr::{UntypedPtr, CellPtr, ScopedPtr, FuncPtr};
+use crate::safeptr::{CellPtr, ScopedPtr, FuncPtr, UntypedCellPtr};
 
 pub type Opcode = u32;
 
 #[derive(Clone)]
 pub struct Function {
-    fractions: Array<UntypedPtr>,
+    fractions: Array<UntypedCellPtr>,
     code: Array<Opcode>,
 }
 impl AllocObject for Function {}
@@ -26,7 +25,7 @@ impl Function {
         mem: &'guard MutatorView,
     ) -> Result<ScopedPtr<'guard, Function>, RuntimeError> {
         mem.alloc(Function {
-            fractions: Array::<UntypedPtr>::new(),
+            fractions: Array::<UntypedCellPtr>::new(),
             code: Array::<Opcode>::new(),
         })
     }
@@ -40,7 +39,7 @@ impl Function {
     pub fn push_frac<'guard>(
         &self,
         mem: &'guard MutatorView,
-        ptr: UntypedPtr
+        ptr: UntypedCellPtr
     ) -> Result<(), RuntimeError> { self.fractions.push(mem, ptr) }
 
     pub fn last_instruction(&self) -> ArraySize { self.code.length() - 1 }
@@ -103,7 +102,7 @@ impl Continuation {
         &self,
         guard: &'guard dyn MutatorScope,
         index: ArraySize,
-    ) -> Result<UntypedPtr, RuntimeError> {
+    ) -> Result<UntypedCellPtr, RuntimeError> {
         Ok(IndexedContainer::get(
                 &self.function.get(guard).fractions,
                 guard,

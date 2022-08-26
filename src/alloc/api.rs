@@ -4,6 +4,8 @@ use std::ptr::NonNull;
 use crate::alloc::BlockError;
 use crate::alloc::constants;
 
+pub trait AllocObject {}
+
 pub trait AllocRaw {
     fn alloc<T>(&self, object: T) -> Result<RawPtr<T>, AllocError>
         where T: AllocObject;
@@ -79,7 +81,10 @@ impl<T: Sized> RawPtr<T> {
         }
     }
 
-    pub unsafe fn cast<U>(self) -> RawPtr<U> { self.ptr.cast::<U>() }
+    pub unsafe fn cast<U>(self) -> RawPtr<U> {
+        RawPtr::new(self.ptr.cast::<U>().as_ptr())
+    }
+
     pub fn as_ptr(self) -> *const T { self.ptr.as_ptr() }
     pub fn as_word(self) -> usize { self.ptr.as_ptr() as usize }
     pub fn as_untyped(self) -> UntypedPtr { unsafe { self.cast() } }
@@ -87,7 +92,7 @@ impl<T: Sized> RawPtr<T> {
     pub fn as_mut(&mut self) -> &mut T { unsafe { self.ptr.as_mut() } }
 }
 
-impl AllocObject for RawPtr {}
+impl<T: Sized> AllocObject for RawPtr<T> {}
 impl<T: Sized> Clone for RawPtr<T> {
     fn clone(&self) -> RawPtr<T> { RawPtr { ptr: self.ptr } }
 }

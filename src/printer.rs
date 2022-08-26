@@ -1,7 +1,6 @@
 use std::fmt;
 
 use crate::alloc::api::AllocObject;
-use crate::data::ITypeId;
 use crate::memory::MutatorScope;
 use crate::safeptr::ScopedPtr;
 
@@ -19,13 +18,13 @@ pub trait Print {
     ) -> fmt::Result { self.print(_guard, f) }
 }
 
-pub fn print<T: AllocObject<ITypeId> + Print>(
+pub fn print<T: AllocObject + Print>(
     value: ScopedPtr<'_, T>
 ) -> String {
     format!("{}", value)
 }
 
-pub fn debug<T: AllocObject<ITypeId> + Print>(
+pub fn debug<T: AllocObject + Print>(
     value: ScopedPtr<'_, T>
 ) -> String {
     format!("{:?}", value)
