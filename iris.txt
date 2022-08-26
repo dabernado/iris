@@ -1,12 +1,12 @@
 // Primitive Types
-0
-1
-int
-uint
-float
-aint	:= int || uint
-prim	:= 1 || int || uint || float
-prim[]
+0	:= empty type
+1	:= unit type
+nat	:= unsigned integer
+
+The following "primitive" types are constructed in IRIS as such, but use unique representations:
+
+bool			:= (1 + 1)
+int (signed integer)	:= (nat + nat)
 
 // Functions
 ID <-> ID		: ?a <-> ?a
@@ -69,75 +69,53 @@ EXPF i <-> COLF i	: 1 <-> (1/?a * ?a)
  */
 
 // Arithmetic
-ADD <-> SUB		: (int * int) <-> (int * int)
+ADD <-> SUB		: (nat * nat) <-> (nat * nat)
 /*
  * Add/subtract two integers, with result placed in first value
  */
 
-ADDI n <-> SUBI n	: int <-> int
+ADDI n <-> SUBI n	: nat <-> nat 
 /*
  * Add/subtract constant to/from integer
  */
 
-MUL <-> DIV		: (int * int) <-> (int * int)
+MUL <-> DIV		: (nat * nat) <-> (nat * nat)
 /*
  * Multiply/divide two integers, with result placed in first
  * value
  */
 
-MULI n <-> DIVI n	: int <-> int
+MULI n <-> DIVI n	: nat <-> nat
 /*
  * Multiply/divide integer with/by constant
  */
 
-UADD <-> USUB		: (uint * uint) <-> (uint * uint)
-/*
- * Add/subtract two unsigned integers, with result placed in
- * first value
- */
-
-UADDI n <-> USUBI n	: uint <-> uint
-/*
- * Add/subtract constant to/from unsigned integer
- */
-
-UMUL <-> UDIV		: (uint * uint) <-> (uint * uint)
-/*
- * Multiply/divide two unsigned integers, with result placed
- * in first value
- */
-
-UMULI n <-> UDIVI n	: uint <-> uint
-/*
- * Multiply/divide unsigned integer with/by constant
- */
-
-XOR <-> XOR		: (aint * uint) <-> (aint * uint)
+XOR <-> XOR		: (nat * nat) <-> (nat * nat)
 /*
  * Exclusive-or on two integers, result placed in first value
  */
 
-XORI n <-> XORI n 	: aint <-> aint
+XORI n <-> XORI n 	: nat <-> nat
 /*
  * Exclusive-or integer with constant
  */
 
-CSWAP <-> CSWAP		: ((aint * aint) * uint) <-> ((aint * aint) * uint)
+CSWAP <-> CSWAP		: ((nat * nat) * nat) <-> ((nat * nat) * nat)
 /*
  * Controlled swap on two integers, with second value as control
  */
 
-CSWAPI n <-> CSWAPI n	: (aint * aint) <-> (aint * aint)
+CSWAPI n <-> CSWAPI n	: (nat * nat) <-> (nat * nat)
 /*
  * Controlled swap on two integers, with constant as control
  */
 
-RR <-> RL		: (aint * uint) <-> (aint * uint)
+RR <-> RL		: (nat * nat) <-> (nat * nat)
 /*
  * Rotate bits of an integer left/right
  */
 
-RRI n <-> RLI n		: aint <-> aint
+RRI n <-> RLI n		: nat <-> nat
 /*
  * Rotate bits of an integer left/right by constant value
  */
@@ -187,7 +165,7 @@ SYSC f <-> RSYSC f		: ?a <-> ?b
  * f = id of system function
  */
 
-FOLW <-> RET			: int <-> ?a
+FOLW <-> RET			: nat <-> ?a
 /*
  * Return from/follow word-size pointer to object
  */
@@ -197,7 +175,7 @@ START <-> END			: ?a <-> ?a
  * Designates beginning/end of function; operationally equivalent to ID
  */
 
-EVAL <-> DEVAL			: (?a * uint) <-> (?b * uint)
+EVAL <-> DEVAL			: (?a * nat) <-> (?b * nat)
 /*
  * Invoke a function dynamically
  */
