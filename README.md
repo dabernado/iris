@@ -12,8 +12,7 @@ An IRIS machine consists of the following components:
 - a direction bit, which stores the direction of execution
 - a context stack, which stores return addresses and other information about the current execution environment
 - an instruction pointer, which points to the next instruction to execute
-- a data pointer, which points to the block which contains the current data structure on which the processor is computing
-- a size register, which points to the last register in the current block that contains data
+- a data pointer, which points to the current data structure on which the processor is computing
 - a program and associated data structure, which includes:
     - the program bytecode
     - the data structure which the top-level isomorphism of the program operates on
@@ -54,14 +53,14 @@ IRIS uses a register-based memory architecture, but instead of addressing regist
 
 ### Data Types
 #### Primitive Types
-Besides the four algebraic data types, there are four primitive types in IRIS: `int`, `uint`, `1` (the unit type) and `0` (the empty type). Since there are no possible values of type `0`, it can only be used to define sum types in which only one of the two variants can be instantiated. The only value of type `1` is "()", or the unit value.
+Besides the four algebraic data types, there are only three primitive types in IRIS: `nat`, `1` (the unit type) and `0` (the empty type). Since there are no possible values of type `0`, it can only be used to define sum types in which only one of the two variants can be instantiated. The only value of type `1` is "()", or the unit value.
 
-The numerical primtypes `int` and `uint` are actually represented by 15 and 31 bits on 32-bit and 64-bit platforms respectively, in order to be able to fit into product type values. IRIS can be extended with full-precision numerical types, but since they won't fit inside of a product cell, they can't be considered as primtypes.
+The numerical primtype `nat` is represented as an unsigned integer, and is actually represented by 15 and 31 bits on 32-bit and 64-bit platforms respectively, in order to be able to fit into product type values. Signed integers are implemented as the type `nat + nat`, but compile down to a typical single word signed int representation.
 
-Some other primtypes which can be added to IRIS via extension are arrays (`int[]`, `1[]`, etc.) provided by the vector extension, and the floating-point numerical type `float` provided by the floating-point extension.
+IRIS could be extended with full-precision numerical types, but since they won't fit inside of a product cell, they can't be considered as primtypes. Some other primtypes which can be added to IRIS via extension are arrays (`nat[]`, `1[]`, etc.) provided by the vector extension, and the floating-point numerical type `float` provided by the floating-point extension.
 
 #### Sum Types
-Sum types are represented by an additional integer indicating which variant of the type the value is, along with the value itself. The amount of memory allocated is equal to the size of the largest variant of the type. For example, a value of 'left (right v)' of type `((int + int) + int)` would be represented as such:
+Sum types are represented by an additional integer indicating which variant of the type the value is, along with the value itself. The amount of memory allocated is equal to the size of the largest variant of the type. For example, a value of 'left (right v)' of type `((nat + nat) + nat)` would be represented as such:
 ```
 r0	r1
 [  1  ] [  v  ]
@@ -69,22 +68,22 @@ r0	r1
 
 The assembler keeps track of where the variant value places the data in the type by remembering both the amount of variants in the left hand of the root sum, the total number of variants in the type, and an offset value which is set to 0 for operations on the root sum.
 
-For example, a value "left (right (right v))" of type `((int + (int + int)) + (int + int))` would be represented with a variant value of 2, with the division value being 3 and a total value of 4. Say that the processor executed an `ASSLS` on the data structure, transforming it into the type `(int + ((int + int) + (int + int)))`; the division value becomes (total-division)+offset = 1 and the variant value stays the same, but since the division value has changed its interpretation now becomes "right (left (right v))".
+For example, a value "left (right (right v))" of type `((nat + (nat + nat)) + (nat + nat))` would be represented with a variant value of 2, with the division value being 3 and a total value of 4. Say that the processor executed an `ASSLS` on the data structure, transforming it into the type `(nat + ((nat + nat) + (nat + nat)))`; the division value becomes (total-division)+offset = 1 and the variant value stays the same, but since the division value has changed its interpretation now becomes "right (left (right v))".
 
-Similarly, if a `SWAPS` was performed on the original value, turning it into type `((int + int) + (int + (int + int)))`, the division value would become "(total-division)+1+offset" which would evaluate to 2 in this case, and the variant value would become "new division + variant" which evaluates to 4, making the value "right (right (right v))".
+Similarly, if a `SWAPS` was performed on the original value, turning it into type `((nat + nat) + (nat + (nat + nat)))`, the division value would become "(total-division)+1+offset" which would evaluate to 2 in this case, and the variant value would become "new division + variant" which evaluates to 4, making the value "right (right (right v))".
 
 What if an `+{ID + SWAPS}+` is executed on this result? The assembler needs to keep track of the division and total values of the inner type, while still executing with a variant value that specifies the variant in the context of the outer type. In this case, the processor would perform the `SWAPP` calculations with the inner type's division and total values as normal, but the offset would be equal to the division value of the outer type (in this case 2), which would then be added to get the resulting variant of the whole data structure.
 
 The only sum operation which allocates/deallocates information is `ZEROI/ZEROE`, which must introduct a variant value to the type it is operating on. If the next register after the current value is empty, the the processor simply moves it over and introduces the variant value at its former starting location. If not, then the processor must reallocate the value along with its variant at the next free registers, and update the pointer to the value in the outer type.
 
 #### Product Types
-Product types are represented by a special cell type which can be divided into two parts; a field containing the first value, and a field for the second value. Each of these pointers can be further divided into a 1-bit field indicating whether or not the value is a pointer or a primtype, and a 15/31-bit field containing the pointer or primtype. For example, a value of type `(int * int)` on a 32-bit system would be represented as such:
+Product types are represented by a special cell type which can be divided into two parts; a field containing the first value, and a field for the second value. Each of these pointers can be further divided into a 1-bit field indicating whether or not the value is a pointer or a primtype, and a 15/31-bit field containing the pointer or primtype. For example, a value of type `(nat * nat)` on a 32-bit system would be represented as such:
 ```
 0     1		 15 16    17	     31
 [ 0 ] [    fst    ] [ 0 ] [    snd    ]
 ```
 
-While a value of type `((int * int) * int)` would look like:
+While a value of type `((nat * nat) * nat)` would look like:
 ```
 0     1		 15 16    17	     31
 [ 1 ] [   *fst    ] [ 0 ] [    snd    ]
@@ -101,7 +100,7 @@ For operations such as `SWAPP` and `ASSRP/ASSLP`, execution is a simple matter o
 #### Fractional Types
 Fractional types are represented as a pointer to a data structure somewhere in memory which the type was initialized to. Upon unification, the value and the fraction are compared by the processor and, if they are equivalent, the value is deallocated and the fraction changes back into the unit type.
 
-For example, take the sequence of operations `*{ UNITI; *{ ID * EXPF; COLF }*; * ID }*` which takes a starting type of `(1 * 1)` and transforms it into `((1 * (1/(int * int), (int * int))) * 1)` before collapsing the fraction and its value. The CPU executes these operations in order:
+For example, take the sequence of operations `*{ UNITI; *{ ID * EXPF; COLF }*; * ID }*` which takes a starting type of `(1 * 1)` and transforms it into `((1 * (1/(nat * nat), (nat * nat))) * 1)` before collapsing the fraction and its value. The CPU executes these operations in order:
 1. The root product combinator is entered, and the processor begins executing on the first value
 2. `UNITI` begins executing; a new product cell containing of type `(1 * 1)` is allocated and the first value of the current product cell is updated to point to the new value. The data pointer is updated to point to the new product cell. The size register is updated and `UNITI` finishes
 3. The next product combinator is entered, and `ID` is executed on the first value of our newly created product cell
