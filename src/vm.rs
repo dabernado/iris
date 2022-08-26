@@ -43,7 +43,7 @@ impl Thread {
         })
     }
 
-    fn frac_lookup<'guard>(
+    fn lookup_frac<'guard>(
         &self,
         guard: &'guard dyn MutatorScope,
         index: ArraySize
@@ -60,17 +60,25 @@ impl Thread {
         let cont = self.continuation.get(mem);
         let data = self.data.get(mem);
 
-        // dont use runtime type checking pls
-        //let data_header = mem.get_header(data);
-        //let data_type = data_header.type_id();
-
         let op = cont.get_next_opcode(mem)?;
         let opcode = get_opcode(op);
 
         match opcode {
             OP_ID | OP_ID_R => {},
-            OP_ZEROI => {},
-            OP_ZEROE => {},
+            OP_ZEROI => {
+                let new_data = mem.alloc(zeroi(data))?;
+                self.data.set(new_data.as_untyped());
+            },
+            OP_ZEROE => {
+                let cast_ptr = unsafe { data.cast::<Sum<Zero, ()>>() };
+                let inner = zeroe(&cast_ptr)?;
+                let new_data = inner
+                    .get(mem)
+                    .as_rawptr(mem);
+
+                self.data.set(new_data.as_untyped());
+                mem.dealloc(data)?;
+            },
             OP_UNITI => {},
             OP_UNITE => {},
             OP_SWAPP | OP_SWAPP_R => {},

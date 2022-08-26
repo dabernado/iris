@@ -5,18 +5,15 @@ use crate::alloc::BlockError;
 use crate::alloc::constants;
 
 pub trait AllocRaw {
-    type Header: AllocHeader;
-
     fn alloc<T>(&self, object: T) -> Result<RawPtr<T>, AllocError>
-        where T: AllocObject<<Self::Header as AllocHeader>::TypeId>;
-    fn alloc_array(&self, size_bytes: ArraySize) -> Result<RawPtr<u8>, AllocError>;
-
-    fn get_header(object: NonNull<()>) -> NonNull<Self::Header>;
-    fn get_object(header: NonNull<Self::Header>) -> NonNull<()>;
+        where T: AllocObject;
+    fn alloc_array(&self, size_bytes: ArraySize)
+        -> Result<RawPtr<u8>, AllocError>;
 
     fn dealloc<T>(&self, object: RawPtr<T>) -> Result<(), AllocError>
-        where T: AllocObject<<Self::Header as AllocHeader>::TypeId>;
-    fn dealloc_array(&self, object: RawPtr<u8>) -> Result<(), AllocError>;
+        where T: AllocObject;
+    fn dealloc_array(&self, object: RawPtr<u8>, size_bytes: ArraySize)
+        -> Result<(), AllocError>;
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -55,21 +52,6 @@ impl SizeClass {
 
 type ArraySize = u32;
 
-pub trait AllocTypeId: Copy + Clone {}
-pub trait AllocObject<T: AllocTypeId> {
-    const TYPE_ID: T;
-}
-
-pub trait AllocHeader: Sized {
-    type TypeId: AllocTypeId;
-
-    fn new<O: AllocObject<Self::TypeId>>(size: u32, size_class: SizeClass) -> Self;
-    fn new_array(size: ArraySize, size_class: SizeClass) -> Self;
-    fn size_class(&self) -> SizeClass;
-    fn size(&self) -> u32;
-    fn type_id(&self) -> Self::TypeId;
-}
-
 pub fn alloc_size_of(object_size: usize) -> usize {
     let align = size_of::<usize>();
     (object_size + (align - 1)) & !(align - 1)
@@ -81,6 +63,8 @@ pub fn alloc_size_of(object_size: usize) -> usize {
 pub struct RawPtr<T: Sized> {
     ptr: NonNull<T>
 }
+
+pub type UntypedPtr = RawPtr<()>;
 
 impl<T: Sized> RawPtr<T> {
     pub fn new(ptr: *const T) -> RawPtr<T> {
@@ -95,13 +79,15 @@ impl<T: Sized> RawPtr<T> {
         }
     }
 
+    pub unsafe fn cast<U>(self) -> RawPtr<U> { self.ptr.cast::<U>() }
     pub fn as_ptr(self) -> *const T { self.ptr.as_ptr() }
     pub fn as_word(self) -> usize { self.ptr.as_ptr() as usize }
-    pub fn as_untyped(self) -> NonNull<()> { self.ptr.cast() }
+    pub fn as_untyped(self) -> UntypedPtr { unsafe { self.cast() } }
     pub fn as_ref(&self) -> &T { unsafe { self.ptr.as_ref() } }
     pub fn as_mut(&mut self) -> &mut T { unsafe { self.ptr.as_mut() } }
 }
 
+impl AllocObject for RawPtr {}
 impl<T: Sized> Clone for RawPtr<T> {
     fn clone(&self) -> RawPtr<T> { RawPtr { ptr: self.ptr } }
 }

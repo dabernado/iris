@@ -19,9 +19,7 @@ pub struct Function {
     fractions: Array<UntypedPtr>,
     code: Array<Opcode>,
 }
-impl AllocObject<ITypeId> for Function {
-    const TYPE_ID: ITypeId = ITypeId::Func;
-}
+impl AllocObject for Function {}
 
 impl Function {
     pub fn alloc<'guard>(
@@ -55,9 +53,7 @@ pub struct Continuation {
     ip: Cell<ArraySize>,
     direction: Cell<bool>,
 }
-impl AllocObject<ITypeId> for Continuation {
-    const TYPE_ID: ITypeId = ITypeId::Continuation;
-}
+impl AllocObject for Continuation {}
 
 impl Continuation {
     pub fn alloc<'guard>(

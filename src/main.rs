@@ -2,7 +2,7 @@
 mod alloc;
 mod safeptr;
 mod data;
-mod machine;
+mod types;
 mod memory;
 mod array;
 mod bytecode;

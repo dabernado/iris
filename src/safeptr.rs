@@ -3,17 +3,11 @@ use std::fmt;
 use std::ops::Deref;
 use std::ptr::NonNull;
 
-use crate::alloc::api::{RawPtr, AllocObject};
+use crate::alloc::api::{RawPtr, UntypedPtr, AllocObject};
 use crate::bytecode::Function;
 use crate::data::{ITypeId, Unit};
 use crate::memory::MutatorScope;
 use crate::printer::Print;
-
-// Pointer Data Types
-pub type UntypedPtr = NonNull<()>;
-impl AllocObject<ITypeId> for UntypedPtr {
-    const TYPE_ID: ITypeId = ITypeId::Ptr;
-}
 
 pub type FuncPtr = CellPtr<Function>;
 
@@ -84,6 +78,10 @@ impl<T: Sized> AllocObject<ITypeId> for CellPtr<T> {
 impl<T: Sized> CellPtr<T> {
     pub fn new_with(source: ScopedPtr<T>) -> CellPtr<T> {
         CellPtr { inner: Cell::new(RawPtr::new(source.value)) }
+    }
+
+    pub fn new_with(source: RawPtr<T>) -> CellPtr<T> {
+        CellPtr { inner: Cell::new(source) }
     }
 
     pub fn new_unit() -> CellPtr<Unit> {
