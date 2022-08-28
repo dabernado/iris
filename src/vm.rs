@@ -114,7 +114,15 @@ impl Thread {
                 asslp(&cast_ptr, mem);
                 self.data.set(cast_ptr.as_untyped(mem));
             },
-            OP_SWAPS | OP_SWAPS_R => {},
+            OP_SWAPS | OP_SWAPS_R => {
+                let div = decode_i(&op);
+                let cast_ptr = unsafe {
+                    data.cast::<Sum<()>>(mem)
+                };
+
+                swaps(&cast_ptr, div, mem);
+                self.data.set(cast_ptr.as_untyped(mem));
+            },
             OP_ASSRS => {},
             OP_ASSLS => {},
             OP_DIST => {},

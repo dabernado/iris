@@ -5,7 +5,7 @@ use crate::memory::{MutatorScope, MutatorView};
 use crate::safeptr::{CellPtr, ScopedPtr};
 
 /*
- * Functions
+ * I-Type
  */
 
 pub fn zeroi<'guard, T>(val: ScopedPtr<'guard, T>) -> Sum<T>
@@ -21,6 +21,19 @@ pub fn zeroe<'guard, T>(
     where T: AllocObject
 {
     val.data().get(guard)
+}
+
+pub fn swaps<'guard>(
+    val: &ScopedPtr<'guard, Sum<()>>,
+    div: Nat,
+    guard: &'guard dyn MutatorScope
+) {
+    let tag = val.tag();
+    if tag <= div {
+        val.set_tag(tag + div);
+    } else {
+        val.set_tag(tag - div);
+    }
 }
 
 pub fn uniti<'guard, T>(val: ScopedPtr<'guard, T>) -> Product<Unit, T>
@@ -84,11 +97,3 @@ pub fn asslp<'guard>(
     val.fst().set(inner.as_untyped(guard));
     val.snd().set(c);
 }
-
-/*
-pub fn swaps<'guard>(
-    val: &ScopedPtr<'guard, Sum<(), ()>>,
-    guard: &'guard dyn MutatorScope
-) {
-}
-*/

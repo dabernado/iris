@@ -12,6 +12,10 @@ pub const OP_ID: u8 = 0;
 pub const OP_ID_R: u8 = !OP_ID ^ (OP_MASK as u8);
 pub const OP_ZEROI: u8 = 1;
 pub const OP_ZEROE: u8 = !OP_ZEROI ^ (OP_MASK as u8);
+pub const OP_SWAPS: u8 = 2;
+pub const OP_SWAPS_R: u8 = !OP_SWAPS ^ (OP_MASK as u8);
+pub const OP_ASSRS: u8 = 3;
+pub const OP_ASSLS: u8 = !OP_ASSRS ^ (OP_MASK as u8);
 pub const OP_UNITI: u8 = 4;
 pub const OP_UNITE: u8 = !OP_UNITI ^ (OP_MASK as u8);
 pub const OP_SWAPP: u8 = 5;
@@ -60,12 +64,6 @@ pub const OP_SUMC: u8 = 20;
 pub const OP_SUMC_R: u8 = !OP_SUMC ^ (OP_MASK as u8);
 pub const OP_PRODC: u8 = 21;
 pub const OP_PRODC_R: u8 = !OP_PRODC ^ (OP_MASK as u8);
-
-// S-Type
-pub const OP_SWAPS: u8 = 2;
-pub const OP_SWAPS_R: u8 = !OP_SWAPS ^ (OP_MASK as u8);
-pub const OP_ASSRS: u8 = 3;
-pub const OP_ASSLS: u8 = !OP_ASSRS ^ (OP_MASK as u8);
 
 // Maximums/Minimums
 pub const MAX_ITYPE_FIELD: u32 = 67108864;

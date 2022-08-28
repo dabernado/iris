@@ -111,6 +111,7 @@ impl<O: AllocObject> Sum<O> {
         self.tag.set(tag);
     }
 
+    pub fn tag(&self) -> Nat { self.tag.get()}
     pub fn data(&self) -> &CellPtr<O> { &self.data }
 }
 

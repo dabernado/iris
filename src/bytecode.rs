@@ -133,14 +133,6 @@ pub fn decode_c(instr: &Opcode) -> (u16, u16) {
     )
 }
 
-pub fn decode_s(instr: &Opcode) -> (u8, u8, u8) {
-    (
-        ((instr & S_TOTAL_MASK) >> 6) as u8,
-        ((instr & S_DIV_MASK) >> 14) as u8,
-        ((instr & S_OFF_MASK) >> 22) as u8
-    )
-}
-
 // Encoding Functions
 pub fn encode_i(op: u8, imm: u32) -> Result<Opcode, RuntimeError> {
     // check if within bounds
@@ -161,17 +153,6 @@ pub fn encode_c(op: u8, off: u16, val: u16) -> Result<Opcode, RuntimeError> {
     } else {
         Err(RuntimeError::new(ErrorKind::IntOverflow))
     }
-}
-
-pub fn encode_s(op: u8, total: u8, div: u8, off: u8) -> Opcode {
-    let padded_total = (total as u32) << 6;
-    let padded_div = (div as u32) << 14;
-    let padded_off = (off as u32) << 22;
-
-    (((0 ^ padded_off)
-      ^ padded_div)
-     ^ padded_total)
-    ^ (op as u32)
 }
 
 #[cfg(test)]
@@ -198,13 +179,5 @@ mod test {
 
         assert!(OP_SUMC == get_opcode(&instr));
         assert!((4, 2) == decode_c(&instr));
-    }
-
-    #[test]
-    fn test_stype() {
-        let instr = encode_s(OP_SWAPS, 4, 2, 0);
-
-        assert!(OP_SWAPS == get_opcode(&instr));
-        assert!((4, 2, 0) == decode_s(&instr));
     }
 }

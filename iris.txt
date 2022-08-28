@@ -231,17 +231,3 @@ function: data0 <-> data1		-- function definition
  * value represents the division value for the type. For EXPF/COLF,
  * it is the size of the new value in bytes.
  */
-
-/*
- * S-Type
- *
- * 31 30 29	 22 21     14 13      6 5	 0
- * [ 0 ] [ offset ] [  div  ] [ total ] [ opcode ]
- *  2b       8b	       8b	 8b	    6b
- *
- * The only instructions with the S-Type encoding are ASSRS/ASSLS
- * and SWAPS, which contain the total number of possible variants
- * for a given type, the division point between variants on the
- * left and right hand side, and an offset value, each represented
- * as an 8-bit integer. The last two bits are used as padding.
- */
