@@ -24,10 +24,11 @@ pub fn zeroe<'guard, T>(
 }
 
 pub fn swaps<'guard>(
-    val: &ScopedPtr<'guard, Sum<()>>,
+    val: &ScopedPtr<'guard, Sum<T>>,
     div: Nat,
     guard: &'guard dyn MutatorScope
-) {
+) where T: AllocObject
+{
     let tag = val.tag();
     if tag <= div {
         val.set_tag(tag + div);
@@ -96,4 +97,12 @@ pub fn asslp<'guard>(
     inner.snd().set(b);
     val.fst().set(inner.as_untyped(guard));
     val.snd().set(c);
+}
+
+pub fn dist<'guard, T>(
+    val: ScopedPtr<'guard, Product<Sum<()>, ()>>,
+    div: Nat
+    mem: &'guard MutatorView
+) -> Result<Sum<Product<(), ()>>, RuntimeError>
+{
 }

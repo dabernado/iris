@@ -3,11 +3,6 @@
 1	:= unit type
 nat	:= unsigned integer
 
-The following "primitive" types are constructed in IRIS as such, but use unique representations:
-
-bool			:= (1 + 1)
-int (signed integer)	:= (nat + nat)
-
 // Functions
 ID <-> ID		: ?a <-> ?a
 /*

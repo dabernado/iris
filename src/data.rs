@@ -43,9 +43,7 @@ impl Print for Nat {
 
 /*
  * int is implemented in IRIS via the
- * nat + nat type, but is represented
- * as a normal signed integer
- */
+ * nat + nat type
 pub type Int = i32;
 impl AllocObject for Int {}
 
@@ -56,12 +54,11 @@ impl Print for Int {
         f: &mut fmt::Formatter,
     ) -> fmt::Result { write!(f, "{}", self) }
 }
+*/
 
 /*
  * bool is implemented in IRIS via the
- * 1 + 1 type, but is represented as
- * a traditional boolean
- */
+ * 1 + 1 type
 pub type Bool = bool;
 impl AllocObject for Bool {}
 
@@ -72,6 +69,7 @@ impl Print for Bool {
         f: &mut fmt::Formatter,
     ) -> fmt::Result { write!(f, "{}", self) }
 }
+*/
 
 /* Algebraic Data Types */
 pub struct Fraction<O: AllocObject>(CellPtr<O>);
@@ -121,7 +119,7 @@ impl<O: AllocObject + Print> Print for Sum<O> {
         guard: &'guard dyn MutatorScope,
         f: &mut fmt::Formatter,
     ) -> fmt::Result {
-        write!(f, "e{} ", self.tag.get());
+        write!(f, "e{} ", self.tag.get())?;
         write!(f, "({})", self.data.get(guard))
     }
 }

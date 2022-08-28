@@ -317,7 +317,7 @@ impl <T: Sized + Clone> StackContainer<T> for Array<T> {
         }
 
         self.length.set(length + 1);
-        self.write(mem, length, item);
+        self.write(mem, length, item)?;
         Ok(())
     }
 

@@ -1,6 +1,6 @@
 use crate::alloc::api::AllocObject;
 use crate::array::{Array, ArraySize};
-use crate::bytecode::{Function, Continuation, get_opcode};
+use crate::bytecode::{Function, Continuation, get_opcode, decode_i};
 use crate::constants::*;
 use crate::context::{Context, ContextStack};
 use crate::data::*;
@@ -123,9 +123,18 @@ impl Thread {
                 swaps(&cast_ptr, div, mem);
                 self.data.set(cast_ptr.as_untyped(mem));
             },
-            OP_ASSRS => {},
-            OP_ASSLS => {},
-            OP_DIST => {},
+            OP_ASSRS | OP_ASSLS => {},
+            OP_DIST => {
+                let cast_ptr = unsafe {
+                    data.cast::<Product<Sum<()>, ()>>(mem)
+                };
+
+                let sum = mem.alloc(dist(cast_ptr, mem)?)?;
+                self.data.set(sum.as_untyped(mem));
+                
+                mem.dealloc(cast_ptr.fst())?;
+                mem.dealloc(data)?;
+            },
             OP_FACT => {},
             OP_EXPN => {},
             OP_COLN => {},
@@ -137,14 +146,6 @@ impl Thread {
             OP_DIV => {},
             OP_MULI => {},
             OP_DIVI => {},
-            OP_UADD => {},
-            OP_USUB => {},
-            OP_UADDI => {},
-            OP_USUBI => {},
-            OP_UMUL => {},
-            OP_UDIV => {},
-            OP_UMULI => {},
-            OP_UDIVI => {},
             OP_XOR | OP_XOR_R => {},
             OP_XORI | OP_XORI_R => {},
             OP_CSWAP | OP_CSWAP_R => {},
