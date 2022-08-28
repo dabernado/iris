@@ -70,8 +70,17 @@ impl Thread {
 
         match opcode {
             OP_ID | OP_ID_R => {},
-            OP_ZEROI => {},
-            OP_ZEROE => {},
+            OP_ZEROI => {
+                let new_data = mem.alloc(zeroi(data))?;
+                self.data.set(new_data.as_untyped(mem));
+            },
+            OP_ZEROE => {
+                let cast_ptr = unsafe { data.cast::<Sum<()>>(mem) };
+                let inner = zeroe(cast_ptr, mem);
+
+                self.data.set(inner.as_untyped(mem));
+                mem.dealloc(data)?;
+            },
             OP_UNITI => {
                 let new_data = mem.alloc(uniti(data))?;
                 self.data.set(new_data.as_untyped(mem));

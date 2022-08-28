@@ -1,4 +1,5 @@
 use std::fmt;
+use std::cell::Cell;
 
 use crate::alloc::api::AllocObject;
 use crate::memory::MutatorScope;
@@ -95,22 +96,32 @@ impl<O: AllocObject + Print> Print for Negative<O> {
     ) -> fmt::Result { write!(f, "-{}", self.0.get(guard)) }
 }
 
-pub enum Sum<L: AllocObject, R: AllocObject> {
-    Left(CellPtr<L>),
-    Right(CellPtr<R>),
+pub struct Sum<O: AllocObject> {
+    tag: Cell<Nat>,
+    data: CellPtr<O>,
 }
-impl<L: AllocObject, R: AllocObject> AllocObject for Sum<L, R> {}
+impl<O: AllocObject> AllocObject for Sum<O> {}
 
-impl<L: AllocObject + Print, R: AllocObject + Print> Print for Sum<L, R> {
+impl<O: AllocObject> Sum<O> {
+    pub fn new(tag: Nat, data: CellPtr<O>) -> Sum<O> {
+        Sum { tag: Cell::new(tag), data }
+    }
+
+    pub fn set_tag(&self, tag: Nat) {
+        self.tag.set(tag);
+    }
+
+    pub fn data(&self) -> &CellPtr<O> { &self.data }
+}
+
+impl<O: AllocObject + Print> Print for Sum<O> {
     fn print<'guard>(
         &self,
         guard: &'guard dyn MutatorScope,
         f: &mut fmt::Formatter,
     ) -> fmt::Result {
-        match self {
-            Sum::Left(ptr) => write!(f, "left {}", ptr.get(guard)),
-            Sum::Right(ptr) => write!(f, "right {}", ptr.get(guard)),
-        }
+        write!(f, "e{} ", self.tag.get());
+        write!(f, "({})", self.data.get(guard))
     }
 }
 

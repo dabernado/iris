@@ -8,27 +8,20 @@ use crate::safeptr::{CellPtr, ScopedPtr};
  * Functions
  */
 
-/*
-pub fn zeroi<'guard, T>(val: ScopedPtr<'guard, T>) -> Sum<Zero, T>
+pub fn zeroi<'guard, T>(val: ScopedPtr<'guard, T>) -> Sum<T>
     where T: AllocObject
 {
-    Sum::Right(CellPtr::new_with(val))
+    Sum::new(1, CellPtr::new_with(val))
 }
-*/
 
-/*
 pub fn zeroe<'guard, T>(
-    val: ScopedPtr<'guard, Sum<Zero, T>>,
+    val: ScopedPtr<'guard, Sum<T>>,
     guard: &'guard dyn MutatorScope
-) -> Result<ScopedPtr<'guard, T>, RuntimeError>
+) -> ScopedPtr<'guard, T>
     where T: AllocObject
 {
-    match val.as_ref(guard) {
-        Sum::Right(ptr) => Ok(ptr.get(guard)),
-        _ => Err(RuntimeError::new(ErrorKind::TypeError))
-    }
+    val.data().get(guard)
 }
-*/
 
 pub fn uniti<'guard, T>(val: ScopedPtr<'guard, T>) -> Product<Unit, T>
     where T: AllocObject
