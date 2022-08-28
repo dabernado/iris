@@ -70,22 +70,41 @@ impl Thread {
 
         match opcode {
             OP_ID | OP_ID_R => {},
-            OP_ZEROI => {
-                let new_data = mem.alloc(zeroi(data))?;
+            OP_ZEROI => {},
+            OP_ZEROE => {},
+            OP_UNITI => {
+                let new_data = mem.alloc(uniti(data))?;
                 self.data.set(new_data.as_untyped(mem));
             },
-            OP_ZEROE => {
-                let cast_ptr = unsafe { data.cast::<Sum<Zero, ()>>(mem) };
-                let inner = zeroe(cast_ptr, mem)?;
+            OP_UNITE => {
+                let cast_ptr = unsafe { data.cast::<Product<Unit, ()>>(mem) };
+                let inner = unite(cast_ptr, mem)?;
 
                 self.data.set(inner.as_untyped(mem));
                 mem.dealloc(data)?;
             },
-            OP_UNITI => {},
-            OP_UNITE => {},
-            OP_SWAPP | OP_SWAPP_R => {},
-            OP_ASSRP => {},
-            OP_ASSLP => {},
+            OP_SWAPP | OP_SWAPP_R => {
+                let cast_ptr = unsafe { data.cast::<Product<(), ()>>(mem) };
+
+                swapp(&cast_ptr, mem);
+                self.data.set(cast_ptr.as_untyped(mem));
+            },
+            OP_ASSRP => {
+                let cast_ptr = unsafe {
+                    data.cast::<Product<(), ()>>(mem)
+                };
+
+                assrp(&cast_ptr, mem);
+                self.data.set(cast_ptr.as_untyped(mem));
+            },
+            OP_ASSLP => {
+                let cast_ptr = unsafe {
+                    data.cast::<Product<(), ()>>(mem)
+                };
+
+                asslp(&cast_ptr, mem);
+                self.data.set(cast_ptr.as_untyped(mem));
+            },
             OP_SWAPS | OP_SWAPS_R => {},
             OP_ASSRS => {},
             OP_ASSLS => {},

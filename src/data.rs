@@ -120,6 +120,15 @@ pub struct Product<F: AllocObject, S: AllocObject> {
 }
 impl<F: AllocObject, S: AllocObject> AllocObject for Product<F, S> {}
 
+impl<F: AllocObject, S: AllocObject> Product<F, S> {
+    pub fn new(fst: CellPtr<F>, snd: CellPtr<S>) -> Product<F, S> {
+        Product { fst, snd }
+    }
+
+    pub fn fst(&self) -> &CellPtr<F> { &self.fst }
+    pub fn snd(&self) -> &CellPtr<S> { &self.snd }
+}
+
 impl<F: AllocObject + Print, S: AllocObject + Print> Print for Product<F, S> {
     fn print<'guard>(
         &self,

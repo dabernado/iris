@@ -27,7 +27,7 @@ SWAPS <-> SWAPS		: (?a + ?b) <-> (?b + ?a)
  * o = offset (usually 0 unless type is wrapped by another sum type)
  */
 
-ASSRS <-> ASSLS		: (?a + (?b + ?c)) <-> ((?a + ?b) + ?c)
+ASSRS <-> ASSLS		: ((?a + ?b) + ?c) <-> (?a + (?b + ?c))
 /*
  * Associate inner sum with types on the right or left
  * n = number of total variants in the type
@@ -35,7 +35,7 @@ ASSRS <-> ASSLS		: (?a + (?b + ?c)) <-> ((?a + ?b) + ?c)
  * o = offset (usually 0 unless type is wrapped by another sum type)
  */
 
-UNITI <-> UNITE		: ?a <-> (?a * 1)
+UNITI <-> UNITE		: ?a <-> (1 * ?a)
 /*
  * Introduce/eliminate product with unit type
  */
@@ -45,7 +45,7 @@ SWAPP <-> SWAPP 	: (?a * ?b) <-> (?b * ?a)
  * Swap the first and second values
  */
 
-ASSRP <-> ASSLP		: (?a * (?b * ?c)) <-> ((?a * ?b) * ?c)
+ASSRP <-> ASSLP		: ((?a * ?b) * ?c) <-> (?a * (?b * ?c))
 /*
  * Associate inner product with types on the right or left
  */

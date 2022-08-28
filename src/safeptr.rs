@@ -91,7 +91,7 @@ impl<T: Sized> CellPtr<T> {
         CellPtr { inner: Cell::new(RawPtr::new(source.value)) }
     }
 
-    pub fn new_unit() -> CellPtr<Unit> {
+    pub fn new_unit() -> UntypedCellPtr {
         CellPtr { inner: Cell::new(RawPtr::<()>::new_unit()) }
     }
 
