@@ -23,12 +23,11 @@ pub fn zeroe<'guard, T>(
     val.data().get(guard)
 }
 
-pub fn swaps<'guard>(
+pub fn swaps<'guard, T: AllocObject>(
     val: &ScopedPtr<'guard, Sum<T>>,
     div: Nat,
     guard: &'guard dyn MutatorScope
-) where T: AllocObject
-{
+) {
     let tag = val.tag();
     if tag <= div {
         val.set_tag(tag + div);
@@ -99,10 +98,71 @@ pub fn asslp<'guard>(
     val.snd().set(c);
 }
 
-pub fn dist<'guard, T>(
-    val: ScopedPtr<'guard, Product<Sum<()>, ()>>,
-    div: Nat
+pub fn dist<'guard, T: AllocObject>(
+    val: ScopedPtr<'guard, Product<Sum<T>, ()>>,
+    div: Nat,
     mem: &'guard MutatorView
-) -> Result<Sum<Product<(), ()>>, RuntimeError>
+) -> Result<ScopedPtr<'guard, Sum<Product<(), ()>>>, RuntimeError>
 {
+    let sum = val.fst().get(mem);
+    let snd = val.snd().get(mem);
+    let tag = sum.tag();
+
+    if div == 0 {
+        let new_sum = unsafe {
+            sum.cast::<Sum<Product<(), ()>>>(mem)
+        };
+        let new_val = unsafe {
+            val.cast::<Product<(), ()>>(mem)
+        };
+        
+        new_val.fst().set(sum.data().get(mem).as_untyped(mem));
+        new_sum.data().set(new_val);
+
+        Ok(new_sum)
+    } else if tag < div {
+        val.fst().set(sum);
+        let new_sum = mem.alloc(Sum::new(0, CellPtr::new_with(val)))?;
+
+        Ok(unsafe {
+            new_sum.cast::<Sum<Product<(), ()>>>(mem)
+        })
+    } else {
+        sum.set_tag(tag - div);
+        val.fst().set(sum);
+        let new_sum = mem.alloc(Sum::new(1, CellPtr::new_with(val)))?;
+
+        Ok(unsafe {
+            new_sum.cast::<Sum<Product<(), ()>>>(mem)
+        })
+    }
+}
+
+pub fn fact<'guard>(
+    val: ScopedPtr<'guard, Sum<Product<(), ()>>>,
+    div: Nat,
+    mem: &'guard MutatorView
+) -> Result<ScopedPtr<'guard, Product<(), ()>>, RuntimeError>
+{
+    let inner = val.data().get(mem);
+    let fst = inner.fst().get(mem);
+    let snd = inner.snd().get(mem);
+    let tag = val.tag();
+    
+    if div == 0 {
+        val.data().set(unsafe { fst.cast::<Product<(), ()>>(mem) });
+        inner.fst().set(val.as_untyped(mem));
+
+        Ok(inner)
+    } else if tag == 0 {
+        mem.dealloc(val)?;
+
+        Ok(inner)
+    } else {
+        let cast_fst = unsafe { fst.cast::<Sum<()>>(mem) };
+        cast_fst.set_tag(cast_fst.tag() + div);
+        mem.dealloc(val)?;
+
+        Ok(inner)
+    }
 }

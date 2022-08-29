@@ -79,7 +79,7 @@ impl Thread {
                 let inner = zeroe(cast_ptr, mem);
 
                 self.data.set(inner.as_untyped(mem));
-                mem.dealloc(data)?;
+                mem.dealloc(cast_ptr)?;
             },
             OP_UNITI => {
                 let new_data = mem.alloc(uniti(data))?;
@@ -90,7 +90,7 @@ impl Thread {
                 let inner = unite(cast_ptr, mem)?;
 
                 self.data.set(inner.as_untyped(mem));
-                mem.dealloc(data)?;
+                mem.dealloc(cast_ptr)?;
             },
             OP_SWAPP | OP_SWAPP_R => {
                 let cast_ptr = unsafe { data.cast::<Product<(), ()>>(mem) };
@@ -125,17 +125,23 @@ impl Thread {
             },
             OP_ASSRS | OP_ASSLS => {},
             OP_DIST => {
+                let div = decode_i(&op);
                 let cast_ptr = unsafe {
                     data.cast::<Product<Sum<()>, ()>>(mem)
                 };
 
-                let sum = mem.alloc(dist(cast_ptr, mem)?)?;
+                let sum = dist(cast_ptr, div, mem)?;
                 self.data.set(sum.as_untyped(mem));
-                
-                mem.dealloc(cast_ptr.fst())?;
-                mem.dealloc(data)?;
             },
-            OP_FACT => {},
+            OP_FACT => {
+                let div = decode_i(&op);
+                let cast_ptr = unsafe {
+                    data.cast::<Sum<Product<(), ()>>>(mem)
+                };
+
+                let prod = fact(cast_ptr, div, mem)?;
+                self.data.set(prod.as_untyped(mem));
+            },
             OP_EXPN => {},
             OP_COLN => {},
             OP_ADD => {},

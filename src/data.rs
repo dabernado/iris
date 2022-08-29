@@ -44,6 +44,7 @@ impl Print for Nat {
 /*
  * int is implemented in IRIS via the
  * nat + nat type
+*/
 pub type Int = i32;
 impl AllocObject for Int {}
 
@@ -54,11 +55,11 @@ impl Print for Int {
         f: &mut fmt::Formatter,
     ) -> fmt::Result { write!(f, "{}", self) }
 }
-*/
 
 /*
  * bool is implemented in IRIS via the
  * 1 + 1 type
+*/
 pub type Bool = bool;
 impl AllocObject for Bool {}
 
@@ -69,7 +70,6 @@ impl Print for Bool {
         f: &mut fmt::Formatter,
     ) -> fmt::Result { write!(f, "{}", self) }
 }
-*/
 
 /* Algebraic Data Types */
 pub struct Fraction<O: AllocObject>(CellPtr<O>);
