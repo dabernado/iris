@@ -31,6 +31,7 @@ pub enum ErrorKind {
     MutableBorrowError,
     TypeError,
     NullPointer,
+    ExpectedZero,
 }
 
 #[derive(Debug, PartialEq)]
@@ -102,6 +103,7 @@ impl fmt::Display for RuntimeError {
             ErrorKind::BoundsError => write!(f, "Indexing bounds error"),
             ErrorKind::TypeError => write!(f, "Type error"),
             ErrorKind::NullPointer => write!(f, "Null pointer error"),
+            ErrorKind::ExpectedZero => write!(f, "Expected value of type 0"),
             ErrorKind::MutableBorrowError => write!(f,
                 "Attempted to modify container that is already mutably borrowed"
             ),

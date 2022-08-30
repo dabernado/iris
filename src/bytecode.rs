@@ -112,6 +112,7 @@ impl Continuation {
 
     pub fn ip(&self) -> ArraySize { self.ip.get() }
     pub fn direction(&self) -> bool { self.direction.get() }
+    pub fn reverse(&self) { self.direction.set(!self.direction()) }
     pub fn current_func<'guard>(
         &self,
         guard: &'guard dyn MutatorScope,

@@ -49,6 +49,9 @@ DIST <-> FACT		: ((?a + ?b) * ?c) <-> ((?a * ?c) + (?b * ?c))
 /*
  * Distribute inner sum over both product values/Factor inner
  * sum into first value
+ *
+ * d = first variant value of the right hand of the type, or 0
+ * if there are only two types
  */
 
 EXPN <-> COLN		: 0 <-> (-?a + ?a)

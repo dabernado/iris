@@ -86,6 +86,10 @@ impl<O: AllocObject + Print> Print for Fraction<O> {
 pub struct Negative<O: AllocObject>(CellPtr<O>);
 impl<O: AllocObject> AllocObject for Negative<O> {}
 
+impl<O: AllocObject> Negative<O> {
+    pub fn data(&self) -> &CellPtr<O> { &self.0 }
+}
+
 impl<O: AllocObject + Print> Print for Negative<O> {
     fn print<'guard>(
         &self,

@@ -166,3 +166,24 @@ pub fn fact<'guard>(
         Ok(inner)
     }
 }
+
+pub fn expn<'guard>(
+    val: ScopedPtr<'guard, Sum<()>>,
+    div: Nat,
+    mem: &'guard MutatorView
+) -> Result<ScopedPtr<'guard, Sum<()>>, RuntimeError>
+{
+    if val.tag() == 0 {
+        let cast_val = unsafe { val.cast::<Sum<Negative<()>>>(mem) };
+        let inner = cast_val.data().get(mem)
+            .data().get(mem);
+
+        if div == 0 {
+            val.data.set(inner);
+            val.set_tag(1);
+            Ok(val)
+        } else {
+        }
+    } else {
+    }
+}

@@ -142,8 +142,32 @@ impl Thread {
                 let prod = fact(cast_ptr, div, mem)?;
                 self.data.set(prod.as_untyped(mem));
             },
-            OP_EXPN => {},
-            OP_COLN => {},
+            OP_EXPN => {
+                if cont.direction() {
+                    let cast_ptr = unsafe {
+                        data.cast::<Sum<()>>(mem)
+                    };
+
+                    let new = expn(cast_ptr, mem)?;
+                    self.data.set(new.as_untyped(mem));
+                    cont.reverse();
+                } else {
+                    Err(RuntimeError::new(ErrorKind::ExpectedZero))
+                }
+            },
+            OP_COLN => {
+                if !cont.direction() {
+                    let cast_ptr = unsafe {
+                        data.cast::<Sum<()>>(mem)
+                    };
+
+                    let new = coln(cast_ptr, mem)?;
+                    self.data.set(new.as_untyped(mem));
+                    cont.reverse();
+                } else {
+                    Err(RuntimeError::new(ErrorKind::ExpectedZero))
+                }
+            },
             OP_ADD => {},
             OP_SUB => {},
             OP_ADDI => {},
