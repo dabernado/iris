@@ -7,9 +7,8 @@ use crate::memory::{MutatorScope, MutatorView};
 use crate::safeptr::{CellPtr, ScopedPtr};
 
 /*
- * I-Type
+ * Functions
  */
-
 pub fn zeroi<'guard, T>(val: ScopedPtr<'guard, T>) -> Sum<T>
     where T: AllocObject
 {
@@ -211,6 +210,9 @@ pub fn expn<'guard>(
     }
 }
 
+/*
+ * Arithmetic 
+ */
 pub fn add<'guard>(
     val: &ScopedPtr<'guard, Product<Nat, Nat>>,
     guard: &'guard dyn MutatorScope
@@ -333,4 +335,65 @@ pub fn divi<'guard>(
     let val_mut = val_raw.as_mut();
 
     *val_mut = num / operand;
+}
+
+pub fn xor<'guard>(
+    val: &ScopedPtr<'guard, Product<Nat, Nat>>,
+    guard: &'guard dyn MutatorScope
+) {
+    let fst = val.fst().get(guard).as_ref(guard);
+    let snd = val.snd().get(guard).as_ref(guard);
+    let mut fst_raw = val.fst().get(guard).as_rawptr(guard);
+    let fst_mut = fst_raw.as_mut();
+
+    *fst_mut = fst ^ snd;
+}
+
+pub fn xori<'guard>(
+    val: &ScopedPtr<'guard, Nat>,
+    operand: Nat,
+    guard: &'guard dyn MutatorScope
+) {
+    let num = val.as_ref(guard);
+    let mut val_raw = val.as_rawptr(guard);
+    let val_mut = val_raw.as_mut();
+
+    *val_mut = num ^ operand;
+}
+
+pub fn cswap<'guard>(
+    val: &ScopedPtr<'guard, Product<Product<Nat, Nat>, Nat>>,
+    guard: &'guard dyn MutatorScope
+) {
+    let inner = val.fst().get(guard).as_ref(guard);
+    let a = inner.fst().get(guard).as_ref(guard);
+    let b = inner.snd().get(guard).as_ref(guard);
+    let c = val.snd().get(guard).as_ref(guard);
+    
+    let mut a_raw = inner.fst().get(guard).as_rawptr(guard);
+    let a_mut = a_raw.as_mut();
+    let mut b_raw = inner.snd().get(guard).as_rawptr(guard);
+    let b_mut = b_raw.as_mut();
+
+    let s = (a ^ b) & c;
+    *a_mut = a ^ s;
+    *b_mut = b ^ s;
+}
+
+pub fn cswapi<'guard>(
+    val: &ScopedPtr<'guard, Product<Nat, Nat>>,
+    operand: Nat,
+    guard: &'guard dyn MutatorScope
+) {
+    let fst = val.fst().get(guard).as_ref(guard);
+    let snd = val.snd().get(guard).as_ref(guard);
+    
+    let mut fst_raw = val.fst().get(guard).as_rawptr(guard);
+    let fst_mut = fst_raw.as_mut();
+    let mut snd_raw = val.snd().get(guard).as_rawptr(guard);
+    let snd_mut = snd_raw.as_mut();
+
+    let s = (fst ^ snd) & operand;
+    *fst_mut = fst ^ s;
+    *snd_mut = snd ^ s;
 }

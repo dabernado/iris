@@ -204,10 +204,26 @@ impl Thread {
                 let cast_ptr = unsafe { data.cast::<Nat>(mem) };
                 divi(&cast_ptr, operand, mem);
             },
-            OP_XOR | OP_XOR_R => {},
-            OP_XORI | OP_XORI_R => {},
-            OP_CSWAP | OP_CSWAP_R => {},
-            OP_CSWAPI | OP_CSWAPI_R => {},
+            OP_XOR | OP_XOR_R => {
+                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
+                xor(&cast_ptr, mem);
+            },
+            OP_XORI | OP_XORI_R => {
+                let operand = decode_i(&op);
+                let cast_ptr = unsafe { data.cast::<Nat>(mem) };
+                xori(&cast_ptr, operand, mem);
+            },
+            OP_CSWAP | OP_CSWAP_R => {
+                let cast_ptr = unsafe {
+                    data.cast::<Product<Product<Nat, Nat>, Nat>>(mem)
+                };
+                cswap(&cast_ptr, mem);
+            },
+            OP_CSWAPI | OP_CSWAPI_R => {
+                let operand = decode_i(&op);
+                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
+                cswapi(&cast_ptr, operand, mem);
+            },
             OP_RR => {},
             OP_RL => {},
             OP_RRI => {},
