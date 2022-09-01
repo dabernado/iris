@@ -179,11 +179,32 @@ pub fn expn<'guard>(
             .data().get(mem);
 
         if div == 0 {
-            val.data.set(inner);
+            val.data().set(inner);
             val.set_tag(1);
             Ok(val)
         } else {
+            let cast_inner = unsafe { inner.cast::<Sum<()>>(mem) };
+            let inner_tag = cast_inner.tag();
+            cast_inner.set_tag(inner_tag + div);
+
+            mem.dealloc(cast_val.data().get(mem))?;
+            mem.dealloc(cast_val)?;
+            Ok(cast_inner)
         }
     } else {
+        let inner = val.data().get(mem);
+
+        if div == 0 {
+            let neg = mem.alloc(Negative::new(CellPtr::new_with(inner)))?;
+            val.data().set(unsafe { neg.cast::<()>(mem) });
+
+            Ok(val)
+        } else {
+            val.set_tag(val.tag() - div);
+            let neg = mem.alloc(Negative::new(CellPtr::new_with(val)))?;
+            let sum = mem.alloc(Sum::new(0, CellPtr::new_with(neg)))?;
+
+            Ok(unsafe { sum.cast::<Sum<()>>(mem) })
+        }
     }
 }

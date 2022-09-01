@@ -143,29 +143,33 @@ impl Thread {
                 self.data.set(prod.as_untyped(mem));
             },
             OP_EXPN => {
+                let div = decode_i(&op);
                 if cont.direction() {
                     let cast_ptr = unsafe {
                         data.cast::<Sum<()>>(mem)
                     };
 
-                    let new = expn(cast_ptr, mem)?;
+                    let new = expn(cast_ptr, div, mem)?;
                     self.data.set(new.as_untyped(mem));
                     cont.reverse();
                 } else {
-                    Err(RuntimeError::new(ErrorKind::ExpectedZero))
+                    return Err(RuntimeError::new(ErrorKind::ExpectedZero));
                 }
             },
             OP_COLN => {
+                let div = decode_i(&op);
                 if !cont.direction() {
                     let cast_ptr = unsafe {
                         data.cast::<Sum<()>>(mem)
                     };
 
-                    let new = coln(cast_ptr, mem)?;
+                    // expn and coln are basically the same function, only
+                    // one runs forwards and the other backwards
+                    let new = expn(cast_ptr, div, mem)?;
                     self.data.set(new.as_untyped(mem));
                     cont.reverse();
                 } else {
-                    Err(RuntimeError::new(ErrorKind::ExpectedZero))
+                    return Err(RuntimeError::new(ErrorKind::ExpectedZero));
                 }
             },
             OP_ADD => {},

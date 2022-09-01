@@ -87,6 +87,10 @@ pub struct Negative<O: AllocObject>(CellPtr<O>);
 impl<O: AllocObject> AllocObject for Negative<O> {}
 
 impl<O: AllocObject> Negative<O> {
+    pub fn new(data: CellPtr<O>) -> Negative<O> { Negative(data) }
+}
+
+impl<O: AllocObject> Negative<O> {
     pub fn data(&self) -> &CellPtr<O> { &self.0 }
 }
 
