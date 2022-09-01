@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::alloc::api::AllocObject;
 use crate::data::*;
 use crate::error::{RuntimeError, ErrorKind};
@@ -206,5 +208,43 @@ pub fn expn<'guard>(
 
             Ok(unsafe { sum.cast::<Sum<()>>(mem) })
         }
+    }
+}
+
+pub fn add<'guard>(
+    val: &ScopedPtr<'guard, Product<Nat, Nat>>,
+    guard: &'guard dyn MutatorScope
+) -> Result<(), RuntimeError> {
+    let fst = val.fst().get(guard).as_ref(guard);
+    let snd = val.snd().get(guard).as_ref(guard);
+    
+    // checking for overflow
+    if fst + snd <= 4294967295 {
+        let mut fst_raw = val.fst().get(guard).as_rawptr(guard);
+        let fst_mut = fst_raw.as_mut();
+
+        *fst_mut = fst + snd;
+        Ok(())
+    } else {
+        Err(RuntimeError::new(ErrorKind::IntOverflow))
+    }
+}
+
+pub fn sub<'guard>(
+    val: &ScopedPtr<'guard, Product<Nat, Nat>>,
+    guard: &'guard dyn MutatorScope
+) -> Result<(), RuntimeError> {
+    let fst = val.fst().get(guard).as_ref(guard);
+    let snd = val.snd().get(guard).as_ref(guard);
+    
+    // checking for underflow
+    if snd <= fst {
+        let mut fst_raw = val.fst().get(guard).as_rawptr(guard);
+        let fst_mut = fst_raw.as_mut();
+
+        *fst_mut = fst + snd;
+        Ok(())
+    } else {
+        Err(RuntimeError::new(ErrorKind::IntOverflow))
     }
 }

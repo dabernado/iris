@@ -96,7 +96,7 @@ impl Thread {
                 let cast_ptr = unsafe { data.cast::<Product<(), ()>>(mem) };
 
                 swapp(&cast_ptr, mem);
-                self.data.set(cast_ptr.as_untyped(mem));
+                //self.data.set(cast_ptr.as_untyped(mem));
             },
             OP_ASSRP => {
                 let cast_ptr = unsafe {
@@ -104,7 +104,7 @@ impl Thread {
                 };
 
                 assrp(&cast_ptr, mem);
-                self.data.set(cast_ptr.as_untyped(mem));
+                //self.data.set(cast_ptr.as_untyped(mem));
             },
             OP_ASSLP => {
                 let cast_ptr = unsafe {
@@ -112,7 +112,7 @@ impl Thread {
                 };
 
                 asslp(&cast_ptr, mem);
-                self.data.set(cast_ptr.as_untyped(mem));
+                //self.data.set(cast_ptr.as_untyped(mem));
             },
             OP_SWAPS | OP_SWAPS_R => {
                 let div = decode_i(&op);
@@ -121,7 +121,7 @@ impl Thread {
                 };
 
                 swaps(&cast_ptr, div, mem);
-                self.data.set(cast_ptr.as_untyped(mem));
+                //self.data.set(cast_ptr.as_untyped(mem));
             },
             OP_ASSRS | OP_ASSLS => {},
             OP_DIST => {
@@ -172,8 +172,18 @@ impl Thread {
                     return Err(RuntimeError::new(ErrorKind::ExpectedZero));
                 }
             },
-            OP_ADD => {},
-            OP_SUB => {},
+            OP_ADD => {
+                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
+
+                add(&cast_ptr, mem)?;
+                //self.data.set(cast_ptr.as_untyped(mem));
+            },
+            OP_SUB => {
+                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
+
+                sub(&cast_ptr, mem)?;
+                //self.data.set(cast_ptr.as_untyped(mem));
+            },
             OP_ADDI => {},
             OP_SUBI => {},
             OP_MUL => {},
@@ -202,6 +212,7 @@ impl Thread {
             OP_COLF => {},
             OP_SUMC | OP_SUMC_R => {},
             OP_PRODC | OP_PRODC_R => {},
+            OP_COMD | OP_COMD_R => {},
             _ => {},
         }
 
