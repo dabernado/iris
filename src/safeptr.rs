@@ -5,9 +5,9 @@ use std::ops::Deref;
 
 use crate::alloc::api::{RawPtr, AllocObject};
 use crate::bytecode::Function;
-use crate::data::Unit;
 use crate::memory::MutatorScope;
 use crate::printer::Print;
+use crate::types::IType;
 
 pub type FuncPtr = CellPtr<Function>;
 
@@ -106,6 +106,23 @@ impl<T: Sized> CellPtr<T> {
 
 impl<T: Sized> From<ScopedPtr<'_, T>> for CellPtr<T> {
     fn from(ptr: ScopedPtr<T>) -> CellPtr<T> { CellPtr::new_with(ptr) }
+}
+
+/* Fraction Pointer */
+#[derive(Clone)]
+pub struct FractionPtr {
+    ptr: UntypedCellPtr,
+    i_type: IType
+}
+
+impl AllocObject for FractionPtr {}
+impl FractionPtr {
+    pub fn new(ptr: UntypedCellPtr, i_type: IType) -> Self {
+        FractionPtr { ptr, i_type }
+    }
+
+    pub fn ptr(&self) -> &UntypedCellPtr { &self.ptr }
+    pub fn i_type(&self) -> &IType { &self.i_type }
 }
 
 /* Scoped References */

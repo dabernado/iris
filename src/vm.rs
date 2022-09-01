@@ -7,7 +7,7 @@ use crate::data::*;
 use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::{MutatorView, MutatorScope};
 use crate::op::*;
-use crate::safeptr::{ScopedPtr, FuncPtr, CellPtr, UntypedCellPtr};
+use crate::safeptr::{ScopedPtr, FractionPtr, FuncPtr, CellPtr, UntypedCellPtr};
 
 #[derive(PartialEq)]
 pub enum EvalStatus {
@@ -50,7 +50,7 @@ impl Thread {
         &self,
         guard: &'guard dyn MutatorScope,
         index: ArraySize
-    ) -> Result<UntypedCellPtr, RuntimeError>
+    ) -> Result<FractionPtr, RuntimeError>
     {
         self.continuation.get(guard)
             .as_ref(guard)
@@ -168,6 +168,8 @@ impl Thread {
                     return Err(RuntimeError::new(ErrorKind::ExpectedZero));
                 }
             },
+            OP_EXPF => {},
+            OP_COLF => {},
             OP_ADD => {
                 let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
                 add(&cast_ptr, mem);
@@ -238,8 +240,6 @@ impl Thread {
             OP_DEVAL => {},
             OP_SYSC => {},
             OP_RSYSC => {},
-            OP_EXPF => {},
-            OP_COLF => {},
             OP_SUMC | OP_SUMC_R => {},
             OP_PRODC | OP_PRODC_R => {},
             OP_COMD | OP_COMD_R => {},

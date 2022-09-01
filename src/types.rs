@@ -1,4 +1,7 @@
+use crate::alloc::api::AllocObject;
+
 /* Type Enum */
+#[derive(Clone)]
 pub enum IType {
     Zero,
     Unit,
@@ -18,3 +21,5 @@ pub enum IType {
         output: Box<IType>,
     },
 }
+
+impl AllocObject for IType {}

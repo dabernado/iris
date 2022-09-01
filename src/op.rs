@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use crate::alloc::api::AllocObject;
 use crate::data::*;
 use crate::error::{RuntimeError, ErrorKind};
