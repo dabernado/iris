@@ -57,6 +57,9 @@ DIST <-> FACT		: ((?a + ?b) * ?c) <-> ((?a * ?c) + (?b * ?c))
 EXPN <-> COLN		: 0 <-> (-?a + ?a)
 /*
  * Reverse type sign and direction of execution
+ *
+ * d = first variant value of the right hand of the type, or 0
+ * if there are only two types
  */
 
 EXPF i <-> COLF i	: 1 <-> (1/?a * ?a)
@@ -126,7 +129,7 @@ RRI n <-> RLI n		: nat <-> nat
  * n = division value of sum type
  */
 
-+ // Division point of combinator
+-- // Division point of combinator
 
 }+
 /*
@@ -141,7 +144,7 @@ RRI n <-> RLI n		: nat <-> nat
  * i = offset to first instruction of second half of combinator
  */
 
-* // Division point of combinator
+-- // Division point of combinator
 
 }*
 /*
