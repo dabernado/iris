@@ -96,7 +96,6 @@ impl Thread {
                 let cast_ptr = unsafe { data.cast::<Product<(), ()>>(mem) };
 
                 swapp(&cast_ptr, mem);
-                //self.data.set(cast_ptr.as_untyped(mem));
             },
             OP_ASSRP => {
                 let cast_ptr = unsafe {
@@ -104,7 +103,6 @@ impl Thread {
                 };
 
                 assrp(&cast_ptr, mem);
-                //self.data.set(cast_ptr.as_untyped(mem));
             },
             OP_ASSLP => {
                 let cast_ptr = unsafe {
@@ -112,7 +110,6 @@ impl Thread {
                 };
 
                 asslp(&cast_ptr, mem);
-                //self.data.set(cast_ptr.as_untyped(mem));
             },
             OP_SWAPS | OP_SWAPS_R => {
                 let div = decode_i(&op);
@@ -121,7 +118,6 @@ impl Thread {
                 };
 
                 swaps(&cast_ptr, div, mem);
-                //self.data.set(cast_ptr.as_untyped(mem));
             },
             OP_ASSRS | OP_ASSLS => {},
             OP_DIST => {
@@ -174,22 +170,40 @@ impl Thread {
             },
             OP_ADD => {
                 let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
-
-                add(&cast_ptr, mem)?;
-                //self.data.set(cast_ptr.as_untyped(mem));
+                add(&cast_ptr, mem);
             },
             OP_SUB => {
                 let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
-
                 sub(&cast_ptr, mem)?;
-                //self.data.set(cast_ptr.as_untyped(mem));
             },
-            OP_ADDI => {},
-            OP_SUBI => {},
-            OP_MUL => {},
-            OP_DIV => {},
-            OP_MULI => {},
-            OP_DIVI => {},
+            OP_ADDI => {
+                let operand = decode_i(&op);
+                let cast_ptr = unsafe { data.cast::<Nat>(mem) };
+                addi(&cast_ptr, operand, mem);
+            },
+            OP_SUBI => {
+                let operand = decode_i(&op);
+                let cast_ptr = unsafe { data.cast::<Nat>(mem) };
+                subi(&cast_ptr, operand, mem)?;
+            },
+            OP_MUL => {
+                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
+                mul(&cast_ptr, mem)?;
+            },
+            OP_DIV => {
+                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
+                div(&cast_ptr, mem)?;
+            },
+            OP_MULI => {
+                let operand = decode_i(&op);
+                let cast_ptr = unsafe { data.cast::<Nat>(mem) };
+                muli(&cast_ptr, operand, mem);
+            },
+            OP_DIVI => {
+                let operand = decode_i(&op);
+                let cast_ptr = unsafe { data.cast::<Nat>(mem) };
+                divi(&cast_ptr, operand, mem);
+            },
             OP_XOR | OP_XOR_R => {},
             OP_XORI | OP_XORI_R => {},
             OP_CSWAP | OP_CSWAP_R => {},

@@ -88,7 +88,7 @@ MUL <-> DIV		: (nat * nat) <-> (nat * nat)
 
 MULI n <-> DIVI n	: nat <-> nat
 /*
- * Multiply/divide integer with/by constant
+ * Multiply/divide integer with/by non-zero constant
  */
 
 XOR <-> XOR		: (nat * nat) <-> (nat * nat)
