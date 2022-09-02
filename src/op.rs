@@ -1,8 +1,8 @@
-use crate::alloc::api::AllocObject;
+use crate::alloc::api::{AllocObject, RawPtr};
 use crate::data::*;
 use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::{MutatorScope, MutatorView};
-use crate::safeptr::{CellPtr, FractionPtr, ScopedPtr};
+use crate::safeptr::{CellPtr, ScopedPtr};
 
 /*
  * Functions
@@ -208,17 +208,14 @@ pub fn expn<'guard>(
     }
 }
 
-pub fn expf<'guard>(val: FractionPtr, mem: &'guard MutatorView)
+pub fn expf<'guard>(frac: &Fraction, mem: &'guard MutatorView)
     -> Result<Product<Fraction, ()>, RuntimeError>
 {
-    let frac = mem.alloc(
-        Fraction::new(val)
-    )?;
-    let new_val = mem.alloc_frac(val)?;
+    let val = mem.alloc_frac(frac)?;
     
     Ok(Product::new(
-        CellPtr::new_with(frac),
-        CellPtr::new_with(new_val)
+        CellPtr::new(RawPtr::new(frac)),
+        CellPtr::new_with(val)
     ))
 }
 

@@ -7,15 +7,16 @@ use crate::array::{
     Container, IndexedContainer, StackContainer
 };
 use crate::constants::*;
+use crate::data::Fraction;
 use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::{MutatorView, MutatorScope};
-use crate::safeptr::{CellPtr, ScopedPtr, FractionPtr, FuncPtr};
+use crate::safeptr::{CellPtr, ScopedPtr, FuncPtr};
 
 pub type Opcode = u32;
 
 #[derive(Clone)]
 pub struct Function {
-    fractions: Array<FractionPtr>,
+    fractions: Array<Fraction>,
     code: Array<Opcode>,
 }
 impl AllocObject for Function {}
@@ -25,7 +26,7 @@ impl Function {
         mem: &'guard MutatorView,
     ) -> Result<ScopedPtr<'guard, Function>, RuntimeError> {
         mem.alloc(Function {
-            fractions: Array::<FractionPtr>::new(),
+            fractions: Array::<Fraction>::new(),
             code: Array::<Opcode>::new(),
         })
     }
@@ -39,7 +40,7 @@ impl Function {
     pub fn push_frac<'guard>(
         &self,
         mem: &'guard MutatorView,
-        ptr: FractionPtr
+        ptr: Fraction
     ) -> Result<(), RuntimeError> { self.fractions.push(mem, ptr) }
 
     pub fn last_instruction(&self) -> ArraySize { self.code.length() - 1 }
@@ -102,8 +103,8 @@ impl Continuation {
         &self,
         guard: &'guard dyn MutatorScope,
         index: ArraySize,
-    ) -> Result<FractionPtr, RuntimeError> {
-        Ok(IndexedContainer::get(
+    ) -> Result<&Fraction, RuntimeError> {
+        Ok(&IndexedContainer::get(
                 &self.function.get(guard).fractions,
                 guard,
                 index,

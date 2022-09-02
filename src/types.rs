@@ -16,10 +16,6 @@ pub enum IType {
         fst: Box<IType>,
         snd: Box<IType>,
     },
-    Iso {
-        input: Box<IType>,
-        output: Box<IType>,
-    },
 }
 
 impl AllocObject for IType {}
