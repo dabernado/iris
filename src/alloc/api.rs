@@ -14,6 +14,9 @@ pub trait AllocRaw {
 
     fn dealloc<T>(&self, object: RawPtr<T>) -> Result<(), AllocError>
         where T: AllocObject;
+    fn dealloc_with_size<T>(&self, object: RawPtr<T>, size: usize)
+        -> Result<(), AllocError>
+        where T: AllocObject;
     fn dealloc_array(&self, object: RawPtr<u8>, size_bytes: ArraySize)
         -> Result<(), AllocError>;
 }

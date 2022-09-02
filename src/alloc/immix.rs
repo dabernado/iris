@@ -127,12 +127,19 @@ impl AllocRaw for StickyImmixHeap {
         let object_size = size_of::<T>();
         let alloc_size = alloc_size_of(object_size);
 
+        self.dealloc_with_size(object, alloc_size)
+    }
+
+    fn dealloc_with_size<T>(&self, object: RawPtr<T>, size: usize)
+        -> Result<(), AllocError>
+        where T: AllocObject,
+    {
         // mark block lines as unallocated
         let obj_ptr = object.as_ptr();
         let block = self.get_block(object.as_word()).unwrap();
 
         let cursor = obj_ptr as usize - block.as_ptr() as usize;
-        block.inner_dealloc(cursor, alloc_size);
+        block.inner_dealloc(cursor, size);
 
         Ok(())
     }

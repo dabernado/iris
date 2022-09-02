@@ -43,6 +43,14 @@ impl<'memory> MutatorView<'memory> {
         Ok(())
     }
 
+    pub fn dealloc_with_size<T>(&self, object: ScopedPtr<'_, T>, size: u32)
+        -> Result<(), RuntimeError>
+        where T: AllocObject,
+    {
+        self.heap.dealloc_with_size(object.as_rawptr(self), size as usize)?;
+        Ok(())
+    }
+
     pub fn alloc_array(
         &self,
         capacity: ArraySize

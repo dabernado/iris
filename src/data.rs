@@ -3,7 +3,7 @@ use std::cell::Cell;
 
 use crate::alloc::api::AllocObject;
 use crate::memory::MutatorScope;
-use crate::safeptr::{CellPtr, ScopedPtr};
+use crate::safeptr::{CellPtr, FractionPtr, ScopedPtr};
 use crate::printer::*;
 
 /* Primitive Types */
@@ -72,15 +72,22 @@ impl Print for Bool {
 }
 
 /* Algebraic Data Types */
-pub struct Fraction<O: AllocObject>(CellPtr<O>);
-impl<O: AllocObject> AllocObject for Fraction<O> {}
+pub struct Fraction(FractionPtr);
+impl AllocObject for Fraction {}
 
-impl<O: AllocObject + Print> Print for Fraction<O> {
+impl Fraction {
+    pub fn new(data: FractionPtr) -> Fraction { Fraction(data) }
+}
+
+impl Print for Fraction {
     fn print<'guard>(
         &self,
         guard: &'guard dyn MutatorScope,
         f: &mut fmt::Formatter,
-    ) -> fmt::Result { write!(f, "1/{}", self.0.get(guard)) }
+    ) -> fmt::Result
+    {
+        write!(f, "1/{}", self.0.cast_as_type().get(guard))
+    }
 }
 
 pub struct Negative<O: AllocObject>(CellPtr<O>);

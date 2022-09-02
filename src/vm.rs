@@ -168,7 +168,14 @@ impl Thread {
                     return Err(RuntimeError::new(ErrorKind::ExpectedZero));
                 }
             },
-            OP_EXPF => {},
+            OP_EXPF => {
+                let index = decode_i(&op);
+                let frac_ptr = self.lookup_frac(mem, index)?;
+
+                let new_data = mem.alloc(expf(frac_ptr, mem)?)?;
+                mem.dealloc(data)?;
+                self.data.set(new_data.as_untyped(mem));
+            },
             OP_COLF => {},
             OP_ADD => {
                 let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
