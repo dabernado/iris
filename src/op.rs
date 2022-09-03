@@ -211,7 +211,7 @@ pub fn expn<'guard>(
 pub fn expf<'guard>(frac: &Fraction, mem: &'guard MutatorView)
     -> Result<Product<Fraction, ()>, RuntimeError>
 {
-    let val = mem.alloc_frac(frac)?;
+    let val = mem.alloc_frac(frac.ptr().get(mem), frac.size())?;
     
     Ok(Product::new(
         CellPtr::new(RawPtr::new(frac)),

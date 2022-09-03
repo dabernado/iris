@@ -95,7 +95,7 @@ impl<T: Sized + Clone> Array<T> {
         &self,
         _guard: &'guard dyn MutatorScope,
         index: ArraySize
-    ) -> Result<&T, RuntimeError> {
+    ) -> Result<&'guard T, RuntimeError> {
         unsafe {
             let dest = self.get_offset(index)?;
             Ok(&*dest as &T)

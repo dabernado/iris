@@ -103,12 +103,8 @@ impl Continuation {
         &self,
         guard: &'guard dyn MutatorScope,
         index: ArraySize,
-    ) -> Result<&Fraction, RuntimeError> {
-        Ok(&IndexedContainer::get(
-                &self.function.get(guard).fractions,
-                guard,
-                index,
-        )?)
+    ) -> Result<&'guard Fraction, RuntimeError> {
+        Ok(self.function.get(guard).fractions.read_ref(guard, index)?)
     }
 
     pub fn ip(&self) -> ArraySize { self.ip.get() }

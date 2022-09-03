@@ -1,7 +1,7 @@
 use std::cell::UnsafeCell;
 use std::mem::{replace, size_of};
 use std::ptr::write;
-use std::slice::from_raw_parts_mut;
+use std::slice::{from_raw_parts, from_raw_parts_mut};
 
 use crate::array::ArraySize;
 use crate::alloc::constants;
@@ -100,6 +100,27 @@ impl StickyImmixHeap {
         }
 
         None
+    }
+
+    pub fn make_copy(&self, ptr: UntypedPtr, size: usize)
+        -> Result<UntypedPtr, AllocError>
+    {
+        let alloc_size = alloc_size_of(size);
+        let size_class = SizeClass::get_for_size(alloc_size)?;
+        
+        let space = self.find_space(alloc_size, size_class)?;
+
+        // copy data from pointer space to new space
+        let u8_ptr = unsafe { ptr.cast::<u8>() };
+        let orig = unsafe { from_raw_parts(u8_ptr.as_ptr(), size) };
+        let copy = unsafe { from_raw_parts_mut(space.as_mut(), size) };
+
+        for bytes in orig.iter().zip(copy.iter_mut()) {
+            let (orig_byte, copy_byte) = bytes;
+            *copy_byte = *orig_byte;
+        }
+
+        Ok(RawPtr::new(space as *const ()))
     }
 }
 

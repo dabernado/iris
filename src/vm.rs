@@ -50,7 +50,7 @@ impl Thread {
         &self,
         guard: &'guard dyn MutatorScope,
         index: ArraySize
-    ) -> Result<&Fraction, RuntimeError>
+    ) -> Result<&'guard Fraction, RuntimeError>
     {
         self.continuation.get(guard)
             .as_ref(guard)

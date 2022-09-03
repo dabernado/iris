@@ -35,6 +35,16 @@ impl<'memory> MutatorView<'memory> {
         ))
     }
 
+    pub fn alloc_frac(&self, object: ScopedPtr<'_, ()>, size: u32)
+        -> Result<ScopedPtr<'_, ()>, RuntimeError>
+    {
+        Ok(ScopedPtr::new(
+            self,
+            self.heap.make_copy(object.as_rawptr(self), size as usize)?
+                .scoped_ref(self),
+        ))
+    }
+
     pub fn dealloc<T>(&self, object: ScopedPtr<'_, T>)
         -> Result<(), RuntimeError>
         where T: AllocObject,

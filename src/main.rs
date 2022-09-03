@@ -1,4 +1,6 @@
 #![feature(exclusive_range_pattern)]
+#![feature(ptr_const_cast)]
+
 mod alloc;
 mod safeptr;
 mod data;
