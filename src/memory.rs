@@ -87,17 +87,17 @@ impl<'memory> MutatorView<'memory> {
         size: u32
     ) -> Result<(), RuntimeError>
     {
-        let frac_ptr = unsafe {
-            fraction.ptr().get(self).as_rawptr(self).cast::<u8>()
-        };
-        let obj_ptr = unsafe {
-            object.as_rawptr(self).cast::<u8>()
-        };
         let frac_val = unsafe {
-            from_raw_parts(frac_ptr.as_ptr(), size as usize)
+            from_raw_parts(
+                fraction.ptr().get(self).as_rawptr(self).cast::<u8>().as_ptr(),
+                size as usize
+            )
         };
         let obj_val = unsafe {
-            from_raw_parts(obj_ptr.as_ptr(), size as usize)
+            from_raw_parts(
+                object.as_rawptr(self).cast::<u8>().as_ptr(),
+                size as usize
+            )
         };
 
         let mut same = false;
