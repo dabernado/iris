@@ -250,8 +250,6 @@ impl Thread {
             OP_RET => {},
             OP_START => {},
             OP_END => {},
-            OP_EVAL => {},
-            OP_DEVAL => {},
             OP_SYSC => {},
             OP_RSYSC => {},
             OP_SUMC | OP_SUMC_R => {},

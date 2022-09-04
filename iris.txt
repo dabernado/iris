@@ -176,11 +176,6 @@ START <-> END			: ?a <-> ?a
  * Designates beginning/end of function; operationally equivalent to ID
  */
 
-EVAL <-> DEVAL			: (?a * nat) <-> (?b * nat)
-/*
- * Invoke a function dynamically
- */
-
 // Example Code
 data0: (int * int) + (int * bool)	-- type definition
 data1: (int + bool) * int
