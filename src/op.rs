@@ -418,3 +418,51 @@ pub fn cswapi<'guard>(
     *fst_mut = fst ^ s;
     *snd_mut = snd ^ s;
 }
+
+pub fn rr<'guard>(
+    val: &ScopedPtr<'guard, Product<Nat, Nat>>,
+    guard: &'guard dyn MutatorScope
+) {
+    let fst = val.fst().get(guard).as_ref(guard);
+    let snd = val.snd().get(guard).as_ref(guard);
+    let mut fst_raw = val.fst().get(guard).as_rawptr(guard);
+    let fst_mut = fst_raw.as_mut();
+
+    *fst_mut = fst / 2_u32.pow(*snd);
+}
+
+pub fn rl<'guard>(
+    val: &ScopedPtr<'guard, Product<Nat, Nat>>,
+    guard: &'guard dyn MutatorScope
+) {
+    let fst = val.fst().get(guard).as_ref(guard);
+    let snd = val.snd().get(guard).as_ref(guard);
+    let mut fst_raw = val.fst().get(guard).as_rawptr(guard);
+    let fst_mut = fst_raw.as_mut();
+
+    *fst_mut = fst * 2_u32.pow(*snd);
+}
+
+pub fn rri<'guard>(
+    val: &ScopedPtr<'guard, Nat>,
+    operand: Nat,
+    guard: &'guard dyn MutatorScope
+) {
+    let num = val.as_ref(guard);
+    let mut val_raw = val.as_rawptr(guard);
+    let val_mut = val_raw.as_mut();
+
+    *val_mut = num / 2_u32.pow(operand);
+}
+
+pub fn rli<'guard>(
+    val: &ScopedPtr<'guard, Nat>,
+    operand: Nat,
+    guard: &'guard dyn MutatorScope
+) {
+    let num = val.as_ref(guard);
+    let mut val_raw = val.as_rawptr(guard);
+    let val_mut = val_raw.as_mut();
+
+    *val_mut = num * 2_u32.pow(operand);
+}

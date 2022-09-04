@@ -240,10 +240,24 @@ impl Thread {
                 let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
                 cswapi(&cast_ptr, operand, mem);
             },
-            OP_RR => {},
-            OP_RL => {},
-            OP_RRI => {},
-            OP_RLI => {},
+            OP_RR => {
+                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
+                rr(&cast_ptr, mem);
+            },
+            OP_RL => {
+                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
+                rl(&cast_ptr, mem);
+            },
+            OP_RRI => {
+                let operand = decode_i(&op);
+                let cast_ptr = unsafe { data.cast::<Nat>(mem) };
+                rri(&cast_ptr, operand, mem);
+            },
+            OP_RLI => {
+                let operand = decode_i(&op);
+                let cast_ptr = unsafe { data.cast::<Nat>(mem) };
+                rli(&cast_ptr, operand, mem);
+            },
             OP_CALL => {},
             OP_UNCALL => {},
             OP_FOLW => {},
