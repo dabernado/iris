@@ -33,6 +33,7 @@ pub enum ErrorKind {
     NullPointer,
     ExpectedZero,
     MulOrDivBy0,
+    FracUnification,
 }
 
 #[derive(Debug, PartialEq)]
@@ -107,6 +108,9 @@ impl fmt::Display for RuntimeError {
             ErrorKind::ExpectedZero => write!(f, "Expected value of type 0"),
             ErrorKind::MulOrDivBy0 => write!(f,
                 "Attempted multiplication or division by 0"
+            ),
+            ErrorKind::FracUnification => write!(f,
+                "Failed to unify fraction and value"
             ),
             ErrorKind::MutableBorrowError => write!(f,
                 "Attempted to modify container that is already mutably borrowed"

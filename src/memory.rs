@@ -1,7 +1,10 @@
+use std::slice::from_raw_parts;
+
 use crate::alloc::api::{AllocRaw, AllocObject, RawPtr};
 use crate::alloc::immix::StickyImmixHeap;
 use crate::array::ArraySize;
-use crate::error::RuntimeError;
+use crate::data::Fraction;
+use crate::error::{RuntimeError, ErrorKind};
 use crate::safeptr::{ScopedPtr, ScopedRef};
 
 /* Immix Heap */
@@ -35,16 +38,6 @@ impl<'memory> MutatorView<'memory> {
         ))
     }
 
-    pub fn alloc_frac(&self, object: ScopedPtr<'_, ()>, size: u32)
-        -> Result<ScopedPtr<'_, ()>, RuntimeError>
-    {
-        Ok(ScopedPtr::new(
-            self,
-            self.heap.make_copy(object.as_rawptr(self), size as usize)?
-                .scoped_ref(self),
-        ))
-    }
-
     pub fn dealloc<T>(&self, object: ScopedPtr<'_, T>)
         -> Result<(), RuntimeError>
         where T: AllocObject,
@@ -75,6 +68,49 @@ impl<'memory> MutatorView<'memory> {
     ) -> Result<(), RuntimeError> {
         self.heap.dealloc_array(array, size)?;
         Ok(())
+    }
+
+    pub fn alloc_frac(&self, object: ScopedPtr<'_, ()>, size: u32)
+        -> Result<ScopedPtr<'_, ()>, RuntimeError>
+    {
+        Ok(ScopedPtr::new(
+            self,
+            self.heap.make_copy(object.as_rawptr(self), size as usize)?
+                .scoped_ref(self),
+        ))
+    }
+
+    pub fn dealloc_frac(
+        &self,
+        fraction: ScopedPtr<'_, Fraction>,
+        object: ScopedPtr<'_, ()>,
+        size: u32
+    ) -> Result<(), RuntimeError>
+    {
+        let frac_ptr = unsafe {
+            fraction.ptr().get(self).as_rawptr(self).cast::<u8>()
+        };
+        let obj_ptr = unsafe {
+            object.as_rawptr(self).cast::<u8>()
+        };
+        let frac_val = unsafe {
+            from_raw_parts(frac_ptr.as_ptr(), size as usize)
+        };
+        let obj_val = unsafe {
+            from_raw_parts(obj_ptr.as_ptr(), size as usize)
+        };
+
+        let mut same = false;
+        for bytes in frac_val.iter().zip(obj_val.iter()) {
+            let (frac_byte, obj_byte) = bytes;
+            same = *frac_byte == *obj_byte;
+        }
+
+        if same {
+            self.dealloc_with_size(object, fraction.size())
+        } else {
+            Err(RuntimeError::new(ErrorKind::FracUnification))
+        }
     }
 }
 

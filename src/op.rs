@@ -219,6 +219,18 @@ pub fn expf<'guard>(frac: &Fraction, mem: &'guard MutatorView)
     ))
 }
 
+pub fn colf<'guard>(
+    prod: ScopedPtr<'guard, Product<Fraction, ()>>,
+    mem: &'guard MutatorView
+) -> Result<(), RuntimeError>
+{
+    let frac = prod.fst().get(mem);
+    let val = prod.snd().get(mem);
+
+    mem.dealloc_frac(frac, val, frac.size())?;
+    mem.dealloc(prod)
+}
+
 /*
  * Arithmetic 
  */

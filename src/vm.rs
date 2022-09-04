@@ -176,7 +176,14 @@ impl Thread {
                 mem.dealloc(data)?;
                 self.data.set(new_data.as_untyped(mem));
             },
-            OP_COLF => {},
+            OP_COLF => {
+                let cast_ptr = unsafe {
+                    data.cast::<Product<Fraction, ()>>(mem)
+                };
+
+                colf(cast_ptr, mem)?;
+                self.data.set(mem.alloc(())?);
+            },
             OP_ADD => {
                 let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
                 add(&cast_ptr, mem);
