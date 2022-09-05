@@ -428,7 +428,7 @@ pub fn rr<'guard>(
     let mut fst_raw = val.fst().get(guard).as_rawptr(guard);
     let fst_mut = fst_raw.as_mut();
 
-    *fst_mut = fst / 2_u32.pow(*snd);
+    *fst_mut = (fst >> snd) | (fst << (32 - snd));
 }
 
 pub fn rl<'guard>(
@@ -440,7 +440,7 @@ pub fn rl<'guard>(
     let mut fst_raw = val.fst().get(guard).as_rawptr(guard);
     let fst_mut = fst_raw.as_mut();
 
-    *fst_mut = fst * 2_u32.pow(*snd);
+    *fst_mut = (fst << snd) | (fst >> (32 - snd));
 }
 
 pub fn rri<'guard>(
@@ -452,7 +452,7 @@ pub fn rri<'guard>(
     let mut val_raw = val.as_rawptr(guard);
     let val_mut = val_raw.as_mut();
 
-    *val_mut = num / 2_u32.pow(operand);
+    *val_mut = (num >> operand) | (num << (32 - operand));
 }
 
 pub fn rli<'guard>(
@@ -464,5 +464,5 @@ pub fn rli<'guard>(
     let mut val_raw = val.as_rawptr(guard);
     let val_mut = val_raw.as_mut();
 
-    *val_mut = num * 2_u32.pow(operand);
+    *val_mut = (num << operand) | (num >> (32 - operand));
 }
