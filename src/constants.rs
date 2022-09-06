@@ -48,14 +48,10 @@ pub const OP_RRI: u8 = 19;
 pub const OP_RLI: u8 = !OP_RRI ^ (OP_MASK as u8);
 pub const OP_CALL: u8 = 22;
 pub const OP_UNCALL: u8 = !OP_CALL ^ (OP_MASK as u8);
-pub const OP_FOLW: u8 = 23;
-pub const OP_RET: u8 = !OP_FOLW ^ (OP_MASK as u8);
-pub const OP_START: u8 = 24;
+pub const OP_START: u8 = 23;
 pub const OP_END: u8 = !OP_START ^ (OP_MASK as u8);
-pub const OP_SYSC: u8 = 25;
+pub const OP_SYSC: u8 = 24;
 pub const OP_RSYSC: u8 = !OP_SYSC ^ (OP_MASK as u8);
-pub const OP_COMD: u8 = 26;
-pub const OP_COMD_R: u8 = !OP_COMD ^ (OP_MASK as u8);
 
 // C-Type
 pub const OP_EXPF: u8 = 9;

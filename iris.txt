@@ -166,11 +166,6 @@ SYSC f <-> RSYSC f		: ?a <-> ?b
  * f = id of system function
  */
 
-FOLW <-> RET			: nat <-> ?a
-/*
- * Return from/follow word-size pointer to object
- */
-
 START <-> END			: ?a <-> ?a
 /*
  * Designates beginning/end of function; operationally equivalent to ID

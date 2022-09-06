@@ -3,7 +3,7 @@
 
 A ["reversible computer"](https://en.wikipedia.org/wiki/Reversible_computing) is a computer in which every primitive operation is logically reversible; i.e., all information is preserved in computation, and computations can not only be executed forwards as usual, but can also be reversed to some previous state. For example, a compression algorithm written for a reversible computer comes with a decompression algorithm for free simply by running the algorithm in reverse, whereas an irreversible computer would require the programmer to implement the decompression algorithm separately. What's more, reversible computing provides a form of orthogonal persistence OOTB at no additional performance cost, allowing the user to recover any past state of the computer at will. Reversible computing has exciting implications for software design, cybersecurity, operating systems, quantum computing, and the environment. Theoretically, a physical reversible computer would run with nearly zero energy requirements, due to the conservation of entropy resulting in extremely low heat dissapation.
 
-**IRIS** is a statically typed functional language, and describes a novel computer architecture that diverges from the usual von Neumann-style RISC architecture in many important and interesting ways. It allows for many high-level language features, such as higher-order functions and polymorphism, while still remaining simple and efficient as a low-level assembly language. The core IRIS spec consists of just 27 isomorphisms, with extensions planned for floating-point, I/O, and vector instructions. Ideally, IRIS will be well suited not only for implementation in software, but also in hardware in a fully reversible IRIS-based microprocessor.
+**IRIS** is a statically typed functional language, and describes a novel computer architecture that diverges from the usual von Neumann-style RISC architecture in many important and interesting ways. It allows for many high-level language features, such as higher-order functions and polymorphism, while still remaining simple and efficient as a low-level assembly language. The core IRIS spec consists of just 25 isomorphisms, with extensions planned for floating-point, I/O, and vector instructions. Ideally, IRIS will be well suited not only for implementation in software, but also in hardware in a fully reversible IRIS-based microprocessor.
 
 **Iris** is currently being written in Rust, and will consist of both a bytecode interpreter and a JIT compiler for IRIS. The main reason for building a virtual machine as the reference implementation of IRIS is to allow programmers to modify the underlying implementation of programs at will. For example, the programmer can indicate which of the functions in their program should be compiled to native machine code, which should be interpreted, and which should link to the Rust FFI. While running the program, they may decide to swap compiled functions out for their interpreted versions on the fly, and vice versa. Or, they could forego all that and compile into a standalone binary, as if they were developing with an ahead-of-time compiled language.
 
@@ -32,18 +32,20 @@ The context stack tells an IRIS computer what they are doing, and stores necessa
 - @a = pointer to the first value of the product, which is pushed onto the data stack once the current context is finished and the current value is popped
 - @b = pointer to root product
 
-**Left @i**; the context for processing the left value of a sum
+**Left @i @n**; the context for processing the left value of a sum
 - @i = pointer to first instruction of the right part of the sum combinator, which is compared to the instruction pointer before each instruction is executed. When the instruction pointer reaches this value, the Left context is popped off the stack and the instruction pointer moves down the program without executing anything until it reaches the end of the sum combinator.
+- @n = # of instructions to jump towards the instruction after the closing SUMC of the combinator, if executing forwards
 
-**Right @i**; the context for processing the right value of a sum
+**Right @i @n**; the context for processing the right value of a sum
 - @i = pointer to first instruction of the right part of the sum combinator, which when executing in reverse behaves exactly like the instruction pointer in a Left context. When the instruction pointer reaches the end of the sum combinator, the Right context is popped off the stack.
+- @n = # of instructions to jump backwards to the instruction before the opening SUMC of the combinator, if executing in reverse
 
 **Indirect @a @b**; the context for following a pointer to some object
 - @a = pointer to last object from which the process came from
 - @b = pointer to current object
 
 **Call @i @j**; the context for calling a function
-- @i = pointer to the next instruction after the `CALL/UNCALL` or `EVAL/DEVAL` which prompted the function call
+- @i = pointer to the next instruction after the `CALL/UNCALL` which prompted the function call
 - @j = pointer to end of function; machine returns from context when instruction pointer is equal to this value
 
 Context values contain a 3-bit tag which indicates what context it is, with the rest of the word divided up between whatever fields the context value holds (15/31-bit instruction pointer and 14/30-bit data pointer for product contexts, 29/61-bit instruction pointer for sum contexts).
