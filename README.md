@@ -40,10 +40,6 @@ The context stack tells an IRIS computer what they are doing, and stores necessa
 - @i = pointer to first instruction of the right part of the sum combinator, which when executing in reverse behaves exactly like the instruction pointer in a Left context. When the instruction pointer reaches the end of the sum combinator, the Right context is popped off the stack.
 - @n = # of instructions to jump backwards to the instruction before the opening SUMC of the combinator, if executing in reverse
 
-**Indirect @a @b**; the context for following a pointer to some object
-- @a = pointer to last object from which the process came from
-- @b = pointer to current object
-
 **Call @i @j**; the context for calling a function
 - @i = pointer to the next instruction after the `CALL/UNCALL` which prompted the function call
 - @j = pointer to end of function; machine returns from context when instruction pointer is equal to this value

@@ -20,10 +20,6 @@ pub enum Context {
     },
     Left(ArraySize, ArraySize),
     Right(ArraySize, ArraySize),
-    Indirect {
-        last: UntypedCellPtr,
-        current: UntypedCellPtr,
-    },
     Call {
         last: ArraySize,
         current: ArraySize,
