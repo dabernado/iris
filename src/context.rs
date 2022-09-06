@@ -18,8 +18,8 @@ pub enum Context {
         fst_val: UntypedCellPtr,
         root_val: UntypedCellPtr,
     },
-    Left(ArraySize),
-    Right(ArraySize),
+    Left(ArraySize, ArraySize),
+    Right(ArraySize, ArraySize),
     Indirect {
         last: UntypedCellPtr,
         current: UntypedCellPtr,

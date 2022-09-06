@@ -107,6 +107,14 @@ impl Continuation {
         Ok(self.function.get(guard).fractions.read_ref(guard, index)?)
     }
 
+    pub fn jump(&self, jmp: ArraySize) {
+        if !self.direction() {
+            self.ip.set(self.ip() + jmp);
+        } else {
+            self.ip.set(self.ip() - jmp);
+        }
+    }
+
     pub fn ip(&self) -> ArraySize { self.ip.get() }
     pub fn direction(&self) -> bool { self.direction.get() }
     pub fn reverse(&self) { self.direction.set(!self.direction()) }

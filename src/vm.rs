@@ -1,5 +1,5 @@
 use crate::alloc::api::AllocObject;
-use crate::array::{Array, ArraySize};
+use crate::array::{Array, ArraySize, StackContainer};
 use crate::bytecode::{Function, Continuation, get_opcode, decode_i};
 use crate::constants::*;
 use crate::context::{Context, ContextStack};
@@ -57,9 +57,87 @@ impl Thread {
             .get_frac(guard, index)
     }
 
+    fn eval_context<'guard>(&self, mem: &'guard MutatorView)
+        -> Result<(), RuntimeError>
+    {
+        let cxt_stack = self.cxt_stack.get(mem);
+        let cont = self.continuation.get(mem);
+
+        match cxt_stack.top(mem)? {
+            Context::First {
+                snd_op_index,
+                snd_val,
+                root_val
+            } => {
+                let ip = cont.ip();
+
+                // if executing in reverse, will exit combinator
+                // once PRODC is encountered
+                // else, check if moving into second part
+                if ip == snd_op_index && !cont.direction() {
+                    // push Second onto context stack
+                    let new_cxt = Context::Second {
+                        fst_op_index: ip - 1,
+                        fst_val: CellPtr::new_with(self.data.get(mem)),
+                        root_val,
+                    };
+                }
+            },
+            Context::Second {
+                fst_op_index,
+                fst_val,
+                root_val
+            } => {
+                let ip = cont.ip();
+
+                // if executing forwards, will exit combinator
+                // once PRODC is encountered
+                // else, check if moving into first part
+                if ip == fst_op_index && cont.direction() {
+                    // push First onto context stack
+                    let new_cxt = Context::First {
+                        snd_op_index: ip + 1,
+                        snd_val: CellPtr::new_with(self.data.get(mem)),
+                        root_val,
+                    };
+                }
+            },
+            Context::Left(index, jmp) => {
+                let ip = cont.ip();
+
+                // if executing backwards, will exit combinator
+                // once SUMC is encountered
+                // else, check if moving out of left part
+                if ip == index && !cont.direction() {
+                    // exit combinator
+                    cxt_stack.pop(mem);
+                    cont.jump(jmp);
+                }
+            },
+            Context::Right(index, jmp) => {
+                let ip = cont.ip();
+
+                // if executing forwards, will exit combinator
+                // once SUMC is encountered
+                // else, check if moving out of right part
+                if ip == index && cont.direction() {
+                    // exit combinator
+                    cxt_stack.pop(mem);
+                    cont.jump(jmp);
+                }
+            },
+            _ => {},
+        }
+
+        Ok(())
+    }
+
     fn eval_next_instr<'guard>(&self, mem: &'guard MutatorView)
         -> Result<EvalStatus, RuntimeError>
     {
+        // check the context stack for any necessary state changes
+        self.eval_context(mem)?;
+
         let cont = self.continuation.get(mem)
             .as_ref(mem);
         let cxt_stack = self.cxt_stack.get(mem);
@@ -260,15 +338,12 @@ impl Thread {
             },
             OP_CALL => {},
             OP_UNCALL => {},
-            OP_FOLW => {},
-            OP_RET => {},
             OP_START => {},
             OP_END => {},
             OP_SYSC => {},
             OP_RSYSC => {},
             OP_SUMC | OP_SUMC_R => {},
             OP_PRODC | OP_PRODC_R => {},
-            OP_COMD | OP_COMD_R => {},
             _ => {},
         }
 
