@@ -128,6 +128,13 @@ ELT <-> CLT		: (nat * nat) <-> ((nat * nat) + (nat * nat))
  * if sum tag and nat comparison match
  */
 
+ELTI n <-> CLTI n	: nat <-> (nat + nat)
+/*
+ * Create left/right value from nat if value is less than
+ * immediate value, or collapse back into nat if sum tag
+ * and nat comparison match
+ */
+
 // Combinators
 +{
 /*
