@@ -1,0 +1,6 @@
+- implement ops in Thread struct
+	- write tests for ops
+- implement typed serialization/deserialization for data types
+	- write tests for serialization/deserialization
+- begin working on compiler
+	- ???
