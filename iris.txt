@@ -121,6 +121,13 @@ RRI n <-> RLI n		: nat <-> nat
  * Rotate bits of an integer left/right by constant value
  */
 
+ELT <-> CLT		: (nat * nat) <-> ((nat * nat) + (nat * nat))
+/*
+ * Create left/right value from nat product if first value is
+ * less than second value, or collapse back into nat product
+ * if sum tag and nat comparison match
+ */
+
 // Combinators
 +{
 /*
