@@ -354,8 +354,21 @@ impl Thread {
                 self.data.set(inner.as_untyped(mem));
                 mem.dealloc(cast_ptr)?;
             },
-            OP_LTII => {},
-            OP_LTEI => {},
+            OP_LTII => {
+                let div = decode_i(&op);
+                let cast_ptr = unsafe { data.cast::<Nat>(mem) };
+                
+                let new_data = mem.alloc(ltii(cast_ptr, div, mem))?;
+                self.data.set(new_data.as_untyped(mem));
+            },
+            OP_LTEI => {
+                let div = decode_i(&op);
+                let cast_ptr = unsafe { data.cast::<Sum<Nat>>(mem) };
+
+                let inner = ltei(cast_ptr, div, mem)?;
+                self.data.set(inner.as_untyped(mem));
+                mem.dealloc(cast_ptr)?;
+            },
             OP_CALL => {},
             OP_UNCALL => {},
             OP_START => {},

@@ -495,3 +495,31 @@ pub fn lte<'guard>(
         Err(RuntimeError::new(ErrorKind::LessThanElim))
     }
 }
+
+pub fn ltii<'guard>(
+    val: ScopedPtr<'guard, Nat>,
+    div: Nat,
+    guard: &'guard dyn MutatorScope
+) -> Sum<Nat> {
+    let num = val.as_ref(guard);
+
+    if *num < div {
+        Sum::new(0, CellPtr::new_with(val))
+    } else {
+        Sum::new(1, CellPtr::new_with(val))
+    }
+}
+
+pub fn ltei<'guard>(
+    val: ScopedPtr<'guard, Sum<Nat>>,
+    div: Nat,
+    guard: &'guard dyn MutatorScope
+) -> Result<ScopedPtr<'guard, Nat>, RuntimeError> {
+    let num = val.data().get(guard).as_ref(guard);
+
+    if (*num < div && val.tag() == 0) || (*num >= div && val.tag() == 1) {
+        Ok(val.data().get(guard))
+    } else {
+        Err(RuntimeError::new(ErrorKind::LessThanElim))
+    }
+}
