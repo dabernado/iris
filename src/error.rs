@@ -33,6 +33,7 @@ pub enum ErrorKind {
     NullPointer,
     ExpectedZero,
     MulOrDivBy0,
+    LessThanElim,
     FracUnification,
 }
 
@@ -108,6 +109,9 @@ impl fmt::Display for RuntimeError {
             ErrorKind::ExpectedZero => write!(f, "Expected value of type 0"),
             ErrorKind::MulOrDivBy0 => write!(f,
                 "Attempted multiplication or division by 0"
+            ),
+            ErrorKind::LessThanElim => write!(f,
+                "Attempted less-than elimination of invalid value"
             ),
             ErrorKind::FracUnification => write!(f,
                 "Failed to unify fraction and value"

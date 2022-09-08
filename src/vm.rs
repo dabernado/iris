@@ -72,7 +72,7 @@ impl Thread {
                 let ip = cont.ip();
 
                 // if executing in reverse, will exit combinator
-                // once PRODC is encountered
+                // once PRODE is encountered
                 // else, check if moving into second part
                 if ip == snd_op_index && !cont.direction() {
                     // push Second onto context stack
@@ -91,7 +91,7 @@ impl Thread {
                 let ip = cont.ip();
 
                 // if executing forwards, will exit combinator
-                // once PRODC is encountered
+                // once PRODE is encountered
                 // else, check if moving into first part
                 if ip == fst_op_index && cont.direction() {
                     // push First onto context stack
@@ -106,7 +106,7 @@ impl Thread {
                 let ip = cont.ip();
 
                 // if executing backwards, will exit combinator
-                // once SUMC is encountered
+                // once SUME is encountered
                 // else, check if moving out of left part
                 if ip == index && !cont.direction() {
                     // exit combinator
@@ -118,7 +118,7 @@ impl Thread {
                 let ip = cont.ip();
 
                 // if executing forwards, will exit combinator
-                // once SUMC is encountered
+                // once SUME is encountered
                 // else, check if moving out of right part
                 if ip == index && cont.direction() {
                     // exit combinator
@@ -144,7 +144,11 @@ impl Thread {
         let data = self.data.get(mem);
 
         let op = cont.get_next_op(mem)?;
-        let opcode = get_opcode(&op);
+        let opcode = if !cont.direction() {
+            get_opcode(&op)
+        } else {
+            !get_opcode(&op)
+        };
 
         match opcode {
             OP_ID | OP_ID_R => {},
@@ -336,14 +340,35 @@ impl Thread {
                 let cast_ptr = unsafe { data.cast::<Nat>(mem) };
                 rli(&cast_ptr, operand, mem);
             },
+            OP_LTI => {
+                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
+                let new_data = mem.alloc(lti(cast_ptr, mem))?;
+                self.data.set(new_data.as_untyped(mem));
+            },
+            OP_LTE => {
+                let cast_ptr = unsafe {
+                    data.cast::<Sum<Product<Nat, Nat>>>(mem)
+                };
+                let inner = lte(cast_ptr, mem)?;
+
+                self.data.set(inner.as_untyped(mem));
+                mem.dealloc(cast_ptr)?;
+            },
+            OP_LTII => {},
+            OP_LTEI => {},
             OP_CALL => {},
             OP_UNCALL => {},
             OP_START => {},
             OP_END => {},
             OP_SYSC => {},
             OP_RSYSC => {},
-            OP_SUMC | OP_SUMC_R => {},
-            OP_PRODC | OP_PRODC_R => {},
+            OP_SUMS => {
+                //let (jmp, div) = decode_c(&op);
+                //let cast_ptr = unsafe { data.cast::<Sum<()>>(mem) };
+            }
+            OP_SUME => {},
+            OP_PRODS => {}
+            OP_PRODE => {},
             _ => {},
         }
 

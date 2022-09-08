@@ -467,6 +467,31 @@ pub fn rli<'guard>(
     *val_mut = (num << operand) | (num >> (32 - operand));
 }
 
-/*
- * Control
- */
+pub fn lti<'guard>(
+    val: ScopedPtr<'guard, Product<Nat, Nat>>,
+    guard: &'guard dyn MutatorScope
+) -> Sum<Product<Nat, Nat>> {
+    let fst = val.fst().get(guard).as_ref(guard);
+    let snd = val.snd().get(guard).as_ref(guard);
+
+    if fst < snd {
+        Sum::new(0, CellPtr::new_with(val))
+    } else {
+        Sum::new(1, CellPtr::new_with(val))
+    }
+}
+
+pub fn lte<'guard>(
+    val: ScopedPtr<'guard, Sum<Product<Nat, Nat>>>,
+    guard: &'guard dyn MutatorScope
+) -> Result<ScopedPtr<'guard, Product<Nat, Nat>>, RuntimeError> {
+    let inner = val.data().get(guard);
+    let fst = inner.fst().get(guard).as_ref(guard);
+    let snd = inner.snd().get(guard).as_ref(guard);
+
+    if (fst < snd && val.tag() == 0) || (fst >= snd && val.tag() == 1) {
+        Ok(inner)
+    } else {
+        Err(RuntimeError::new(ErrorKind::LessThanElim))
+    }
+}

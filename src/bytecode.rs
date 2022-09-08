@@ -181,9 +181,9 @@ mod test {
 
     #[test]
     fn test_ctype() {
-        let instr = encode_c(OP_SUMC, 4, 2).unwrap();
+        let instr = encode_c(OP_SUMS, 4, 2).unwrap();
 
-        assert!(OP_SUMC == get_opcode(&instr));
+        assert!(OP_SUMS == get_opcode(&instr));
         assert!((4, 2) == decode_c(&instr));
     }
 }

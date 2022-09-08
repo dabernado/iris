@@ -160,6 +160,8 @@ Despite the strong typing of IRIS allowing for the elimination of many runtime e
 
 `ERRMUL0` - attempted integer multiplication by 0 (irreversible)
 
+`ERRLTE` - attempted less-than elimination on invalid value
+
 `ERREXT` - code contains instructions/datatypes from an extension not supported by the current environment
 
 `ERRCXT` - attempted invalid context trainsition
