@@ -17,17 +17,12 @@ ZEROI <-> ZEROE		: ?a <-> (0 + ?a)
 SWAPS <-> SWAPS		: (?a + ?b) <-> (?b + ?a)
 /*
  * Swap the two variant types' sides
- * n = number of total variants in the type
- * d = first variant value of the right hand of the type
- * o = offset (usually 0 unless type is wrapped by another sum type)
+ * d = division value of sum type
  */
 
 ASSRS <-> ASSLS		: ((?a + ?b) + ?c) <-> (?a + (?b + ?c))
 /*
  * Associate inner sum with types on the right or left
- * n = number of total variants in the type
- * d = first variant value of the right hand of the type
- * o = offset (usually 0 unless type is wrapped by another sum type)
  */
 
 UNITI <-> UNITE		: ?a <-> (1 * ?a)
@@ -66,7 +61,6 @@ EXPF i <-> COLF i	: 1 <-> (1/?a * ?a)
 /*
  * Allocate/deallocate new variable
  * i = index of fraction array to value being introduced
- * s = size of allocated/deallocated type in bytes
  */
 
 // Arithmetic
@@ -139,8 +133,9 @@ LTII n <-> LTEI n	: nat <-> (nat + nat)
 +{
 /*
  * Left hand sum combinator delimiter
- * i = offset to first instruction of right half of combinator
- * n = division value of sum type
+ * l = number of instructions in left hand of combinator
+ * r = number of instructions in right hand of combinator
+ * d = division value of sum type
  */
 
 -- // Division point of combinator
@@ -148,14 +143,15 @@ LTII n <-> LTEI n	: nat <-> (nat + nat)
 }+
 /*
  * Right hand sum combinator delimiter
- * i = offset to first instruction of left half of combinator
- * n = division value of sum type
+ * l = number of instructions in left hand of combinator
+ * r = number of instructions in right hand of combinator
+ * d = division value of sum type
  */
 
 *{
 /*
  * First product combinator delimiter
- * i = offset to first instruction of second half of combinator
+ * i = index of middle point of combinator
  */
 
 -- // Division point of combinator
@@ -163,7 +159,7 @@ LTII n <-> LTEI n	: nat <-> (nat + nat)
 }*
 /*
  * Second product combinator delimiter
- * i = offset to first instruction of first half of combinator
+ * i = index of middle point of combinator
  */
 
 // Control/Memory
@@ -223,16 +219,15 @@ function: data0 <-> data1		-- function definition
  */
 
 /*
- * C-Type
+ * S-Type
  *
- * 31	       19 18		6 5	   0
- * [   const	] [     off	] [ opcode ]
- *      13b	        13b	      6b
+ * 31 30 29	 22 21     14 13      6 5	 0
+ * [ 0 ] [   rc   ] [  lc   ] [  div  ] [ opcode ]
+ *  2b       8b	       8b	 8b	    6b
  *
- * The C-Type encoding is for the combinator and EXPF/COLF
- * instructions, which contain an offset to some location
- * in program memory and a constant value. For product
- * combinators, this value is empty. For sum combinators, this
- * value represents the division value for the type. For EXPF/COLF,
- * it is the size of the new value in bytes.
+ * The only instructions with the S-Type encoding are SUMS/SUME,
+ * which contain the division value for a
+ * given sum type, and the number of instructions in the left
+ * and right hand side of the combinator. The last two bits
+ * are kept empty.
  */

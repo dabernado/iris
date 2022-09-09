@@ -1,6 +1,6 @@
 use crate::alloc::api::AllocObject;
 use crate::array::{Array, ArraySize, StackContainer};
-use crate::bytecode::{Function, Continuation, get_opcode, decode_i};
+use crate::bytecode::{Function, Continuation, get_opcode, decode_i, decode_s};
 use crate::constants::*;
 use crate::context::{Context, ContextStack};
 use crate::data::*;
@@ -102,28 +102,38 @@ impl Thread {
                     };
                 }
             },
-            Context::Left(index, jmp) => {
+            Context::Left {
+                right_op_index,
+                jump,
+                root_val
+            } => {
                 let ip = cont.ip();
 
                 // if executing backwards, will exit combinator
                 // once SUME is encountered
                 // else, check if moving out of left part
-                if ip == index && !cont.direction() {
+                if ip == right_op_index && !cont.direction() {
                     // exit combinator
                     cxt_stack.pop(mem);
-                    cont.jump(jmp);
+                    cont.jump(jump + 1);
+                    self.data.set(root_val.get(mem).as_untyped(mem));
                 }
             },
-            Context::Right(index, jmp) => {
+            Context::Right {
+                left_op_index,
+                jump,
+                root_val
+            } => {
                 let ip = cont.ip();
 
                 // if executing forwards, will exit combinator
                 // once SUME is encountered
                 // else, check if moving out of right part
-                if ip == index && cont.direction() {
+                if ip == left_op_index && cont.direction() {
                     // exit combinator
                     cxt_stack.pop(mem);
-                    cont.jump(jmp);
+                    cont.jump(jump + 1);
+                    self.data.set(root_val.get(mem).as_untyped(mem));
                 }
             },
             _ => {},
@@ -376,10 +386,66 @@ impl Thread {
             OP_SYSC => {},
             OP_RSYSC => {},
             OP_SUMS => {
-                //let (jmp, div) = decode_c(&op);
-                //let cast_ptr = unsafe { data.cast::<Sum<()>>(mem) };
+                let (rc, lc, div) = decode_s(&op);
+                let cast_ptr = unsafe { data.cast::<Sum<()>>(mem) };
+
+                if cast_ptr.tag() < div as u32 {
+                    if !cont.direction() {
+                        let new_cxt = Context::Left {
+                            right_op_index: cont.ip() + (lc + 1) as u32,
+                            jump: rc as u32,
+                            root_val: CellPtr::new_with(cast_ptr),
+                        };
+
+                        cxt_stack.push(mem, new_cxt);
+                        self.data.set(cast_ptr.data().get(mem));
+                    } else {
+                        let new_cxt = Context::Left {
+                            right_op_index: cont.ip() - rc as u32,
+                            jump: rc as u32,
+                            root_val: CellPtr::new_with(cast_ptr),
+                        };
+
+                        cont.jump((rc + 1) as u32); // ip - rc+1
+                        cxt_stack.push(mem, new_cxt);
+                        self.data.set(cast_ptr.data().get(mem));
+                    }
+                } else {
+                    if !cont.direction() {
+                        let new_cxt = Context::Right {
+                            left_op_index: cont.ip() + lc as u32,
+                            jump: lc as u32,
+                            root_val: CellPtr::new_with(cast_ptr),
+                        };
+
+                        cont.jump((lc + 1) as u32); // ip + lc+1
+                        cxt_stack.push(mem, new_cxt);
+                        self.data.set(cast_ptr.data().get(mem));
+                    } else {
+                        let new_cxt = Context::Right {
+                            left_op_index: cont.ip() - (rc + 1) as u32,
+                            jump: lc as u32,
+                            root_val: CellPtr::new_with(cast_ptr),
+                        };
+
+                        cxt_stack.push(mem, new_cxt);
+                        self.data.set(cast_ptr.data().get(mem));
+                    }
+                }
             }
-            OP_SUME => {},
+            OP_SUME => {
+                let sum_cxt = cxt_stack.pop(mem)?;
+
+                match sum_cxt {
+                    Context::Left { root_val, .. } => {
+                        self.data.set(root_val.get(mem).as_untyped(mem));
+                    },
+                    Context::Right { root_val, .. } => {
+                        self.data.set(root_val.get(mem).as_untyped(mem));
+                    },
+                    _ => return Err(RuntimeError::new(ErrorKind::BadContext)),
+                }
+            },
             OP_PRODS => {}
             OP_PRODE => {},
             _ => {},

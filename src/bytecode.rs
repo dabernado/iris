@@ -132,10 +132,11 @@ pub fn decode_i(instr: &Opcode) -> u32 {
     (instr & I_MASK) >> 6
 }
 
-pub fn decode_c(instr: &Opcode) -> (u16, u16) {
+pub fn decode_s(instr: &Opcode) -> (u8, u8, u8) {
     (
-        ((instr & C_OFF_MASK) >> 6) as u16,
-        ((instr & C_CONST_MASK) >> 19) as u16
+        ((instr & S_TOTAL_MASK) >> 6) as u8,
+        ((instr & S_DIV_MASK) >> 14) as u8,
+        ((instr & S_OFF_MASK) >> 22) as u8
     )
 }
 
@@ -149,16 +150,15 @@ pub fn encode_i(op: u8, imm: u32) -> Result<Opcode, RuntimeError> {
     }
 }
 
-pub fn encode_c(op: u8, off: u16, val: u16) -> Result<Opcode, RuntimeError> {
-    // check if within bounds
-    if off <= MAX_CTYPE_FIELD && val <= MAX_CTYPE_FIELD {
-        let padded_val = (val as u32) << 19;
-        let padded_off = (off as u32) << 6;
+pub fn encode_s(op: u8, total: u8, div: u8, off: u8) -> Opcode {
+    let padded_total = (total as u32) << 6;
+    let padded_div = (div as u32) << 14;
+    let padded_off = (off as u32) << 22;
 
-        Ok(((0 ^ padded_val) ^ padded_off) ^ (op as u32))
-    } else {
-        Err(RuntimeError::new(ErrorKind::IntOverflow))
-    }
+    (((0 ^ padded_off)
+      ^ padded_div)
+     ^ padded_total)
+    ^ (op as u32)
 }
 
 #[cfg(test)]
@@ -180,10 +180,10 @@ mod test {
     }
 
     #[test]
-    fn test_ctype() {
-        let instr = encode_c(OP_SUMS, 4, 2).unwrap();
+    fn test_stype() {
+        let instr = encode_s(OP_SUMS, 4, 2, 3);
 
         assert!(OP_SUMS == get_opcode(&instr));
-        assert!((4, 2) == decode_c(&instr));
+        assert!((4, 2, 3) == decode_s(&instr));
     }
 }

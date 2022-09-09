@@ -164,7 +164,7 @@ Despite the strong typing of IRIS allowing for the elimination of many runtime e
 
 `ERREXT` - code contains instructions/datatypes from an extension not supported by the current environment
 
-`ERRCXT` - attempted invalid context trainsition
+`ERRCXT` - attempted invalid context transition
 
 `ERRSYSC` - attempted invalid syscall
 

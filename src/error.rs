@@ -35,6 +35,7 @@ pub enum ErrorKind {
     MulOrDivBy0,
     LessThanElim,
     FracUnification,
+    BadContext,
 }
 
 #[derive(Debug, PartialEq)]
@@ -107,6 +108,9 @@ impl fmt::Display for RuntimeError {
             ErrorKind::TypeError => write!(f, "Type error"),
             ErrorKind::NullPointer => write!(f, "Null pointer error"),
             ErrorKind::ExpectedZero => write!(f, "Expected value of type 0"),
+            ErrorKind::BadContext => write!(f,
+                "Attempted invalid context transition"
+            ),
             ErrorKind::MulOrDivBy0 => write!(f,
                 "Attempted multiplication or division by 0"
             ),

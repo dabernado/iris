@@ -118,6 +118,7 @@ impl<O: AllocObject + Print> Print for Negative<O> {
     ) -> fmt::Result { write!(f, "-{}", self.0.get(guard)) }
 }
 
+#[derive(Clone)]
 pub struct Sum<O: AllocObject> {
     tag: Cell<Nat>,
     data: CellPtr<O>,
@@ -148,6 +149,7 @@ impl<O: AllocObject + Print> Print for Sum<O> {
     }
 }
 
+#[derive(Clone)]
 pub struct Product<F: AllocObject, S: AllocObject> {
     fst: CellPtr<F>,
     snd: CellPtr<S>,
