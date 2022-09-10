@@ -33,6 +33,10 @@ pub enum Context {
         last: ArraySize,
         current: ArraySize,
     }
+    Uncall {
+        last: ArraySize,
+        current: ArraySize,
+    }
 }
 
 impl AllocObject for Context {}
