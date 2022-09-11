@@ -134,9 +134,9 @@ pub fn decode_i(instr: Opcode) -> u32 {
 
 pub fn decode_s(instr: Opcode) -> (u8, u8, u8) {
     (
-        ((instr & S_TOTAL_MASK) >> 6) as u8,
-        ((instr & S_DIV_MASK) >> 14) as u8,
-        ((instr & S_OFF_MASK) >> 22) as u8
+        ((instr & S_DIV_MASK) >> 6) as u8,
+        ((instr & S_LC_MASK) >> 14) as u8,
+        ((instr & S_RC_MASK) >> 22) as u8
     )
 }
 
@@ -150,14 +150,14 @@ pub fn encode_i(op: u8, imm: u32) -> Result<Opcode, RuntimeError> {
     }
 }
 
-pub fn encode_s(op: u8, total: u8, div: u8, off: u8) -> Opcode {
-    let padded_total = (total as u32) << 6;
-    let padded_div = (div as u32) << 14;
-    let padded_off = (off as u32) << 22;
+pub fn encode_s(op: u8, div: u8, lc: u8, rc: u8) -> Opcode {
+    let padded_div = (div as u32) << 6;
+    let padded_lc = (lc as u32) << 14;
+    let padded_rc = (rc as u32) << 22;
 
-    (((0 ^ padded_off)
-      ^ padded_div)
-     ^ padded_total)
+    (((0 ^ padded_rc)
+      ^ padded_lc)
+     ^ padded_div)
     ^ (op as u32)
 }
 
