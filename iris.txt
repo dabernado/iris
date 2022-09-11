@@ -151,7 +151,7 @@ LTII n <-> LTEI n	: nat <-> (nat + nat)
 *{
 /*
  * First product combinator delimiter
- * i = index of middle point of combinator
+ * j = jump to first instruction of second half of combinator
  */
 
 -- // Division point of combinator
@@ -159,7 +159,7 @@ LTII n <-> LTEI n	: nat <-> (nat + nat)
 }*
 /*
  * Second product combinator delimiter
- * i = index of middle point of combinator
+ * j = jump to last instruction of first half of combinator
  */
 
 // Control/Memory
@@ -190,17 +190,17 @@ function: data0 <-> data1		-- function definition
     +{
         ADD
         ID
-	+
+	--
         SWAPP
     }+
     FACT
-    *{			-- fst = @r0, snd = @r1
+    *{			// fst = @r0, snd = @r1
         +{
 	    NEG
-	    +
+	    --
 	    MULI 2
 	}+
-	*
+	--
 	ADDI 69
     }*
     END

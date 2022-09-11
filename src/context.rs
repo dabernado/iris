@@ -32,7 +32,7 @@ pub enum Context {
     Call {
         last: ArraySize,
         current: ArraySize,
-    }
+    },
     Uncall {
         last: ArraySize,
         current: ArraySize,
