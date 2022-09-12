@@ -4,3 +4,4 @@
 	- write tests for serialization/deserialization
 - begin working on compiler
 	- ???
+- implement foreign function interface

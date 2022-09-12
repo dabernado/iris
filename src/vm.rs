@@ -57,6 +57,25 @@ impl Thread {
             .get_frac(guard, index)
     }
 
+    fn call_func<'guard>(
+        &self, mem: &'guard dyn MutatorScope,
+        index: ArraySize,
+        not: bool,
+    ) -> Result<(), RuntimeError> {
+        let cont = self.continuation.get(mem);
+        let func_ptr = self.functions.get(mem)
+            .read_ref(mem, index)?
+            .get(mem);
+
+        cont.set_func(func_ptr);
+        if not {
+            cont.reverse();
+        }
+
+        cont.reset(func_ptr.length());
+        Ok(())
+    }
+
     fn eval_context<'guard>(&self, mem: &'guard MutatorView)
         -> Result<(), RuntimeError>
     {
@@ -169,7 +188,7 @@ impl Thread {
         };
 
         match opcode {
-            OP_ID | OP_ID_R => {},
+            OP_ID | OP_ID_R => {}, // identity
             OP_ZEROI => {
                 let new_data = mem.alloc(zeroi(data))?;
                 self.data.set(new_data.as_untyped(mem));
@@ -219,7 +238,7 @@ impl Thread {
 
                 swaps(&cast_ptr, div, mem);
             },
-            OP_ASSRS | OP_ASSLS => {},
+            OP_ASSRS | OP_ASSLS => {}, // op-equivalent to ID
             OP_DIST => {
                 let div = decode_i(op);
                 let cast_ptr = unsafe {
@@ -387,12 +406,34 @@ impl Thread {
                 self.data.set(inner.as_untyped(mem));
                 mem.dealloc(cast_ptr)?;
             },
-            OP_CALL => {},
-            OP_UNCALL => {},
-            OP_START => {},
+            OP_CALL => {
+                let index = decode_i(op);
+                let dir = cont.direction();
+                let new_cxt = Context::Call {
+                    ret_func: CellPtr::new_with(cont.current_func(mem)),
+                    ret_addr: if dir { cont.ip() - 1 } else { cont.ip() + 1 },
+                    not: dir,
+                };
+
+                self.call_func(mem, index, dir);
+                cxt_stack.push(mem, new_cxt);
+            },
+            OP_UNCALL => {
+                let index = decode_i(op);
+                let dir = cont.direction();
+                let new_cxt = Context::Call {
+                    ret_func: CellPtr::new_with(cont.current_func(mem)),
+                    ret_addr: if dir { cont.ip() - 1 } else { cont.ip() + 1 },
+                    not: !dir,
+                };
+
+                self.call_func(mem, index, !dir);
+                cxt_stack.push(mem, new_cxt);
+            },
+            OP_START => {}, // op-equivalent to ID
             OP_END => {},
-            OP_SYSC => {},
-            OP_RSYSC => {},
+            OP_SYSC => {}, // TODO: FFI
+            OP_RSYSC => {}, // TODO: FFI
             OP_SUMS => {
                 let (rc, lc, div) = decode_s(op);
                 let cast_ptr = unsafe { data.cast::<Sum<()>>(mem) };

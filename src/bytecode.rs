@@ -43,8 +43,7 @@ impl Function {
         ptr: Fraction
     ) -> Result<(), RuntimeError> { self.fractions.push(mem, ptr) }
 
-    pub fn last_instruction(&self) -> ArraySize { self.code.length() - 1 }
-    pub fn next_instruction(&self) -> ArraySize { self.code.length() }
+    pub fn length(&self) -> ArraySize { self.code.length() }
 }
 
 #[derive(Clone)]
@@ -107,11 +106,24 @@ impl Continuation {
         Ok(self.function.get(guard).fractions.read_ref(guard, index)?)
     }
 
+    pub fn set_ip(&self, i: ArraySize) { self.ip.set(i); }
     pub fn jump(&self, jmp: ArraySize) {
         if !self.direction() {
-            self.ip.set(self.ip() + jmp);
+            self.set_ip(self.ip() + jmp);
         } else {
-            self.ip.set(self.ip() - jmp);
+            self.set_ip(self.ip() - jmp);
+        }
+    }
+
+    pub fn set_func<'guard>(&self, func: ScopedPtr<'guard, Function>) {
+        self.function.set(func);
+    }
+
+    pub fn reset(&self, jmp: ArraySize) {
+        if !self.direction() {
+            self.ip.set(0);
+        } else {
+            self.ip.set(jmp);
         }
     }
 
