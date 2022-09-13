@@ -68,9 +68,7 @@ impl Thread {
             .get(mem);
 
         cont.set_func(func_ptr);
-        if not {
-            cont.reverse();
-        }
+        if not { cont.reverse(); }
 
         cont.reset(func_ptr.length());
         Ok(())
@@ -431,7 +429,17 @@ impl Thread {
                 cxt_stack.push(mem, new_cxt);
             },
             OP_START => {}, // op-equivalent to ID
-            OP_END => {},
+            OP_END => {
+                match cxt_stack.top(mem)? {
+                    Context::Call { ret_func, ret_addr, not } => {
+                        if not { cont.reverse(); }
+                        cont.set_func(ret_func.get(mem));
+                        cont.set_ip(ret_addr);
+                    },
+                    Context::Nil => return Ok(EvalStatus::Ok),
+                    _ => return Err(RuntimeError::new(ErrorKind::BadContext)),
+                }
+            },
             OP_SYSC => {}, // TODO: FFI
             OP_RSYSC => {}, // TODO: FFI
             OP_SUMS => {
