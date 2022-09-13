@@ -104,11 +104,6 @@ RRI n <-> RLI n		: nat <-> nat
  * Rotate bits of an integer left/right by constant value
  */
 
-nati <-> nate		: 1 <-> nat
-/*
- * Cast between unit and nat iff nat == 0
- */
-
 LTI <-> LTE		: (nat * nat) <-> ((nat * nat) + (nat * nat))
 /*
  * Create left/right value from nat product if first value is
