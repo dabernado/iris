@@ -118,26 +118,16 @@ Based on the sum variant of the incoming value, `EXPN/COLN` will negate its type
 Negative types can be used to implement novel control structures such as recursion, delimited continuations, coroutines, and others. Looping in IRIS is implemented with the additive trace, which itself is implemented using negative types. For example, given a function `f` of type `(?a + ?b) + (?a + ?c)`, a trace over `f` can be constructed with the following function:
 
 ```
-traceadd: ?b <-> ?c
-    START
-    ZEROI
-    +{
-    	ID
-    	--
-    	EXPN
-    }+
-    +{
-    	CALL f
-	--
-	ID
-    }+
-    +{
-    	ID
-	--
-	COLN
-    }+
-    ZEROE
-    RETURN
+fn: (?a + ?b) <-> (?a + (nat * nat))
+
+traceadd: ?b <-> (nat * nat)
+  zeroi;			// 0 + ?b
+  (expn:?a | .);		// (-?a + ?a) + ?b
+  assrs;			// -?a + (?a + ?b)
+  (. | fn;(+5;-4, ^20));	// -?a + (?a + (nat * nat))
+  assls;			// (-?a + ?a) + (nat * nat) 
+  (coln:?a + .);		// 0 + (nat * nat)
+  zeroe.			// nat * nat
 ```
 
 #### Functions
@@ -157,18 +147,10 @@ Despite the strong typing of IRIS allowing for the elimination of many runtime e
 
 `ERRISIZE` - integer overflow
 
-`ERRDIV0` - attempted integer division by 0
-
-`ERRMUL0` - attempted integer multiplication by 0 (irreversible)
-
 `ERRLTE` - attempted less-than elimination on invalid value
-
-`ERREXT` - code contains instructions/datatypes from an extension not supported by the current environment
 
 `ERRCXT` - attempted invalid context transition
 
 `ERRSYSC` - attempted invalid syscall
 
 `ERRTYPE` - types of attempted operation and data do not match
-
-`ERRCALL` - attempted CALL/GCALL with invalid function pointer

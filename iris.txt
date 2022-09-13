@@ -74,17 +74,6 @@ ADDI n <-> SUBI n	: nat <-> nat
  * Add/subtract constant to/from integer
  */
 
-MUL <-> DIV		: (nat * nat) <-> (nat * nat)
-/*
- * Multiply/divide two integers, with result placed in first
- * value
- */
-
-MULI n <-> DIVI n	: nat <-> nat
-/*
- * Multiply/divide integer with/by non-zero constant
- */
-
 XOR <-> XOR		: (nat * nat) <-> (nat * nat)
 /*
  * Exclusive-or on two integers, result placed in first value
@@ -113,6 +102,11 @@ RR <-> RL		: (nat * nat) <-> (nat * nat)
 RRI n <-> RLI n		: nat <-> nat
 /*
  * Rotate bits of an integer left/right by constant value
+ */
+
+nati <-> nate		: 1 <-> nat
+/*
+ * Cast between unit and nat iff nat == 0
  */
 
 LTI <-> LTE		: (nat * nat) <-> ((nat * nat) + (nat * nat))
