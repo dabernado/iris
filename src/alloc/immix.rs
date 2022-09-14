@@ -113,7 +113,7 @@ impl StickyImmixHeap {
         // copy data from pointer space to new space
         let u8_ptr = unsafe { ptr.cast::<u8>() };
         let orig = unsafe { from_raw_parts(u8_ptr.as_ptr(), size) };
-        let copy = unsafe { from_raw_parts_mut(space.as_mut(), size) };
+        let copy = unsafe { from_raw_parts_mut(space as *mut u8, size) };
 
         for bytes in orig.iter().zip(copy.iter_mut()) {
             let (orig_byte, copy_byte) = bytes;

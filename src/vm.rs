@@ -319,24 +319,6 @@ impl Thread {
                 let cast_ptr = unsafe { data.cast::<Nat>(mem) };
                 subi(&cast_ptr, operand, mem)?;
             },
-            OP_MUL => {
-                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
-                mul(&cast_ptr, mem)?;
-            },
-            OP_DIV => {
-                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
-                div(&cast_ptr, mem)?;
-            },
-            OP_MULI => {
-                let operand = decode_i(op);
-                let cast_ptr = unsafe { data.cast::<Nat>(mem) };
-                muli(&cast_ptr, operand, mem);
-            },
-            OP_DIVI => {
-                let operand = decode_i(op);
-                let cast_ptr = unsafe { data.cast::<Nat>(mem) };
-                divi(&cast_ptr, operand, mem);
-            },
             OP_XOR | OP_XOR_R => {
                 let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
                 xor(&cast_ptr, mem);

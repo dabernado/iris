@@ -296,68 +296,6 @@ pub fn subi<'guard>(
     }
 }
 
-pub fn mul<'guard>(
-    val: &ScopedPtr<'guard, Product<Nat, Nat>>,
-    guard: &'guard dyn MutatorScope
-) -> Result<(), RuntimeError> {
-    let fst = val.fst().get(guard).as_ref(guard);
-    let snd = val.snd().get(guard).as_ref(guard);
-    
-    // checking if multiplying by 0
-    if *snd == 0 {
-        let mut fst_raw = val.fst().get(guard).as_rawptr(guard);
-        let fst_mut = fst_raw.as_mut();
-
-        *fst_mut = fst * snd;
-        Ok(())
-    } else {
-        Err(RuntimeError::new(ErrorKind::MulOrDivBy0))
-    }
-}
-
-pub fn div<'guard>(
-    val: &ScopedPtr<'guard, Product<Nat, Nat>>,
-    guard: &'guard dyn MutatorScope
-) -> Result<(), RuntimeError> {
-    let fst = val.fst().get(guard).as_ref(guard);
-    let snd = val.snd().get(guard).as_ref(guard);
-    
-    // checking if multiplying by 0
-    if *snd == 0 {
-        let mut fst_raw = val.fst().get(guard).as_rawptr(guard);
-        let fst_mut = fst_raw.as_mut();
-
-        *fst_mut = fst / snd;
-        Ok(())
-    } else {
-        Err(RuntimeError::new(ErrorKind::MulOrDivBy0))
-    }
-}
-
-pub fn muli<'guard>(
-    val: &ScopedPtr<'guard, Nat>,
-    operand: Nat,
-    guard: &'guard dyn MutatorScope
-) {
-    let num = val.as_ref(guard);
-    let mut val_raw = val.as_rawptr(guard);
-    let val_mut = val_raw.as_mut();
-
-    *val_mut = num * operand;
-}
-
-pub fn divi<'guard>(
-    val: &ScopedPtr<'guard, Nat>,
-    operand: Nat,
-    guard: &'guard dyn MutatorScope
-) {
-    let num = val.as_ref(guard);
-    let mut val_raw = val.as_rawptr(guard);
-    let val_mut = val_raw.as_mut();
-
-    *val_mut = num / operand;
-}
-
 pub fn xor<'guard>(
     val: &ScopedPtr<'guard, Product<Nat, Nat>>,
     guard: &'guard dyn MutatorScope
