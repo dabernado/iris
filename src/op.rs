@@ -25,7 +25,7 @@ pub fn zeroe<'guard, T>(
 pub fn swaps<'guard, T: AllocObject>(
     val: &ScopedPtr<'guard, Sum<T>>,
     div: Nat,
-    guard: &'guard dyn MutatorScope
+    _guard: &'guard dyn MutatorScope
 ) {
     let tag = val.tag();
     if tag <= div {
@@ -104,7 +104,6 @@ pub fn dist<'guard, T: AllocObject>(
 ) -> Result<ScopedPtr<'guard, Sum<Product<(), ()>>>, RuntimeError>
 {
     let sum = val.fst().get(mem);
-    let snd = val.snd().get(mem);
     let tag = sum.tag();
 
     if div == 0 {
@@ -145,7 +144,6 @@ pub fn fact<'guard>(
 {
     let inner = val.data().get(mem);
     let fst = inner.fst().get(mem);
-    let snd = inner.snd().get(mem);
     let tag = val.tag();
     
     if div == 0 {

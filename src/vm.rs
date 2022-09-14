@@ -7,7 +7,7 @@ use crate::data::*;
 use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::{MutatorView, MutatorScope};
 use crate::op::*;
-use crate::safeptr::{ScopedPtr, FuncPtr, CellPtr, UntypedCellPtr};
+use crate::safeptr::*;
 
 #[derive(PartialEq)]
 pub enum EvalStatus {
@@ -57,8 +57,17 @@ impl Thread {
             .get_frac(guard, index)
     }
 
+    fn add_func<'guard>(
+        &self,
+        guard: &'guard MutatorView,
+        func: ScopedPtr<'guard, Function>
+    ) {
+        self.functions.get(guard).push(guard, CellPtr::new_with(func));
+    }
+
     fn call_func<'guard>(
-        &self, mem: &'guard dyn MutatorScope,
+        &self,
+        mem: &'guard dyn MutatorScope,
         index: ArraySize,
         not: bool,
     ) -> Result<(), RuntimeError> {
@@ -527,7 +536,50 @@ impl Thread {
 
         Ok(EvalStatus::Pending)
     }
+
+    pub fn data(&self) -> &UntypedCellPtr { &self.data }
 }
 
 #[cfg(test)]
-mod test {}
+mod test {
+    use crate::bytecode::*;
+    use crate::constants::*;
+    use crate::data::*;
+    use crate::memory::{Memory, MutatorView};
+    use crate::op::*;
+    use crate::safeptr::*;
+    use crate::vm::{EvalStatus, Thread};
+
+    #[test]
+    fn test_zeroi_zeroe() {
+        let binding = Memory::new();
+        let mem = MutatorView::new(&binding);
+        let test_fn = Function::alloc(&mem).unwrap();
+
+        // push ZEROI and ZEROE onto function
+        test_fn.push(&mem, OP_ZEROI as u32);
+        test_fn.push(&mem, OP_ZEROE as u32);
+
+        // create thread
+        let data = mem.alloc(0 as u32).unwrap();
+        let thread = Thread::alloc_with_arg(
+            &mem,
+            CellPtr::new_with(data.as_untyped(&mem))
+        ).unwrap();
+
+        thread.add_func(&mem, test_fn);
+        thread.call_func(&mem, 0, false).unwrap();
+
+        match thread.eval_next_instr(&mem).unwrap() {
+            EvalStatus::Pending => {
+                let new_data = thread.data().get(&mem);
+                let cast_data = unsafe { new_data.cast::<Sum<u32>>(&mem) };
+                let test_zeroi = zeroi(mem.alloc(0 as u32).unwrap());
+
+                //println!("expected: {}, got: {}", test_zeroi.tag(), cast_data.tag());
+                assert!(test_zeroi.tag() == cast_data.tag());
+            },
+            _ => panic!("eval_next_instr failed"),
+        }
+    }
+}

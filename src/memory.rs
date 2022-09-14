@@ -25,7 +25,7 @@ pub trait Mutator: Sized {
 }
 
 impl<'memory> MutatorView<'memory> {
-    fn new(mem: &'memory Memory) -> MutatorView<'memory> {
+    pub fn new(mem: &'memory Memory) -> MutatorView<'memory> {
         MutatorView { heap: &mem.heap }
     }
 
