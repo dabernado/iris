@@ -78,12 +78,6 @@ impl<T: Sized> RawPtr<T> {
         }
     }
 
-    pub fn new_unit() -> RawPtr<()> {
-        RawPtr {
-            ptr: NonNull::new(&mut () as *mut ()).unwrap(),
-        }
-    }
-
     pub unsafe fn cast<U>(self) -> RawPtr<U> {
         RawPtr::new(self.ptr.cast::<U>().as_ptr())
     }
