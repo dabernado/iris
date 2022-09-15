@@ -205,7 +205,7 @@ impl Thread {
                 let cast_ptr = unsafe { data.cast::<Sum<()>>(mem) };
                 let inner = zeroe(cast_ptr, mem);
 
-                self.data.set(inner.as_untyped(mem));
+                self.data.set(inner);
                 mem.dealloc(cast_ptr)?;
             },
             OP_UNITI => {
@@ -558,8 +558,8 @@ mod test {
         let test_fn = Function::alloc(&mem).unwrap();
 
         // push ZEROI and ZEROE onto function
-        test_fn.push(&mem, OP_ZEROI as u32);
-        test_fn.push(&mem, OP_ZEROE as u32);
+        test_fn.push(&mem, encode_i(OP_ZEROI, 0).unwrap());
+        test_fn.push(&mem, encode_i(OP_ZEROE, 0).unwrap());
 
         // create thread
         let data = mem.alloc(1337 as u32).unwrap();
@@ -571,10 +571,11 @@ mod test {
         thread.add_func(&mem, test_fn);
         thread.call_func(&mem, 0, false).unwrap();
 
+        // exec zeroi
         match thread.eval_next_instr(&mem).unwrap() {
             EvalStatus::Pending => {
                 let new_data = thread.data().get(&mem);
-                let cast_data = unsafe { new_data.cast::<Sum<u32>>(&mem) };
+                let cast_data = unsafe { new_data.cast::<Sum<Nat>>(&mem) };
                 let test_zeroi = Sum::new(
                     1,
                     CellPtr::new_with(mem.alloc(1337 as u32).unwrap())
@@ -588,6 +589,20 @@ mod test {
                             .get(&mem)
                             .as_ref(&mem)
                 );
+
+                // exec zeroe
+                match thread.eval_next_instr(&mem).unwrap() {
+                    EvalStatus::Pending => {
+                        let result = thread.data().get(&mem);
+                        let cast_result = unsafe {
+                            result.cast::<Nat>(&mem)
+                        };
+                        let test_result = 1337 as u32;
+
+                        assert!(&test_result == cast_result.as_ref(&mem));
+                    },
+                    _ => panic!("eval_next_instr failed"),
+                }
             },
             _ => panic!("eval_next_instr failed"),
         }
