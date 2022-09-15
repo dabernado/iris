@@ -34,6 +34,7 @@ impl Thread {
     {
         let funcs = Array::<FuncPtr>::alloc_with_capacity(mem, 128)?;
         let cxts = Array::<Context>::alloc_with_capacity(mem, 256)?;
+        cxts.push(mem, Context::Nil)?;
 
         let empty_fn = Function::alloc(mem)?;
         let cont = Continuation::alloc(mem, empty_fn)?;
@@ -561,7 +562,7 @@ mod test {
         test_fn.push(&mem, OP_ZEROE as u32);
 
         // create thread
-        let data = mem.alloc(0 as u32).unwrap();
+        let data = mem.alloc(1337 as u32).unwrap();
         let thread = Thread::alloc_with_arg(
             &mem,
             CellPtr::new_with(data.as_untyped(&mem))
@@ -574,10 +575,19 @@ mod test {
             EvalStatus::Pending => {
                 let new_data = thread.data().get(&mem);
                 let cast_data = unsafe { new_data.cast::<Sum<u32>>(&mem) };
-                let test_zeroi = zeroi(mem.alloc(0 as u32).unwrap());
+                let test_zeroi = Sum::new(
+                    1,
+                    CellPtr::new_with(mem.alloc(1337 as u32).unwrap())
+                );
 
-                //println!("expected: {}, got: {}", test_zeroi.tag(), cast_data.tag());
                 assert!(test_zeroi.tag() == cast_data.tag());
+                assert!(test_zeroi.data()
+                            .get(&mem)
+                            .as_ref(&mem)
+                        == cast_data.data()
+                            .get(&mem)
+                            .as_ref(&mem)
+                );
             },
             _ => panic!("eval_next_instr failed"),
         }

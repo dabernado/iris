@@ -118,16 +118,17 @@ Based on the sum variant of the incoming value, `EXPN/COLN` will negate its type
 Negative types can be used to implement novel control structures such as recursion, delimited continuations, coroutines, and others. Looping in IRIS is implemented with the additive trace, which itself is implemented using negative types. For example, given a function `f` of type `(?a + ?b) + (?a + ?c)`, a trace over `f` can be constructed with the following function:
 
 ```
-fn: (?a + ?b) <-> (?a + (nat * nat))
+fn: (?a + ?b) <-> (?a + ?c)
 
-traceadd: ?b <-> (nat * nat)
-  zeroi;			                // 0 + ?b
-  (expn:?a + id);		          // (-?a + ?a) + ?b
-  assrs;			                // -?a + (?a + ?b)
-  (id + fn; (+5; -4 * ^20));	// -?a + (?a + (nat * nat))
-  assls;			                // (-?a + ?a) + (nat * nat) 
-  (coln:?a + id);		          // 0 + (nat * nat)
-  zeroe.			                // nat * nat
+traceadd: ?b <-> ?c
+  zeroi;                                     // 0 + ?b
+  (+ expn:?a id);                            // (-?a + ?a) + ?b
+  assrs;                                     // -?a + (?a + ?b)
+  (+ id
+    (fn; (* (plus5; setFlag) ^20)));         // -?a + (?a + (nat * nat))
+  assls;                                     // (-?a + ?a) + (nat * nat) 
+  (+ coln:?a id);                            // 0 + (nat * nat)
+  zeroe.                                     // nat * nat
 ```
 
 #### Functions
