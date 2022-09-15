@@ -62,3 +62,68 @@ fn test_zeroi_zeroe() {
         _ => panic!("eval_next_instr failed"),
     }
 }
+
+#[test]
+fn test_uniti_unite() {
+    let binding = Memory::new();
+    let mem = MutatorView::new(&binding);
+    let test_fn = Function::alloc(&mem).unwrap();
+
+    // push UNITI and UNITE onto function
+    test_fn.push(&mem, encode_i(OP_UNITI, 0).unwrap());
+    test_fn.push(&mem, encode_i(OP_UNITE, 0).unwrap());
+
+    // create thread
+    let data = mem.alloc(1337 as u32).unwrap();
+    let thread = Thread::alloc_with_arg(
+        &mem,
+        CellPtr::new_with(data.as_untyped(&mem))
+        ).unwrap();
+
+    thread.add_func(&mem, test_fn);
+    thread.call_func(&mem, 0, false).unwrap();
+
+    // exec uniti
+    match thread.eval_next_instr(&mem).unwrap() {
+        EvalStatus::Pending => {
+            let new_data = thread.data().get(&mem);
+            let cast_data = unsafe {
+                new_data.cast::<Product<Unit, Nat>>(&mem)
+            };
+            let test_uniti = Product::new(
+                CellPtr::new_with(mem.alloc(Unit::new()).unwrap()),
+                CellPtr::new_with(mem.alloc(1337 as u32).unwrap())
+            );
+
+            assert!(test_uniti.fst()
+                    .get(&mem)
+                    .as_ref(&mem)
+                    == cast_data.fst()
+                    .get(&mem)
+                    .as_ref(&mem)
+                    );
+            assert!(test_uniti.snd()
+                    .get(&mem)
+                    .as_ref(&mem)
+                    == cast_data.snd()
+                    .get(&mem)
+                    .as_ref(&mem)
+                    );
+
+            // exec unite
+            match thread.eval_next_instr(&mem).unwrap() {
+                EvalStatus::Pending => {
+                    let result = thread.data().get(&mem);
+                    let cast_result = unsafe {
+                        result.cast::<Nat>(&mem)
+                    };
+                    let test_result = 1337 as u32;
+
+                    assert!(&test_result == cast_result.as_ref(&mem));
+                },
+                _ => panic!("eval_next_instr failed"),
+            }
+        },
+        _ => panic!("eval_next_instr failed"),
+    }
+}

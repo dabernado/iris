@@ -19,8 +19,16 @@ impl Print for Zero {
     ) -> fmt::Result { write!(f, "*") }
 }
 
-pub type Unit = ();
+// for rust typechecking
+impl AllocObject for () {}
+
+#[derive(Clone, PartialEq)]
+pub struct Unit(u32); // has to represent some kind of data or alloc freaks out
 impl AllocObject for Unit {}
+
+impl Unit {
+    pub fn new() -> Unit { Unit(0) }
+}
 
 impl Print for Unit {
     fn print<'guard>(

@@ -35,20 +35,25 @@ pub fn swaps<'guard, T: AllocObject>(
     }
 }
 
-pub fn uniti<'guard, T>(val: ScopedPtr<'guard, T>) -> Product<Unit, T>
+pub fn uniti<'guard, T>(
+    val: ScopedPtr<'guard, T>,
+    mem: &'guard MutatorView
+) -> Result<Product<Unit, T>, RuntimeError>
     where T: AllocObject
 {
-    Product::new(CellPtr::<Unit>::new_unit(), CellPtr::new_with(val))
+    Ok(Product::new(
+        CellPtr::new_with(mem.alloc(Unit::new())?),
+        CellPtr::new_with(val)
+    ))
 }
 
 pub fn unite<'guard, T>(
     val: ScopedPtr<'guard, Product<Unit, T>>,
-    mem: &'guard MutatorView
-) -> Result<ScopedPtr<'guard, T>, RuntimeError>
+    mem: &'guard dyn MutatorScope
+) -> ScopedPtr<'guard, T>
     where T: AllocObject
 {
-    mem.dealloc(val.fst().get(mem))?;
-    Ok(val.snd().get(mem))
+    val.snd().get(mem)
 
 }
 

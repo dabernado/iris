@@ -209,14 +209,15 @@ impl Thread {
                 mem.dealloc(cast_ptr)?;
             },
             OP_UNITI => {
-                let new_data = mem.alloc(uniti(data))?;
+                let new_data = mem.alloc(uniti(data, mem)?)?;
                 self.data.set(new_data.as_untyped(mem));
             },
             OP_UNITE => {
                 let cast_ptr = unsafe { data.cast::<Product<Unit, ()>>(mem) };
-                let inner = unite(cast_ptr, mem)?;
+                let inner = unite(cast_ptr, mem);
 
                 self.data.set(inner.as_untyped(mem));
+                mem.dealloc(cast_ptr.fst().get(mem))?;
                 mem.dealloc(cast_ptr)?;
             },
             OP_SWAPP | OP_SWAPP_R => {

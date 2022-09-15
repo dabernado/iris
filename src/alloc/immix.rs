@@ -70,7 +70,7 @@ impl StickyImmixHeap {
         } {
             let block_start = head.as_ptr() as usize;
             let block_end = block_start + constants::BLOCK_SIZE;
-            println!("{} - {}", block_start, block_end);
+            //println!("{} - {}", block_start, block_end);
 
             if (word >= block_start) && (word < block_end) {
                 return Some(head);
@@ -157,6 +157,7 @@ impl AllocRaw for StickyImmixHeap {
     {
         // mark block lines as unallocated
         let obj_ptr = object.as_ptr();
+        println!("object as word: {}", object.as_word());
         let block = self.get_block(object.as_word()).unwrap();
 
         let cursor = obj_ptr as usize - block.as_ptr() as usize;
