@@ -490,9 +490,9 @@ pub fn default_array_growth(capacity: ArraySize) -> Result<ArraySize, RuntimeErr
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
-    use crate::memory::{Memory, Mutator, MutatorView};
+    use crate::memory::{Memory, Mutator};
 
     #[test]
     fn array_generic_push_and_pop() {
@@ -507,7 +507,7 @@ mod test {
                 &self,
                 view: &MutatorView,
                 _input: Self::Input,
-            ) -> Result<Self::Output, RuntimeError> {
+                ) -> Result<Self::Output, RuntimeError> {
                 let array: Array<i32> = Array::new();
 
                 for i in 0..1000 {
@@ -539,7 +539,7 @@ mod test {
                 &self,
                 view: &MutatorView,
                 _input: Self::Input,
-            ) -> Result<Self::Output, RuntimeError> {
+                ) -> Result<Self::Output, RuntimeError> {
                 let array: Array<i32> = Array::new();
 
                 for i in 0..12 {
@@ -577,7 +577,7 @@ mod test {
                 &self,
                 view: &MutatorView,
                 _input: Self::Input,
-            ) -> Result<Self::Output, RuntimeError> {
+                ) -> Result<Self::Output, RuntimeError> {
                 let array: Array<i32> = Array::with_capacity(view, 256)?;
 
                 let ptr_before = array.data.get().as_ptr();

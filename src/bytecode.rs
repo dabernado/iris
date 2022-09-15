@@ -172,30 +172,3 @@ pub fn encode_s(op: u8, div: u8, lc: u8, rc: u8) -> Opcode {
      ^ padded_div)
     ^ (op as u32)
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    // Encoding/Decoding Tests
-    #[test]
-    fn test_get_opcode() {
-        assert!(OP_ADD == get_opcode(10));
-    }
-
-    #[test]
-    fn test_itype() {
-        let instr = encode_i(OP_ADDI, 2).unwrap();
-
-        assert!(OP_ADDI == get_opcode(instr));
-        assert!(2 == decode_i(instr));
-    }
-
-    #[test]
-    fn test_stype() {
-        let instr = encode_s(OP_SUMS, 4, 2, 3);
-
-        assert!(OP_SUMS == get_opcode(instr));
-        assert!((4, 2, 3) == decode_s(instr));
-    }
-}
