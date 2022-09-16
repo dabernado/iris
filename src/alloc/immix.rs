@@ -70,7 +70,6 @@ impl StickyImmixHeap {
         } {
             let block_start = head.as_ptr() as usize;
             let block_end = block_start + constants::BLOCK_SIZE;
-            //println!("{} - {}", block_start, block_end);
 
             if (word >= block_start) && (word < block_end) {
                 return Some(head);
