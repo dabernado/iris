@@ -1,8 +1,9 @@
 - implement ops in Thread struct
 	- write tests for ops
-- implement typed serialization/deserialization for data types
+- implement typed serialization/deserialization for images
 	- write tests for serialization/deserialization
 - begin working on bootstrapping isome compiler
 	- ???
-- implement foreign function interface
 - write metacircular isome compiler
+- implement foreign function interface
+- implement vector ops extension
