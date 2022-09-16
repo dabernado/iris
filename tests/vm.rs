@@ -31,19 +31,9 @@ fn test_zeroi_zeroe() {
         EvalStatus::Pending => {
             let new_data = thread.data().get(&mem);
             let cast_data = unsafe { new_data.cast::<Sum<Nat>>(&mem) };
-            let test_zeroi = Sum::new(
-                1,
-                CellPtr::new_with(mem.alloc(1337 as u32).unwrap())
-                );
 
-            assert!(test_zeroi.tag() == cast_data.tag());
-            assert!(test_zeroi.data()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    == cast_data.data()
-                    .get(&mem)
-                    .as_ref(&mem)
-                   );
+            assert!(1 == cast_data.tag());
+            assert!(&1337 == cast_data.data().get(&mem).as_ref(&mem));
 
             // exec zeroe
             match thread.eval_next_instr(&mem).unwrap() {
@@ -52,9 +42,8 @@ fn test_zeroi_zeroe() {
                     let cast_result = unsafe {
                         result.cast::<Nat>(&mem)
                     };
-                    let test_result = 1337 as u32;
 
-                    assert!(&test_result == cast_result.as_ref(&mem));
+                    assert!(&1337 == cast_result.as_ref(&mem));
                 },
                 _ => panic!("eval_next_instr failed"),
             }
@@ -90,25 +79,9 @@ fn test_uniti_unite() {
             let cast_data = unsafe {
                 new_data.cast::<Product<Unit, Nat>>(&mem)
             };
-            let test_uniti = Product::new(
-                CellPtr::new_with(mem.alloc(Unit::new()).unwrap()),
-                CellPtr::new_with(mem.alloc(1337 as u32).unwrap())
-            );
 
-            assert!(test_uniti.fst()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    == cast_data.fst()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    );
-            assert!(test_uniti.snd()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    == cast_data.snd()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    );
+            assert!(&Unit::new() == cast_data.fst().get(&mem).as_ref(&mem));
+            assert!(&1337 == cast_data.snd().get(&mem).as_ref(&mem));
 
             // exec unite
             match thread.eval_next_instr(&mem).unwrap() {
@@ -117,9 +90,8 @@ fn test_uniti_unite() {
                     let cast_result = unsafe {
                         result.cast::<Nat>(&mem)
                     };
-                    let test_result = 1337 as u32;
 
-                    assert!(&test_result == cast_result.as_ref(&mem));
+                    assert!(&1337 == cast_result.as_ref(&mem));
                 },
                 _ => panic!("eval_next_instr failed"),
             }
@@ -159,25 +131,9 @@ fn test_swapp() {
             let cast_data = unsafe {
                 new_data.cast::<Product<Nat, Nat>>(&mem)
             };
-            let test_swapp = Product::new(
-                CellPtr::new_with(mem.alloc(69 as u32).unwrap()),
-                CellPtr::new_with(mem.alloc(420 as u32).unwrap())
-            );
 
-            assert!(test_swapp.fst()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    == cast_data.fst()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    );
-            assert!(test_swapp.snd()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    == cast_data.snd()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    );
+            assert!(&69 == cast_data.fst().get(&mem).as_ref(&mem));
+            assert!(&420 == cast_data.snd().get(&mem).as_ref(&mem));
 
             // exec swapp
             match thread.eval_next_instr(&mem).unwrap() {
@@ -186,25 +142,9 @@ fn test_swapp() {
                     let cast_result = unsafe {
                         result.cast::<Product<Nat, Nat>>(&mem)
                     };
-                    let test_result = Product::new(
-                        CellPtr::new_with(mem.alloc(420 as u32).unwrap()),
-                        CellPtr::new_with(mem.alloc(69 as u32).unwrap())
-                        );
 
-                    assert!(test_result.fst()
-                            .get(&mem)
-                            .as_ref(&mem)
-                            == cast_result.fst()
-                            .get(&mem)
-                            .as_ref(&mem)
-                           );
-                    assert!(test_result.snd()
-                            .get(&mem)
-                            .as_ref(&mem)
-                            == cast_result.snd()
-                            .get(&mem)
-                            .as_ref(&mem)
-                           );
+                    assert!(&420 == cast_result.fst().get(&mem).as_ref(&mem));
+                    assert!(&69 == cast_result.snd().get(&mem).as_ref(&mem));
                 },
                 _ => panic!("eval_next_instr failed"),
             }
@@ -248,41 +188,11 @@ fn test_assrp_asslp() {
             let cast_data = unsafe {
                 new_data.cast::<Product<Nat, Product<Nat, Nat>>>(&mem)
             };
-            let test_assrp = mem.alloc(Product::new(
-                    CellPtr::new_with(mem.alloc(420 as u32).unwrap()),
-                    CellPtr::new_with(mem.alloc(Product::new(
-                                CellPtr::new_with(mem.alloc(69 as u32)
-                                    .unwrap()),
-                                CellPtr::new_with(mem.alloc(1337 as u32)
-                                    .unwrap()),
-                    )).unwrap())
-            )).unwrap();
+            let inner_data = cast_data.snd().get(&mem);
 
-            assert!(test_assrp.fst()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    == cast_data.fst()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    );
-            assert!(test_assrp.snd().get(&mem)
-                    .fst()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    == cast_data.snd().get(&mem)
-                    .fst()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    );
-            assert!(test_assrp.snd().get(&mem)
-                    .snd()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    == cast_data.snd().get(&mem)
-                    .snd()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    );
+            assert!(&420 == cast_data.fst().get(&mem).as_ref(&mem));
+            assert!(&69 == inner_data.fst().get(&mem).as_ref(&mem));
+            assert!(&1337 == inner_data.snd().get(&mem).as_ref(&mem));
 
             // exec asslp
             match thread.eval_next_instr(&mem).unwrap() {
@@ -291,41 +201,11 @@ fn test_assrp_asslp() {
                     let cast_result = unsafe {
                         result.cast::<Product<Product<Nat, Nat>, Nat>>(&mem)
                     };
-                    let test_result = mem.alloc(Product::new(
-                            CellPtr::new_with(mem.alloc(Product::new(
-                                        CellPtr::new_with(mem.alloc(420 as u32)
-                                            .unwrap()),
-                                        CellPtr::new_with(mem.alloc(69 as u32)
-                                            .unwrap()),
-                            )).unwrap()),
-                            CellPtr::new_with(mem.alloc(1337 as u32).unwrap())
-                    )).unwrap();
+                    let cast_inner = cast_result.fst().get(&mem);
 
-            assert!(test_result.snd()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    == cast_result.snd()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    );
-            assert!(test_result.fst().get(&mem)
-                    .fst()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    == cast_result.fst().get(&mem)
-                    .fst()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    );
-            assert!(test_result.fst().get(&mem)
-                    .snd()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    == cast_result.fst().get(&mem)
-                    .snd()
-                    .get(&mem)
-                    .as_ref(&mem)
-                    );
+                    assert!(&420 == cast_inner.fst().get(&mem).as_ref(&mem));
+                    assert!(&69 == cast_inner.snd().get(&mem).as_ref(&mem));
+                    assert!(&1337 == cast_result.snd().get(&mem).as_ref(&mem));
                 },
                 _ => panic!("eval_next_instr failed"),
             }
