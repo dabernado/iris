@@ -124,8 +124,7 @@ traceadd: ?b <-> ?c
   zeroi;                                     // 0 + ?b
   (+ expn:?a id);                            // (-?a + ?a) + ?b
   assrs;                                     // -?a + (?a + ?b)
-  (+ id
-    (fn; (* (plus5; setFlag) ^20)));         // -?a + (?a + (nat * nat))
+  (+ id (fn; (\* (plus5; setFlag) ^20)));    // -?a + (?a + (nat * nat))
   assls;                                     // (-?a + ?a) + (nat * nat) 
   (+ coln:?a id);                            // 0 + (nat * nat)
   zeroe.                                     // nat * nat
