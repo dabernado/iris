@@ -156,7 +156,6 @@ impl AllocRaw for StickyImmixHeap {
     {
         // mark block lines as unallocated
         let obj_ptr = object.as_ptr();
-        println!("object as word: {}", object.as_word());
         let block = self.get_block(object.as_word()).unwrap();
 
         let cursor = obj_ptr as usize - block.as_ptr() as usize;

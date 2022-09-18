@@ -73,7 +73,7 @@ impl<'guard, T: Sized + PartialEq> PartialEq for ScopedPtr<'guard, T> {
 }
 
 /* Cell Pointers */
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CellPtr<T: Sized> {
     inner: Cell<RawPtr<T>>,
 }

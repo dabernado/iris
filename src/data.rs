@@ -22,7 +22,7 @@ impl Print for Zero {
 // for rust typechecking
 impl AllocObject for () {}
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Unit(u32); // has to represent some kind of data or alloc freaks out
 impl AllocObject for Unit {}
 
@@ -80,7 +80,7 @@ impl Print for Bool {
 }
 
 /* Algebraic Data Types */
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Fraction {
     ptr: UntypedCellPtr,
     size: Nat
@@ -107,6 +107,7 @@ impl Print for Fraction {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Negative<O: AllocObject>(CellPtr<O>);
 impl<O: AllocObject> AllocObject for Negative<O> {}
 
@@ -115,7 +116,9 @@ impl<O: AllocObject> Negative<O> {
 }
 
 impl<O: AllocObject> Negative<O> {
-    pub fn data(&self) -> &CellPtr<O> { &self.0 }
+    pub fn data<'guard>(&self, guard: &'guard dyn MutatorScope)
+        -> ScopedPtr<'guard, O>
+    { self.0.get(guard) }
 }
 
 impl<O: AllocObject + Print> Print for Negative<O> {
@@ -126,7 +129,7 @@ impl<O: AllocObject + Print> Print for Negative<O> {
     ) -> fmt::Result { write!(f, "-{}", self.0.get(guard)) }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Sum<O: AllocObject> {
     tag: Cell<Nat>,
     data: CellPtr<O>,
@@ -142,8 +145,16 @@ impl<O: AllocObject> Sum<O> {
         self.tag.set(tag);
     }
 
+    pub fn set_data<'guard>(&self, ptr: ScopedPtr<'guard, O>) {
+        self.data.set(ptr);
+    }
+
     pub fn tag(&self) -> Nat { self.tag.get()}
-    pub fn data(&self) -> &CellPtr<O> { &self.data }
+    pub fn data<'guard>(&self, guard: &'guard dyn MutatorScope)
+        -> ScopedPtr<'guard, O>
+    {
+        self.data.get(guard)
+    }
 }
 
 impl<O: AllocObject + Print> Print for Sum<O> {
@@ -157,7 +168,7 @@ impl<O: AllocObject + Print> Print for Sum<O> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Product<F: AllocObject, S: AllocObject> {
     fst: CellPtr<F>,
     snd: CellPtr<S>,
@@ -169,8 +180,25 @@ impl<F: AllocObject, S: AllocObject> Product<F, S> {
         Product { fst, snd }
     }
 
-    pub fn fst(&self) -> &CellPtr<F> { &self.fst }
-    pub fn snd(&self) -> &CellPtr<S> { &self.snd }
+    pub fn fst<'guard>(
+        &self,
+        guard: &'guard dyn MutatorScope
+    ) -> ScopedPtr<'guard, F> { self.fst.get(guard) }
+
+    pub fn set_fst<'guard>(
+        &self,
+        ptr: ScopedPtr<'guard, F>
+    ) { self.fst.set(ptr) }
+    
+    pub fn snd<'guard>(
+        &self,
+        guard: &'guard dyn MutatorScope
+    ) -> ScopedPtr<'guard, S> { self.snd.get(guard) }
+
+    pub fn set_snd<'guard>(
+        &self,
+        ptr: ScopedPtr<'guard, S>
+    ) { self.snd.set(ptr) }
 }
 
 impl<F: AllocObject + Print, S: AllocObject + Print> Print for Product<F, S> {

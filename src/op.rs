@@ -19,7 +19,7 @@ pub fn zeroe<'guard, T>(
 ) -> ScopedPtr<'guard, T>
     where T: AllocObject
 {
-    val.data().get(guard)
+    val.data(guard)
 }
 
 pub fn swaps<'guard, T: AllocObject>(
@@ -53,7 +53,7 @@ pub fn unite<'guard, T>(
 ) -> ScopedPtr<'guard, T>
     where T: AllocObject
 {
-    val.snd().get(mem)
+    val.snd(mem)
 
 }
 
@@ -61,45 +61,45 @@ pub fn swapp<'guard>(
     val: &ScopedPtr<'guard, Product<(), ()>>,
     guard: &'guard dyn MutatorScope
 ) {
-    let fst = val.fst().get(guard);
-    let snd = val.snd().get(guard);
+    let fst = val.fst(guard);
+    let snd = val.snd(guard);
 
-    val.fst().set(snd);
-    val.snd().set(fst);
+    val.set_fst(snd);
+    val.set_snd(fst);
 }
 
 pub fn assrp<'guard>(
     val: &ScopedPtr<'guard, Product<(), ()>>,
     guard: &'guard dyn MutatorScope
 ) {
-    let inner_ptr = val.fst().get(guard);
+    let inner_ptr = val.fst(guard);
     let inner = unsafe { inner_ptr.cast::<Product<(), ()>>(guard) };
 
-    let a = inner.fst().get(guard);
-    let b = inner.snd().get(guard);
-    let c = val.snd().get(guard);
+    let a = inner.fst(guard);
+    let b = inner.snd(guard);
+    let c = val.snd(guard);
 
-    inner.fst().set(b);
-    inner.snd().set(c);
-    val.fst().set(a);
-    val.snd().set(inner.as_untyped(guard));
+    inner.set_fst(b);
+    inner.set_snd(c);
+    val.set_fst(a);
+    val.set_snd(inner.as_untyped(guard));
 }
 
 pub fn asslp<'guard>(
     val: &ScopedPtr<'guard, Product<(), ()>>,
     guard: &'guard dyn MutatorScope
 ) {
-    let inner_ptr = val.snd().get(guard);
+    let inner_ptr = val.snd(guard);
     let inner = unsafe { inner_ptr.cast::<Product<(), ()>>(guard) };
 
-    let a = val.fst().get(guard);
-    let b = inner.fst().get(guard);
-    let c = inner.snd().get(guard);
+    let a = val.fst(guard);
+    let b = inner.fst(guard);
+    let c = inner.snd(guard);
 
-    inner.fst().set(a);
-    inner.snd().set(b);
-    val.fst().set(inner.as_untyped(guard));
-    val.snd().set(c);
+    inner.set_fst(a);
+    inner.set_snd(b);
+    val.set_fst(inner.as_untyped(guard));
+    val.set_snd(c);
 }
 
 pub fn dist<'guard, T: AllocObject>(
@@ -108,7 +108,7 @@ pub fn dist<'guard, T: AllocObject>(
     mem: &'guard MutatorView
 ) -> Result<ScopedPtr<'guard, Sum<Product<(), ()>>>, RuntimeError>
 {
-    let sum = val.fst().get(mem);
+    let sum = val.fst(mem);
     let tag = sum.tag();
 
     if div == 0 {
@@ -119,12 +119,12 @@ pub fn dist<'guard, T: AllocObject>(
             val.cast::<Product<(), ()>>(mem)
         };
         
-        new_val.fst().set(sum.data().get(mem).as_untyped(mem));
-        new_sum.data().set(new_val);
+        new_val.set_fst(sum.data(mem).as_untyped(mem));
+        new_sum.set_data(new_val);
 
         Ok(new_sum)
     } else if tag < div {
-        val.fst().set(sum);
+        val.set_fst(sum);
         let new_sum = mem.alloc(Sum::new(0, CellPtr::new_with(val)))?;
 
         Ok(unsafe {
@@ -132,7 +132,7 @@ pub fn dist<'guard, T: AllocObject>(
         })
     } else {
         sum.set_tag(tag - div);
-        val.fst().set(sum);
+        val.set_fst(sum);
         let new_sum = mem.alloc(Sum::new(1, CellPtr::new_with(val)))?;
 
         Ok(unsafe {
@@ -147,13 +147,13 @@ pub fn fact<'guard>(
     mem: &'guard MutatorView
 ) -> Result<ScopedPtr<'guard, Product<(), ()>>, RuntimeError>
 {
-    let inner = val.data().get(mem);
-    let fst = inner.fst().get(mem);
+    let inner = val.data(mem);
+    let fst = inner.fst(mem);
     let tag = val.tag();
     
     if div == 0 {
-        val.data().set(unsafe { fst.cast::<Product<(), ()>>(mem) });
-        inner.fst().set(val.as_untyped(mem));
+        val.set_data(unsafe { fst.cast::<Product<(), ()>>(mem) });
+        inner.set_fst(val.as_untyped(mem));
 
         Ok(inner)
     } else if tag == 0 {
@@ -177,11 +177,11 @@ pub fn expn<'guard>(
 {
     if val.tag() == 0 {
         let cast_val = unsafe { val.cast::<Sum<Negative<()>>>(mem) };
-        let inner = cast_val.data().get(mem)
-            .data().get(mem);
+        let inner = cast_val.data(mem)
+            .data(mem);
 
         if div == 0 {
-            val.data().set(inner);
+            val.set_data(inner);
             val.set_tag(1);
             Ok(val)
         } else {
@@ -189,16 +189,16 @@ pub fn expn<'guard>(
             let inner_tag = cast_inner.tag();
             cast_inner.set_tag(inner_tag + div);
 
-            mem.dealloc(cast_val.data().get(mem))?;
+            mem.dealloc(cast_val.data(mem))?;
             mem.dealloc(cast_val)?;
             Ok(cast_inner)
         }
     } else {
-        let inner = val.data().get(mem);
+        let inner = val.data(mem);
 
         if div == 0 {
             let neg = mem.alloc(Negative::new(CellPtr::new_with(inner)))?;
-            val.data().set(unsafe { neg.cast::<()>(mem) });
+            val.set_data(unsafe { neg.cast::<()>(mem) });
 
             Ok(val)
         } else {
@@ -227,8 +227,8 @@ pub fn colf<'guard>(
     mem: &'guard MutatorView
 ) -> Result<(), RuntimeError>
 {
-    let frac = prod.fst().get(mem);
-    let val = prod.snd().get(mem);
+    let frac = prod.fst(mem);
+    let val = prod.snd(mem);
 
     mem.dealloc_frac(frac, val, frac.size())?;
     mem.dealloc(prod)
@@ -241,9 +241,9 @@ pub fn add<'guard>(
     val: &ScopedPtr<'guard, Product<Nat, Nat>>,
     guard: &'guard dyn MutatorScope
 ) {
-    let fst = val.fst().get(guard).as_ref(guard);
-    let snd = val.snd().get(guard).as_ref(guard);
-    let mut fst_raw = val.fst().get(guard).as_rawptr(guard);
+    let fst = val.fst(guard).as_ref(guard);
+    let snd = val.snd(guard).as_ref(guard);
+    let mut fst_raw = val.fst(guard).as_rawptr(guard);
     let fst_mut = fst_raw.as_mut();
 
     *fst_mut = fst + snd;
@@ -253,12 +253,12 @@ pub fn sub<'guard>(
     val: &ScopedPtr<'guard, Product<Nat, Nat>>,
     guard: &'guard dyn MutatorScope
 ) -> Result<(), RuntimeError> {
-    let fst = val.fst().get(guard).as_ref(guard);
-    let snd = val.snd().get(guard).as_ref(guard);
+    let fst = val.fst(guard).as_ref(guard);
+    let snd = val.snd(guard).as_ref(guard);
     
     // checking for underflow
     if snd <= fst {
-        let mut fst_raw = val.fst().get(guard).as_rawptr(guard);
+        let mut fst_raw = val.fst(guard).as_rawptr(guard);
         let fst_mut = fst_raw.as_mut();
 
         *fst_mut = fst + snd;
@@ -303,9 +303,9 @@ pub fn xor<'guard>(
     val: &ScopedPtr<'guard, Product<Nat, Nat>>,
     guard: &'guard dyn MutatorScope
 ) {
-    let fst = val.fst().get(guard).as_ref(guard);
-    let snd = val.snd().get(guard).as_ref(guard);
-    let mut fst_raw = val.fst().get(guard).as_rawptr(guard);
+    let fst = val.fst(guard).as_ref(guard);
+    let snd = val.snd(guard).as_ref(guard);
+    let mut fst_raw = val.fst(guard).as_rawptr(guard);
     let fst_mut = fst_raw.as_mut();
 
     *fst_mut = fst ^ snd;
@@ -327,14 +327,14 @@ pub fn cswap<'guard>(
     val: &ScopedPtr<'guard, Product<Product<Nat, Nat>, Nat>>,
     guard: &'guard dyn MutatorScope
 ) {
-    let inner = val.fst().get(guard).as_ref(guard);
-    let a = inner.fst().get(guard).as_ref(guard);
-    let b = inner.snd().get(guard).as_ref(guard);
-    let c = val.snd().get(guard).as_ref(guard);
+    let inner = val.fst(guard).as_ref(guard);
+    let a = inner.fst(guard).as_ref(guard);
+    let b = inner.snd(guard).as_ref(guard);
+    let c = val.snd(guard).as_ref(guard);
     
-    let mut a_raw = inner.fst().get(guard).as_rawptr(guard);
+    let mut a_raw = inner.fst(guard).as_rawptr(guard);
     let a_mut = a_raw.as_mut();
-    let mut b_raw = inner.snd().get(guard).as_rawptr(guard);
+    let mut b_raw = inner.snd(guard).as_rawptr(guard);
     let b_mut = b_raw.as_mut();
 
     let s = (a ^ b) & c;
@@ -347,12 +347,12 @@ pub fn cswapi<'guard>(
     operand: Nat,
     guard: &'guard dyn MutatorScope
 ) {
-    let fst = val.fst().get(guard).as_ref(guard);
-    let snd = val.snd().get(guard).as_ref(guard);
+    let fst = val.fst(guard).as_ref(guard);
+    let snd = val.snd(guard).as_ref(guard);
     
-    let mut fst_raw = val.fst().get(guard).as_rawptr(guard);
+    let mut fst_raw = val.fst(guard).as_rawptr(guard);
     let fst_mut = fst_raw.as_mut();
-    let mut snd_raw = val.snd().get(guard).as_rawptr(guard);
+    let mut snd_raw = val.snd(guard).as_rawptr(guard);
     let snd_mut = snd_raw.as_mut();
 
     let s = (fst ^ snd) & operand;
@@ -364,9 +364,9 @@ pub fn rr<'guard>(
     val: &ScopedPtr<'guard, Product<Nat, Nat>>,
     guard: &'guard dyn MutatorScope
 ) {
-    let fst = val.fst().get(guard).as_ref(guard);
-    let snd = val.snd().get(guard).as_ref(guard);
-    let mut fst_raw = val.fst().get(guard).as_rawptr(guard);
+    let fst = val.fst(guard).as_ref(guard);
+    let snd = val.snd(guard).as_ref(guard);
+    let mut fst_raw = val.fst(guard).as_rawptr(guard);
     let fst_mut = fst_raw.as_mut();
 
     *fst_mut = (fst >> snd) | (fst << (32 - snd));
@@ -376,9 +376,9 @@ pub fn rl<'guard>(
     val: &ScopedPtr<'guard, Product<Nat, Nat>>,
     guard: &'guard dyn MutatorScope
 ) {
-    let fst = val.fst().get(guard).as_ref(guard);
-    let snd = val.snd().get(guard).as_ref(guard);
-    let mut fst_raw = val.fst().get(guard).as_rawptr(guard);
+    let fst = val.fst(guard).as_ref(guard);
+    let snd = val.snd(guard).as_ref(guard);
+    let mut fst_raw = val.fst(guard).as_rawptr(guard);
     let fst_mut = fst_raw.as_mut();
 
     *fst_mut = (fst << snd) | (fst >> (32 - snd));
@@ -412,8 +412,8 @@ pub fn lti<'guard>(
     val: ScopedPtr<'guard, Product<Nat, Nat>>,
     guard: &'guard dyn MutatorScope
 ) -> Sum<Product<Nat, Nat>> {
-    let fst = val.fst().get(guard).as_ref(guard);
-    let snd = val.snd().get(guard).as_ref(guard);
+    let fst = val.fst(guard).as_ref(guard);
+    let snd = val.snd(guard).as_ref(guard);
 
     if fst < snd {
         Sum::new(0, CellPtr::new_with(val))
@@ -426,9 +426,9 @@ pub fn lte<'guard>(
     val: ScopedPtr<'guard, Sum<Product<Nat, Nat>>>,
     guard: &'guard dyn MutatorScope
 ) -> Result<ScopedPtr<'guard, Product<Nat, Nat>>, RuntimeError> {
-    let inner = val.data().get(guard);
-    let fst = inner.fst().get(guard).as_ref(guard);
-    let snd = inner.snd().get(guard).as_ref(guard);
+    let inner = val.data(guard);
+    let fst = inner.fst(guard).as_ref(guard);
+    let snd = inner.snd(guard).as_ref(guard);
 
     if (fst < snd && val.tag() == 0) || (fst >= snd && val.tag() == 1) {
         Ok(inner)
@@ -456,10 +456,10 @@ pub fn ltei<'guard>(
     div: Nat,
     guard: &'guard dyn MutatorScope
 ) -> Result<ScopedPtr<'guard, Nat>, RuntimeError> {
-    let num = val.data().get(guard).as_ref(guard);
+    let num = val.data(guard).as_ref(guard);
 
     if (*num < div && val.tag() == 0) || (*num >= div && val.tag() == 1) {
-        Ok(val.data().get(guard))
+        Ok(val.data(guard))
     } else {
         Err(RuntimeError::new(ErrorKind::LessThanElim))
     }

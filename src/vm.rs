@@ -217,7 +217,7 @@ impl Thread {
                 let inner = unite(cast_ptr, mem);
 
                 self.data.set(inner.as_untyped(mem));
-                mem.dealloc(cast_ptr.fst().get(mem))?;
+                mem.dealloc(cast_ptr.fst(mem))?;
                 mem.dealloc(cast_ptr)?;
             },
             OP_SWAPP | OP_SWAPP_R => {
@@ -448,7 +448,7 @@ impl Thread {
                         };
 
                         cxt_stack.push(mem, new_cxt);
-                        self.data.set(cast_ptr.data().get(mem));
+                        self.data.set(cast_ptr.data(mem));
                     } else {
                         let new_cxt = Context::Left {
                             right_op_index: cont.ip() - rc as u32,
@@ -458,7 +458,7 @@ impl Thread {
 
                         cont.jump((rc + 1) as u32); // ip - rc+1
                         cxt_stack.push(mem, new_cxt);
-                        self.data.set(cast_ptr.data().get(mem));
+                        self.data.set(cast_ptr.data(mem));
                     }
                 } else {
                     if !cont.direction() {
@@ -470,7 +470,7 @@ impl Thread {
 
                         cont.jump((lc + 1) as u32); // ip + lc+1
                         cxt_stack.push(mem, new_cxt);
-                        self.data.set(cast_ptr.data().get(mem));
+                        self.data.set(cast_ptr.data(mem));
                     } else {
                         let new_cxt = Context::Right {
                             left_op_index: cont.ip() - (rc + 1) as u32,
@@ -479,7 +479,7 @@ impl Thread {
                         };
 
                         cxt_stack.push(mem, new_cxt);
-                        self.data.set(cast_ptr.data().get(mem));
+                        self.data.set(cast_ptr.data(mem));
                     }
                 }
             }
@@ -503,21 +503,21 @@ impl Thread {
                 if !cont.direction() {
                     let new_cxt = Context::First {
                         snd_op_index: index,
-                        snd_val: CellPtr::new_with(cast_ptr.snd().get(mem)),
+                        snd_val: CellPtr::new_with(cast_ptr.snd(mem)),
                         root_val: CellPtr::new_with(cast_ptr),
                     };
 
                     cxt_stack.push(mem, new_cxt);
-                    self.data.set(cast_ptr.fst().get(mem));
+                    self.data.set(cast_ptr.fst(mem));
                 } else {
                     let new_cxt = Context::Second {
                         fst_op_index: index,
-                        fst_val: CellPtr::new_with(cast_ptr.fst().get(mem)),
+                        fst_val: CellPtr::new_with(cast_ptr.fst(mem)),
                         root_val: CellPtr::new_with(cast_ptr),
                     };
 
                     cxt_stack.push(mem, new_cxt);
-                    self.data.set(cast_ptr.snd().get(mem));
+                    self.data.set(cast_ptr.snd(mem));
                 }
             }
             OP_PRODE => {

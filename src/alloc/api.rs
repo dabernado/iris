@@ -65,6 +65,7 @@ pub fn alloc_size_of(object_size: usize) -> usize {
 /*
  * RawPtr API
  */
+#[derive(Debug)]
 pub struct RawPtr<T: Sized> {
     ptr: NonNull<T>
 }
