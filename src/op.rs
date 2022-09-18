@@ -28,10 +28,15 @@ pub fn swaps<'guard, T: AllocObject>(
     _guard: &'guard dyn MutatorScope
 ) {
     let tag = val.tag();
+
     if tag <= div {
-        val.set_tag(tag + div);
+        if div != 0 {
+            val.set_tag(tag + div);
+        } else {
+            val.set_tag(tag + 1);
+        }
     } else {
-        val.set_tag(tag - div);
+        val.set_tag((tag - div) - 1);
     }
 }
 
