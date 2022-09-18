@@ -189,11 +189,7 @@ impl Thread {
         let data = self.data.get(mem);
 
         let op = cont.get_next_op(mem)?;
-        let opcode = if !cont.direction() {
-            get_opcode(op)
-        } else {
-            !get_opcode(op)
-        };
+        let opcode = get_opcode(op, cont.direction());
 
         match opcode {
             OP_ID | OP_ID_R => {}, // identity

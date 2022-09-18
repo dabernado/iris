@@ -137,8 +137,12 @@ impl Continuation {
 }
 
 // Decoding Functions
-pub fn get_opcode(instr: Opcode) -> u8 {
-    (instr & OP_MASK) as u8
+pub fn get_opcode(instr: Opcode, dir: bool) -> u8 {
+    if !dir {
+        (instr & OP_MASK) as u8
+    } else {
+        (!instr & OP_MASK) as u8
+    }
 }
 pub fn decode_i(instr: Opcode) -> u32 {
     (instr & I_MASK) >> 6
