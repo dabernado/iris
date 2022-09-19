@@ -1,6 +1,13 @@
 use crate::alloc::api::AllocObject;
 use crate::array::{Array, ArraySize, StackContainer};
-use crate::bytecode::{Function, Continuation, get_opcode, decode_i, decode_s};
+use crate::bytecode::{
+    Function,
+    Continuation,
+    get_opcode,
+    decode_i,
+    decode_c,
+    decode_s
+};
 use crate::constants::*;
 use crate::context::{Context, ContextStack};
 use crate::data::*;
@@ -236,12 +243,12 @@ impl Thread {
                 asslp(&cast_ptr, mem);
             },
             OP_SWAPS | OP_SWAPS_R => {
-                let div = decode_i(op);
+                let (lc, rc) = decode_c(op);
                 let cast_ptr = unsafe {
                     data.cast::<Sum<()>>(mem)
                 };
 
-                swaps(&cast_ptr, div, mem);
+                swaps(&cast_ptr, lc, rc, mem);
             },
             OP_ASSRS | OP_ASSLS => {}, // op-equivalent to ID
             OP_DIST => {

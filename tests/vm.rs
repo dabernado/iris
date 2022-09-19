@@ -221,10 +221,9 @@ fn test_swaps() {
     let test_fn = Function::alloc(&mem).unwrap();
 
     // push two SWAPS instructions onto function
-    // with type ((nat + nat) + nat) + (nat + nat),
-    // initial div is 2 and second div is 1
-    test_fn.push(&mem, encode_i(OP_SWAPS, 2).unwrap());
-    test_fn.push(&mem, encode_i(OP_SWAPS, 1).unwrap());
+    // with type ((nat + nat) + nat) + (nat + nat)
+    test_fn.push(&mem, encode_c(OP_SWAPS, 3, 2).unwrap());
+    test_fn.push(&mem, encode_c(OP_SWAPS, 2, 3).unwrap());
 
     // create thread
     let data = mem.alloc(
@@ -259,6 +258,68 @@ fn test_swaps() {
 
                     assert!(2 == cast_data.tag());
                     assert!(&69 == cast_data.data(&mem).as_ref(&mem));
+                },
+                _ => panic!("eval_next_instr failed"),
+            }
+        },
+        _ => panic!("eval_next_instr failed"),
+    }
+}
+
+#[test]
+fn test_dist_fact() {
+    let binding = Memory::new();
+    let mem = MutatorView::new(&binding);
+    let test_fn = Function::alloc(&mem).unwrap();
+
+    // push DIST + FACT instructions onto function
+    // with type ((nat + nat) + nat) * 1,
+    // initial div is 1 and second div is 0
+    test_fn.push(&mem, encode_i(OP_DIST, 1).unwrap());
+    test_fn.push(&mem, encode_i(OP_FACT, 0).unwrap());
+
+    // create thread
+    let data = mem.alloc(Product::new(
+                    CellPtr::new_with(mem.alloc(
+                            Sum::new(2, CellPtr::new_with(
+                                    mem.alloc(1337 as u32).unwrap()))
+                            ).unwrap()),
+                    CellPtr::new_with(mem.alloc(Unit::new()).unwrap()),
+            )).unwrap();
+
+    let thread = Thread::alloc_with_arg(
+        &mem,
+        CellPtr::new_with(data.as_untyped(&mem))
+        ).unwrap();
+
+    thread.add_func(&mem, test_fn);
+    thread.call_func(&mem, 0, false).unwrap();
+
+    // exec dist
+    match thread.eval_next_instr(&mem).unwrap() {
+        EvalStatus::Pending => {
+            let new_data = thread.data().get(&mem);
+            let cast_data = unsafe {
+                new_data.cast::<Product<Nat, Product<Nat, Nat>>>(&mem)
+            };
+            let inner_data = cast_data.snd(&mem);
+
+            assert!(&420 == cast_data.fst(&mem).as_ref(&mem));
+            assert!(&69 == inner_data.fst(&mem).as_ref(&mem));
+            assert!(&1337 == inner_data.snd(&mem).as_ref(&mem));
+
+            // exec asslp
+            match thread.eval_next_instr(&mem).unwrap() {
+                EvalStatus::Pending => {
+                    let result = thread.data().get(&mem);
+                    let cast_result = unsafe {
+                        result.cast::<Product<Product<Nat, Nat>, Nat>>(&mem)
+                    };
+                    let cast_inner = cast_result.fst(&mem);
+                    
+                    assert!(&420 == cast_inner.fst(&mem).as_ref(&mem));
+                    assert!(&69 == cast_inner.snd(&mem).as_ref(&mem));
+                    assert!(&1337 == cast_result.snd(&mem).as_ref(&mem));
                 },
                 _ => panic!("eval_next_instr failed"),
             }

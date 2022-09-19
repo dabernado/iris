@@ -24,19 +24,16 @@ pub fn zeroe<'guard, T>(
 
 pub fn swaps<'guard, T: AllocObject>(
     val: &ScopedPtr<'guard, Sum<T>>,
-    div: Nat,
+    lc: u16,
+    rc: u16,
     _guard: &'guard dyn MutatorScope
 ) {
     let tag = val.tag();
 
-    if tag <= div {
-        if div != 0 {
-            val.set_tag(tag + div);
-        } else {
-            val.set_tag(tag + 1);
-        }
+    if tag <= (lc - 1) as u32 {
+        val.set_tag(tag + rc as u32);
     } else {
-        val.set_tag((tag - div) - 1);
+        val.set_tag(tag - lc as u32);
     }
 }
 
@@ -123,7 +120,7 @@ pub fn dist<'guard, T: AllocObject>(
         let new_val = unsafe {
             val.cast::<Product<(), ()>>(mem)
         };
-        
+
         new_val.set_fst(sum.data(mem).as_untyped(mem));
         new_sum.set_data(new_val);
 

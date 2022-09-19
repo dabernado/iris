@@ -1,8 +1,8 @@
 // Bitmasks
 pub const OP_MASK: u32 = 0x0000003F;
 pub const I_MASK: u32 = 0xFFFFFFC0;
-pub const C_OFF_MASK: u32 = 0x0007FFC0;
-pub const C_CONST_MASK: u32 = 0xFFF8000;
+pub const C_LC_MASK: u32 = 0x0007FFC0;
+pub const C_RC_MASK: u32 = 0xFFF8000;
 pub const S_DIV_MASK: u32 = 0x00003FC0;
 pub const S_LC_MASK: u32 = 0x003FC000;
 pub const S_RC_MASK: u32 = 0x3FC00000;

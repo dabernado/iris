@@ -282,6 +282,19 @@ START <-> END			: ?a <-> ?a
  * contain a constant value are represented by the I-Type
  * encoding. Most IRIS instructions are I-Type encoded.
 
+ * C-Type
+ *
+ * 31	       19 18		6 5	   0
+ * [   const	] [     off	] [ opcode ]
+ *      13b	        13b	      6b
+ *
+ * The C-Type encoding is for the combinator and EXPF/COLF
+ * instructions, which contain an offset to some location
+ * in program memory and a constant value. For product
+ * combinators, this value is empty. For sum combinators, this
+ * value represents the division value for the type. For EXPF/COLF,
+ * it is the size of the new value in bytes.
+
  * S-Type
  *
  * 31 30 29	 22 21     14 13      6 5	 0
