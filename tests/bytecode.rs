@@ -23,8 +23,16 @@ fn test_itype() {
 
 #[test]
 fn test_stype() {
-    let instr = encode_s(OP_SUMS, 4, 2, 3);
+    let instr = encode_s(OP_SWAPS, 6, 9).unwrap();
+
+    assert!(OP_SWAPS == get_opcode(instr, false));
+    assert!((6, 9) == decode_s(instr));
+}
+
+#[test]
+fn test_ctype() {
+    let instr = encode_c(OP_SUMS, 4, 2, 3);
 
     assert!(OP_SUMS == get_opcode(instr, false));
-    assert!((4, 2, 3) == decode_s(instr));
+    assert!((4, 2, 3) == decode_c(instr));
 }

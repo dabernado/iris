@@ -5,8 +5,8 @@ use crate::bytecode::{
     Continuation,
     get_opcode,
     decode_i,
-    decode_c,
-    decode_s
+    decode_s,
+    decode_c
 };
 use crate::constants::*;
 use crate::context::{Context, ContextStack};
@@ -243,7 +243,7 @@ impl Thread {
                 asslp(&cast_ptr, mem);
             },
             OP_SWAPS | OP_SWAPS_R => {
-                let (lc, rc) = decode_c(op);
+                let (lc, rc) = decode_s(op);
                 let cast_ptr = unsafe {
                     data.cast::<Sum<()>>(mem)
                 };
@@ -439,7 +439,7 @@ impl Thread {
             OP_SYSC => {}, // TODO: FFI
             OP_RSYSC => {}, // TODO: FFI
             OP_SUMS => {
-                let (rc, lc, div) = decode_s(op);
+                let (rc, lc, div) = decode_c(op);
                 let cast_ptr = unsafe { data.cast::<Sum<()>>(mem) };
 
                 if cast_ptr.tag() < div as u32 {

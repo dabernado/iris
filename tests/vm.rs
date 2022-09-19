@@ -222,8 +222,8 @@ fn test_swaps() {
 
     // push two SWAPS instructions onto function
     // with type ((nat + nat) + nat) + (nat + nat)
-    test_fn.push(&mem, encode_c(OP_SWAPS, 3, 2).unwrap());
-    test_fn.push(&mem, encode_c(OP_SWAPS, 2, 3).unwrap());
+    test_fn.push(&mem, encode_s(OP_SWAPS, 3, 2).unwrap());
+    test_fn.push(&mem, encode_s(OP_SWAPS, 2, 3).unwrap());
 
     // create thread
     let data = mem.alloc(

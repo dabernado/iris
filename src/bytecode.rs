@@ -149,14 +149,14 @@ pub fn decode_i(instr: Opcode) -> u32 {
     (instr & I_MASK) >> 6
 }
 
-pub fn decode_c(instr: Opcode) -> (u16, u16) {
+pub fn decode_s(instr: Opcode) -> (u16, u16) {
     (
         ((instr & C_LC_MASK) >> 6) as u16,
         ((instr & C_RC_MASK) >> 19) as u16
     )
 }
 
-pub fn decode_s(instr: Opcode) -> (u8, u8, u8) {
+pub fn decode_c(instr: Opcode) -> (u8, u8, u8) {
     (
         ((instr & S_DIV_MASK) >> 6) as u8,
         ((instr & S_LC_MASK) >> 14) as u8,
@@ -174,7 +174,7 @@ pub fn encode_i(op: u8, imm: u32) -> Result<Opcode, RuntimeError> {
     }
 }
 
-pub fn encode_c(op: u8, lc: u16, rc: u16) -> Result<Opcode, RuntimeError> {
+pub fn encode_s(op: u8, lc: u16, rc: u16) -> Result<Opcode, RuntimeError> {
     // check if within bounds
     if lc <= MAX_CTYPE_FIELD && rc <= MAX_CTYPE_FIELD {
         let padded_rc = (rc as u32) << 19;
@@ -186,7 +186,7 @@ pub fn encode_c(op: u8, lc: u16, rc: u16) -> Result<Opcode, RuntimeError> {
     }
 }
 
-pub fn encode_s(op: u8, div: u8, lc: u8, rc: u8) -> Opcode {
+pub fn encode_c(op: u8, div: u8, lc: u8, rc: u8) -> Opcode {
     let padded_div = (div as u32) << 6;
     let padded_lc = (lc as u32) << 14;
     let padded_rc = (rc as u32) << 22;
