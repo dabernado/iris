@@ -148,169 +148,125 @@ Despite the strong typing of IRIS allowing for the elimination of many runtime e
 
 ## Language Spec
 ### Primitive Types
+```
 0	:= empty type
 1	:= unit type
 nat	:= unsigned integer
+```
 
 ### Functions
+```
 ID <-> ID		: ?a <-> ?a
-```
  * Identity; does nothing
-```
 
 ZEROI <-> ZEROE		: ?a <-> (0 + ?a)
-```
  * Introduce/eliminate sum variant of type 0
-```
 
 SWAPS <-> SWAPS		: (?a + ?b) <-> (?b + ?a)
-```
  * Swap the two variant types' sides
  *
  * d = index of last variant of the left hand of the type
-```
 
 ASSRS <-> ASSLS		: ((?a + ?b) + ?c) <-> (?a + (?b + ?c))
-```
  * Associate inner sum with types on the right or left
-```
 
 UNITI <-> UNITE		: ?a <-> (1 * ?a)
-```
  * Introduce/eliminate product with unit type
-```
 
 SWAPP <-> SWAPP 	: (?a * ?b) <-> (?b * ?a)
-```
  * Swap the first and second values
-```
 
 ASSRP <-> ASSLP		: ((?a * ?b) * ?c) <-> (?a * (?b * ?c))
-```
  * Associate inner product with types on the right or left
-```
 
 DIST <-> FACT		: ((?a + ?b) * ?c) <-> ((?a * ?c) + (?b * ?c))
-```
  * Distribute inner sum over both product values/Factor inner
  * sum into first value
  *
  * d = index of last variant of the left hand of the sum type
-```
 
 EXPN <-> COLN		: 0 <-> (-?a + ?a)
-```
  * Reverse type sign and direction of execution
  *
  * d = index of last variant of the left hand of the type
-```
 
 EXPF i <-> COLF i	: 1 <-> (1/?a * ?a)
-```
  * Allocate/deallocate new variable
  * i = index of fraction array to value being introduced
 ```
 
 ### Arithmetic
+```
 ADD <-> SUB		: (nat * nat) <-> (nat * nat)
-```
  * Add/subtract two integers, with result placed in first value
-```
 
 ADDI n <-> SUBI n	: nat <-> nat 
-```
  * Add/subtract constant to/from integer
-```
 
 XOR <-> XOR		: (nat * nat) <-> (nat * nat)
-```
  * Exclusive-or on two integers, result placed in first value
-```
 
 XORI n <-> XORI n 	: nat <-> nat
-```
  * Exclusive-or integer with constant
-```
 
 CSWAP <-> CSWAP		: ((nat * nat) * nat) <-> ((nat * nat) * nat)
-```
  * Controlled swap on two integers, with second value as control
-```
 
 CSWAPI n <-> CSWAPI n	: (nat * nat) <-> (nat * nat)
-```
  * Controlled swap on two integers, with constant as control
-```
 
 RR <-> RL		: (nat * nat) <-> (nat * nat)
-```
  * Rotate bits of an integer left/right
-```
 
 RRI n <-> RLI n		: nat <-> nat
-```
  * Rotate bits of an integer left/right by constant value
-```
 
 LTI <-> LTE		: (nat * nat) <-> ((nat * nat) + (nat * nat))
-```
  * Create left/right value from nat product if first value is
  * less than second value, or collapse back into nat product
  * if sum tag and nat comparison match
-```
 
 LTII n <-> LTEI n	: nat <-> (nat + nat)
-```
  * Create left/right value from nat if value is less than
  * immediate value, or collapse back into nat if sum tag
  * and nat comparison match
 ```
 
 ### Combinators
-+{
 ```
++{
  * Left hand sum combinator delimiter
  * l = number of instructions in left hand of combinator
  * r = number of instructions in right hand of combinator
  * d = index of last variant of the left hand of the type
-```
 
 }+
-```
  * Right hand sum combinator delimiter
  * l = number of instructions in left hand of combinator
  * r = number of instructions in right hand of combinator
  * d = index of last variant of the left hand of the type
-```
 
 *{
-```
  * First product combinator delimiter
  * j = jump to first instruction of second half of combinator
-```
 
 }*
-```
  * Second product combinator delimiter
  * j = jump to last instruction of first half of combinator
 ```
 
 ### Control/Memory
-CALL f <-> UNCALL f		: ?a <-> ?b
 ```
+CALL f <-> UNCALL f		: ?a <-> ?b
  * Invoke function forwards/backwards on datatype
  * f = index in function list to invoked function
-```
 
 SYSC f <-> RSYSC f		: ?a <-> ?b
-```
  * Invoke system call forwards/backwards on datatype; used for
  * ISA extensions and I/O ops
  * f = id of system function
-```
 
 START <-> END			: ?a <-> ?a
-```
  * Designates beginning/end of function; operationally equivalent to ID
 ```
 
@@ -325,9 +281,7 @@ START <-> END			: ?a <-> ?a
  * Instructions that do not contain additional information or
  * contain a constant value are represented by the I-Type
  * encoding. Most IRIS instructions are I-Type encoded.
-```
 
-```
  * S-Type
  *
  * 31 30 29	 22 21     14 13      6 5	 0
