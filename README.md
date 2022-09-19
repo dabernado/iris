@@ -6,3 +6,14 @@ A ["reversible computer"](https://en.wikipedia.org/wiki/Reversible_computing) is
 **IRIS** is a statically typed functional language, and describes a novel computer architecture that diverges from the usual von Neumann-style RISC architecture in many important and interesting ways, while remaining simpler and more efficient than most existing computer architectures. The core IRIS spec consists of just 25 isomorphisms, with possible extensions for floating-point, I/O, and vector instructions. Ideally, IRIS will be well suited not only for implementation in software, but also in hardware in a fully reversible IRIS-based microprocessor.
 
 **Iris** is currently being written in Rust, and will mainly consist of a bytecode interpreter as a compilation target for higher-level reversible languages. The main reason for building a virtual machine as the reference implementation of IRIS is to allow programmers to modify the underlying implementation of programs at will. For example, the programmer can indicate which of the functions in their program should be compiled to native machine code, which should be interpreted, and which should link to the Rust FFI. While running the program, they may decide to swap compiled functions out for their interpreted versions on the fly, and vice versa. Or, they could forego all that and compile into a standalone binary, as if they were developing with an ahead-of-time compiled language.
+
+## Roadmap
+As of now, Iris is getting close to becoming a functioning prototype of an IRIS interpreter. Once that goal is reached, I will begin developing a compiler for a high-level reversible language which targets IRIS, and then will continue refining the two together in tandem as a single toolchain.
+
+Right now, the next steps are as follows:
+- write integration tests for bytecode interpretation
+- design and implement a new data structure for code/data images
+- implement and test IRIS image serialization/deserialization
+- implement foreign function interface
+- design and implement vector ops extension
+- ???
