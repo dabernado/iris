@@ -252,12 +252,12 @@ impl Thread {
             },
             OP_ASSRS | OP_ASSLS => {}, // op-equivalent to ID
             OP_DIST => {
-                let div = decode_i(op);
+                let (lc, rc) = decode_s(op);
                 let cast_ptr = unsafe {
                     data.cast::<Product<Sum<()>, ()>>(mem)
                 };
 
-                let sum = dist(cast_ptr, div, mem)?;
+                let sum = dist(cast_ptr, lc, rc, mem)?;
                 self.data.set(sum.as_untyped(mem));
             },
             OP_FACT => {

@@ -275,8 +275,8 @@ fn test_dist_fact() {
     // push DIST + FACT instructions onto function
     // with type ((nat + nat) + nat) * 1,
     // initial div is 1 and second div is 0
-    test_fn.push(&mem, encode_i(OP_DIST, 1).unwrap());
-    test_fn.push(&mem, encode_i(OP_FACT, 0).unwrap());
+    test_fn.push(&mem, encode_s(OP_DIST, 2, 1).unwrap());
+    test_fn.push(&mem, encode_s(OP_FACT, 2, 1).unwrap());
 
     // create thread
     let data = mem.alloc(Product::new(

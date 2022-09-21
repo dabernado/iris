@@ -106,14 +106,15 @@ pub fn asslp<'guard>(
 
 pub fn dist<'guard, T: AllocObject>(
     val: ScopedPtr<'guard, Product<Sum<T>, ()>>,
-    div: Nat,
+    lc: u16,
+    rc: u16,
     mem: &'guard MutatorView
 ) -> Result<ScopedPtr<'guard, Sum<Product<(), ()>>>, RuntimeError>
 {
     let sum = val.fst(mem);
     let tag = sum.tag();
 
-    if div == 0 {
+    if lc == 0 && rc == 0 {
         let new_sum = unsafe {
             sum.cast::<Sum<Product<(), ()>>>(mem)
         };
@@ -125,7 +126,7 @@ pub fn dist<'guard, T: AllocObject>(
         new_sum.set_data(new_val);
 
         Ok(new_sum)
-    } else if tag < div {
+    } else if tag <= (lc - 1) as u32 {
         val.set_fst(sum);
         let new_sum = mem.alloc(Sum::new(0, CellPtr::new_with(val)))?;
 
@@ -133,7 +134,7 @@ pub fn dist<'guard, T: AllocObject>(
             new_sum.cast::<Sum<Product<(), ()>>>(mem)
         })
     } else {
-        sum.set_tag(tag - div);
+        sum.set_tag(tag - lc as u32);
         val.set_fst(sum);
         let new_sum = mem.alloc(Sum::new(1, CellPtr::new_with(val)))?;
 
