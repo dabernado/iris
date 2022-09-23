@@ -270,6 +270,18 @@ START <-> END			: ?a <-> ?a
  * Designates beginning/end of function; operationally equivalent to ID
 ```
 
+### Extensions
+
+#### Vectors
+map <-> unmap
+copy <-> uncopy
+zip <-> unzip
+iota <-> atoi
+concat <-> split
+reorder <-> reorder
+vadd <-> vsub
+vcswap <-> vcswap
+
 ## Instruction Encoding
 ```
  * I-Type

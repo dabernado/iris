@@ -300,26 +300,13 @@ fn test_dist_fact() {
         EvalStatus::Pending => {
             let new_data = thread.data().get(&mem);
             let cast_data = unsafe {
-                new_data.cast::<Product<Nat, Product<Nat, Nat>>>(&mem)
+                new_data.cast::<Sum<Product<Nat, Unit>>>(&mem)
             };
-            let inner_data = cast_data.snd(&mem);
+            let inner_data = cast_data.data(&mem);
 
-            assert!(&420 == cast_data.fst(&mem).as_ref(&mem));
-            assert!(&69 == inner_data.fst(&mem).as_ref(&mem));
-            assert!(&1337 == inner_data.snd(&mem).as_ref(&mem));
-
-            // exec asslp
+            // exec fact
             match thread.eval_next_instr(&mem).unwrap() {
                 EvalStatus::Pending => {
-                    let result = thread.data().get(&mem);
-                    let cast_result = unsafe {
-                        result.cast::<Product<Product<Nat, Nat>, Nat>>(&mem)
-                    };
-                    let cast_inner = cast_result.fst(&mem);
-                    
-                    assert!(&420 == cast_inner.fst(&mem).as_ref(&mem));
-                    assert!(&69 == cast_inner.snd(&mem).as_ref(&mem));
-                    assert!(&1337 == cast_result.snd(&mem).as_ref(&mem));
                 },
                 _ => panic!("eval_next_instr failed"),
             }
