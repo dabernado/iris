@@ -258,6 +258,7 @@ LTII n <-> LTEI n	: nat <-> (nat + nat)
 ### Control/Memory
 ```
 CALL f <-> UNCALL f		: ?a <-> ?b
+	where f: ?a <-> ?b
  * Invoke function forwards/backwards on datatype
  * f = index in function list to invoked function
 
@@ -271,16 +272,18 @@ START <-> END			: ?a <-> ?a
 ```
 
 ### Extensions
-
 #### Vectors
-map <-> unmap
-copy <-> uncopy
-zip <-> unzip
-iota <-> atoi
-concat <-> split
-reorder <-> reorder
-vadd <-> vsub
-vcswap <-> vcswap
+COPY <-> UNCOPY		: [?a] <-> ([?a] * [?a])
+ZIP <-> UNZIP		: ([?a] * [?b]) <-> [?a * ?b]
+IOTA <-> ATOI		: nat <-> [nat]
+CONCAT <-> SPLIT	: ([?a] * [?a]) <-> (nat * [?a])
+REORD <-> REORD		: [nat * ?a] <-> [nat * ?a]
+VADD <-> VSUB		: ([nat] * [nat]) <-> ([nat] * [nat])
+VCSWAP <-> VCSWAP	: (nat * ([?a] * [?b])) <-> (nat * ([?a] * [?b]))
+MAP f <-> UNMAP f	: [?a] <-> [?b]
+	where f: ?a <-> ?b
+SCANL f <-> SCANR f	: [?a] <-> [?a]
+	where f: (?a * ?a) <-> (?a * ?a)
 
 ## Instruction Encoding
 ```
