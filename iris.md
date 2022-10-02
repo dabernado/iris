@@ -111,14 +111,14 @@ Negative types can be used to implement novel control structures such as recursi
 ```
 fn: (?a + ?b) <-> (?a + ?c)
 
-traceadd: ?b <-> ?c
-  zeroi;                                     // 0 + ?b
-  (+ expn:?a id);                            // (-?a + ?a) + ?b
-  assrs;                                     // -?a + (?a + ?b)
-  (+ id (fn; (\* (plus5; setFlag) ^20)));    // -?a + (?a + (nat * nat))
-  assls;                                     // (-?a + ?a) + (nat * nat) 
-  (+ coln:?a id);                            // 0 + (nat * nat)
-  zeroe.                                     // nat * nat
+trace_fn: ?b <-> ?c
+  zeroi;                          // 0 + ?b
+  (+ expn:?a; id);                // (-?a + ?a) + ?b
+  assrs;                          // -?a + (?a + ?b)
+  (+ id; fn);                     // -?a + (?a + ?c)
+  assls;                          // (-?a + ?a) + ?c
+  (+ coln:?a; add5 setFlag);      // 0 + ?c
+  zeroe.                          // ?c
 ```
 
 #### Functions
@@ -273,16 +273,16 @@ START <-> END			: ?a <-> ?a
 
 ### Extensions
 #### Vectors
-COPY <-> UNCOPY		: [?a] <-> ([?a] * [?a])
-ZIP <-> UNZIP		: ([?a] * [?b]) <-> [?a * ?b]
-IOTA <-> ATOI		: nat <-> [nat]
-CONCAT <-> SPLIT	: ([?a] * [?a]) <-> (nat * [?a])
-REORD <-> REORD		: [nat * ?a] <-> [nat * ?a]
-VADD <-> VSUB		: ([nat] * [nat]) <-> ([nat] * [nat])
-VCSWAP <-> VCSWAP	: (nat * ([?a] * [?b])) <-> (nat * ([?a] * [?b]))
-MAP f <-> UNMAP f	: [?a] <-> [?b]
+COPY <-> UNCOPY		: [?a; n] <-> ([?a; n] * [?a; n])
+ZIP <-> UNZIP		: ([?a; n] * [?b; n]) <-> [?a * ?b; n]
+IOTA <-> ATOI		: nat <-> [nat; n]
+CONCAT <-> SPLIT	: ([?a; n] * [?a; m]) <-> (nat * [?a; n+m])
+REORD <-> REORD		: [nat * ?a; n] <-> [nat * ?a; n]
+VADD <-> VSUB		: ([nat; n] * [nat; n]) <-> ([nat; n] * [nat; n])
+VCSWAP <-> VCSWAP	: (nat * ([?a; n] * [?b; n])) <-> (nat * ([?a; n] * [?b; n]))
+MAP f <-> UNMAP f	: [?a; n] <-> [?b; n]
 	where f: ?a <-> ?b
-SCANL f <-> SCANR f	: [?a] <-> [?a]
+SCANL f <-> SCANR f	: [?a; n] <-> [?a; n]
 	where f: (?a * ?a) <-> (?a * ?a)
 
 ## Instruction Encoding
