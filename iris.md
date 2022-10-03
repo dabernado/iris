@@ -113,11 +113,11 @@ fn: (?a + ?b) <-> (?a + ?c)
 
 trace_fn: ?b <-> ?c
   zeroi;                          // 0 + ?b
-  (+ expn:?a; id);                // (-?a + ?a) + ?b
+  (+ expn:?a, id);                // (-?a + ?a) + ?b
   assrs;                          // -?a + (?a + ?b)
-  (+ id; fn);                     // -?a + (?a + ?c)
+  (+ id, fn);                     // -?a + (?a + ?c)
   assls;                          // (-?a + ?a) + ?c
-  (+ coln:?a; add5 setFlag);      // 0 + ?c
+  (+ coln:?a, add5; setFlag);     // 0 + ?c
   zeroe.                          // ?c
 ```
 
