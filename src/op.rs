@@ -169,36 +169,38 @@ pub fn fact<'guard>(
     mem: &'guard MutatorView
 ) -> Result<ScopedPtr<'guard, Product</*Sum*/(), ()>>, RuntimeError>
 {
-    let inner = val.data(mem);
-    let fst = inner.fst(mem);
+    let prod = val.data(mem);
     let tag = val.tag();
 
     if tag == 0 {
         if lc == 1 {
+            let fst = prod.fst(mem);
             let cast_val = unsafe { val.cast::<Sum<()>>(mem) };
             cast_val.set_data(fst);
-            inner.set_fst(cast_val.as_untyped(mem));
+            prod.set_fst(cast_val.as_untyped(mem));
 
-            Ok(inner)
+            Ok(prod)
         } else {
             mem.dealloc(val)?;
 
-            Ok(inner)
+            Ok(prod)
         }
     } else {
         if rc == 1 {
             let cast_val = unsafe { val.cast::<Sum<()>>(mem) };
+            let fst = prod.fst(mem);
             cast_val.set_data(fst);
             cast_val.set_tag(lc as u32);
-            inner.set_fst(cast_val.as_untyped(mem));
+            prod.set_fst(cast_val.as_untyped(mem));
 
-            Ok(inner)
+            Ok(prod)
         } else {
+            let fst = prod.fst(mem);
             let cast_fst = unsafe { fst.cast::<Sum<()>>(mem) };
             cast_fst.set_tag(cast_fst.tag() + lc as u32);
             mem.dealloc(val)?;
 
-            Ok(inner)
+            Ok(prod)
         }
     }
 }

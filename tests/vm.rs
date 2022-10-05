@@ -313,7 +313,7 @@ fn test_dist_fact() {
                 EvalStatus::Pending => {
                     let result = thread.data().get(&mem);
                     let cast_result = unsafe {
-                        new_data.cast::<Product<Sum<Nat>, Unit>>(&mem)
+                        result.cast::<Product<Sum<Nat>, Unit>>(&mem)
                     };
                     let result_sum = cast_result.fst(&mem);
 
