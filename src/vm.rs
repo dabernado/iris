@@ -261,12 +261,12 @@ impl Thread {
                 self.data.set(sum.as_untyped(mem));
             },
             OP_FACT => {
-                let div = decode_i(op);
+                let (lc, rc) = decode_s(op);
                 let cast_ptr = unsafe {
                     data.cast::<Sum<Product<(), ()>>>(mem)
                 };
 
-                let prod = fact(cast_ptr, div, mem)?;
+                let prod = fact(cast_ptr, lc, rc, mem)?;
                 self.data.set(prod.as_untyped(mem));
             },
             OP_EXPN => {

@@ -304,9 +304,22 @@ fn test_dist_fact() {
             };
             let inner_data = cast_data.data(&mem);
 
+            assert!(1 == cast_data.tag());
+            assert!(&1337 == inner_data.fst(&mem).as_ref(&mem));
+            assert!(&Unit::new() == inner_data.snd(&mem).as_ref(&mem));
+
             // exec fact
             match thread.eval_next_instr(&mem).unwrap() {
                 EvalStatus::Pending => {
+                    let result = thread.data().get(&mem);
+                    let cast_result = unsafe {
+                        new_data.cast::<Product<Sum<Nat>, Unit>>(&mem)
+                    };
+                    let result_sum = cast_result.fst(&mem);
+
+                    assert!(2 == result_sum.tag());
+                    assert!(&1337 == result_sum.data(&mem).as_ref(&mem));
+                    assert!(&Unit::new() == cast_result.snd(&mem).as_ref(&mem));
                 },
                 _ => panic!("eval_next_instr failed"),
             }
