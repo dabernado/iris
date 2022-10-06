@@ -6,6 +6,9 @@ use iris::op::*;
 use iris::safeptr::*;
 use iris::vm::{EvalStatus, Thread};
 
+/*
+ * Functions
+ */
 #[test]
 fn test_zeroi_zeroe() {
     let binding = Memory::new();
@@ -326,4 +329,16 @@ fn test_dist_fact() {
         },
         _ => panic!("eval_next_instr failed"),
     }
+}
+
+#[test]
+fn test_expn_coln() {
+    panic!("Not implemented");
+}
+
+/*
+ * Combinators
+ */
+#[test]
+fn test_sums_sume() {
 }
