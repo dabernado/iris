@@ -16,4 +16,5 @@ Right now, the next steps are as follows:
 - implement and test IRIS image serialization/deserialization
 - implement foreign function interface
 - design and implement vector ops extension
+- JIT compilation
 - ???
