@@ -118,7 +118,7 @@ trace_fn =
   assrs                          // -?a + (?a + ?b)
   (+ id, fn)                     // -?a + (?a + ?c)
   assls                          // (-?a + ?a) + ?c
-  (+ coln:?a, add5 setFlag)      // 0 + ?c
+  (+ coln:?a, (add5 setFlag))    // 0 + ?c
   zeroe.                         // ?c
 ```
 
@@ -127,6 +127,9 @@ Functions as a datatype in IRIS are represented by a pointer to the function's s
 
 #### Polymorphism
 Polymorphic functions can be written IRIS, which are instantiated as overloaded versions of the functions at compile time.
+
+### Bytecode Format
+Bytecode in an IRIS machine is organized as a recursive tree, consisting of `nat`s and product types. 
 
 ### Exceptions
 Despite the strong typing of IRIS allowing for the elimination of many runtime errors that are possible in other assembly languages, there are still some scenarios in which the attempted execution of certain instructions may result in the CPU throwing an exception. Some of the most common are:
@@ -258,10 +261,12 @@ LTII n <-> LTEI n	: nat <-> (nat + nat)
 
 ### Control/Memory
 ```
-CALL f <-> UNCALL f		: ?a <-> ?b
+CALL 'f <-> UNCALL 'f		: ?a <-> ?b
 	where f: ?a <-> ?b
  * Invoke function forwards/backwards on datatype
- * f = index in function list to invoked function
+ * f = name of invoked function, stored in a hash table with function address
+
+EVAL <-> DEVAL : (((nat * ?a) * ?b) * ?c) <-> (((nat * ?a) * ?b) * ?d)
 
 SYSC f <-> RSYSC f		: ?a <-> ?b
  * Invoke system call forwards/backwards on datatype; used for
@@ -281,9 +286,9 @@ CONCAT <-> SPLIT	: ([?a; n] * [?a; m]) <-> (nat * [?a; n+m])
 REORD <-> REORD		: [nat * ?a; n] <-> [nat * ?a; n]
 VADD <-> VSUB		: ([nat; n] * [nat; n]) <-> ([nat; n] * [nat; n])
 VCSWAP <-> VCSWAP	: (nat * ([?a; n] * [?b; n])) <-> (nat * ([?a; n] * [?b; n]))
-MAP f <-> UNMAP f	: [?a; n] <-> [?b; n]
+MAP 'f <-> UNMAP 'f	: [?a; n] <-> [?b; n]
 	where f: ?a <-> ?b
-SCANL f <-> SCANR f	: [?a; n] <-> [?a; n]
+SCANL 'f <-> SCANR 'f	: [?a; n] <-> [?a; n]
 	where f: (?a * ?a) <-> (?a * ?a)
 
 ## Instruction Encoding

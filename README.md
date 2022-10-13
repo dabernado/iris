@@ -14,7 +14,8 @@ Right now, the next steps are as follows:
 - write integration tests for bytecode interpretation
 - design and implement a new data structure for code/data images
 - implement and test IRIS image serialization/deserialization
-- implement foreign function interface
+- implement dynamic function lookup/dispatch
 - design and implement vector ops extension
 - JIT compilation via Cranelift for x86/arm64/risc-v
+- implement foreign function interface
 - ???

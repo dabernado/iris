@@ -341,4 +341,84 @@ fn test_expn_coln() {
  */
 #[test]
 fn test_sums_sume() {
+    let binding = Memory::new();
+    let mem = MutatorView::new(&binding);
+    let test_fn = Function::alloc(&mem).unwrap();
+
+    // push sum combinator onto function, with different
+    // ops for each branch
+    test_fn.push(&mem, encode_s(OP_SUMS, 1, 1).unwrap());
+    test_fn.push(&mem, encode_s(OP_ADDI, 2).unwrap());
+    test_fn.push(&mem, encode_s(OP_SUBI, 4).unwrap());
+    test_fn.push(&mem, encode_s(OP_SUME, 1, 1).unwrap());
+
+    /*
+     * Testing left hand of combinator
+     */
+    let left_data = mem.alloc(
+        Sum::new(0, CellPtr::new_with(mem.alloc(69 as u32).unwrap())))
+        .unwrap();
+    let thread = Thread::alloc_with_arg(
+        &mem,
+        CellPtr::new_with(data.as_untyped(&mem))
+        ).unwrap();
+
+    thread.add_func(&mem, test_fn);
+    thread.call_func(&mem, 0, false).unwrap();
+
+    // exec sums
+    match thread.eval_next_instr(&mem).unwrap() {
+        EvalStatus::Pending => {
+            let new_data = thread.data().get(&mem);
+            let cast_data = unsafe {
+                new_data.cast::<Sum<Nat>>(&mem)
+            };
+
+            assert!(4 == cast_data.tag());
+            assert!(&69 == cast_data.data(&mem).as_ref(&mem));
+
+            // exec addi
+            match thread.eval_next_instr(&mem).unwrap() {
+                EvalStatus::Pending => {
+                },
+                _ => panic!("eval_next_instr failed"),
+            }
+        },
+        _ => panic!("eval_next_instr failed"),
+    }
+
+    /*
+     * Testing right hand of combinator
+     */
+    let right_data = mem.alloc(
+        Sum::new(1, CellPtr::new_with(mem.alloc(69 as u32).unwrap())))
+        .unwrap();
+    let thread = Thread::alloc_with_arg(
+        &mem,
+        CellPtr::new_with(data.as_untyped(&mem))
+        ).unwrap();
+
+    thread.add_func(&mem, test_fn);
+    thread.call_func(&mem, 0, false).unwrap();
+
+    // exec sums
+    match thread.eval_next_instr(&mem).unwrap() {
+        EvalStatus::Pending => {
+            let new_data = thread.data().get(&mem);
+            let cast_data = unsafe {
+                new_data.cast::<Sum<Nat>>(&mem)
+            };
+
+            assert!(1 == cast_data.tag());
+            assert!( == thread.ip());
+
+            // exec subi
+            match thread.eval_next_instr(&mem).unwrap() {
+                EvalStatus::Pending => {
+                },
+                _ => panic!("eval_next_instr failed"),
+            }
+        },
+        _ => panic!("eval_next_instr failed"),
+    }
 }
