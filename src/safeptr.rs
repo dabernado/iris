@@ -91,7 +91,7 @@ impl<T: Sized> CellPtr<T> {
     }
 
     pub fn from_usize(nat: usize) -> UntypedCellPtr {
-        CellPtr { inner: Cell::new(RawPtr::from_usize(nat)) }
+        CellPtr { inner: Cell::new(RawPtr::<()>::from_usize(nat)) }
     }
 
     pub fn get<'guard>(&self, guard: &'guard dyn MutatorScope) -> ScopedPtr<'guard, T> {

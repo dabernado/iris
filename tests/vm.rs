@@ -338,7 +338,6 @@ fn test_expn_coln() {
 
 /*
  * Combinators
- */
 #[test]
 fn test_sums_sume() {
     let binding = Memory::new();
@@ -422,3 +421,4 @@ fn test_sums_sume() {
         _ => panic!("eval_next_instr failed"),
     }
 }
+ */
