@@ -172,7 +172,8 @@ ZEROI <-> ZEROE   : ?a <-> (0 + ?a)
 SWAPS <-> SWAPS   : (?a + ?b) <-> (?b + ?a)
  * Swap the two variant types' sides
  *
- * d = index of last variant of the left hand of the type
+ * lc = # of types on the left-hand side of the sum
+ * rc = # of types on the right-hand side of the sum
 
 ASSRS <-> ASSLS   : ((?a + ?b) + ?c) <-> (?a + (?b + ?c))
  * Associate inner sum with types on the right or left
@@ -190,7 +191,8 @@ DIST <-> FACT     : ((?a + ?b) * ?c) <-> ((?a * ?c) + (?b * ?c))
  * Distribute inner sum over both product values/Factor inner
  * sum into first value
  *
- * d = index of last variant of the left hand of the sum type
+ * lc = # of types on the left-hand side of the sum
+ * rc = # of types on the right-hand side of the sum
 
 FOLD <-> UFOLD    : a[x.?a] <-> x.?a
  * Fold/unfold value into a recursively typed value
@@ -198,7 +200,7 @@ FOLD <-> UFOLD    : a[x.?a] <-> x.?a
 EXPN <-> COLN     : 0 <-> (-?a + ?a)
  * Reverse type sign and direction of execution
  *
- * d = index of last variant of the left hand of the type
+ * n = number of types in each side of the sum
 
 EXPF x <-> COLF x : 1 <-> (1/?a * ?a)
  * Allocate/deallocate new variable
