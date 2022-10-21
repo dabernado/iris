@@ -146,21 +146,21 @@ pub fn get_opcode(instr: Opcode, dir: bool) -> u8 {
 }
 
 pub fn decode_i(instr: Opcode) -> u32 {
-    (instr & I_MASK) >> 6
+    (instr & I_MASK) >> 5
 }
 
 pub fn decode_s(instr: Opcode) -> (u16, u16) {
     (
-        ((instr & C_LC_MASK) >> 6) as u16,
-        ((instr & C_RC_MASK) >> 19) as u16
+        ((instr & S_LC_MASK) >> 5) as u16,
+        ((instr & S_RC_MASK) >> 18) as u16
     )
 }
 
 pub fn decode_c(instr: Opcode) -> (u8, u8, u8) {
     (
-        ((instr & S_DIV_MASK) >> 6) as u8,
-        ((instr & S_LC_MASK) >> 14) as u8,
-        ((instr & S_RC_MASK) >> 22) as u8
+        ((instr & C_DIV_MASK) >> 5) as u8,
+        ((instr & C_LC_MASK) >> 14) as u8,
+        ((instr & C_RC_MASK) >> 23) as u8
     )
 }
 
@@ -168,7 +168,7 @@ pub fn decode_c(instr: Opcode) -> (u8, u8, u8) {
 pub fn encode_i(op: u8, imm: u32) -> Result<Opcode, RuntimeError> {
     // check if within bounds
     if imm <= MAX_ITYPE_FIELD {
-        Ok((imm << 6) ^ (op as u32))
+        Ok((imm << 5) ^ (op as u32))
     } else {
         Err(RuntimeError::new(ErrorKind::IntOverflow))
     }
@@ -177,8 +177,8 @@ pub fn encode_i(op: u8, imm: u32) -> Result<Opcode, RuntimeError> {
 pub fn encode_s(op: u8, lc: u16, rc: u16) -> Result<Opcode, RuntimeError> {
     // check if within bounds
     if lc <= MAX_CTYPE_FIELD && rc <= MAX_CTYPE_FIELD {
-        let padded_rc = (rc as u32) << 19;
-        let padded_lc = (lc as u32) << 6;
+        let padded_rc = (rc as u32) << 18;
+        let padded_lc = (lc as u32) << 5;
 
         Ok(((0 ^ padded_rc) ^ padded_lc) ^ (op as u32))
     } else {
@@ -187,9 +187,9 @@ pub fn encode_s(op: u8, lc: u16, rc: u16) -> Result<Opcode, RuntimeError> {
 }
 
 pub fn encode_c(op: u8, div: u8, lc: u8, rc: u8) -> Opcode {
-    let padded_div = (div as u32) << 6;
+    let padded_div = (div as u32) << 5;
     let padded_lc = (lc as u32) << 14;
-    let padded_rc = (rc as u32) << 22;
+    let padded_rc = (rc as u32) << 23;
 
     (((0 ^ padded_rc)
       ^ padded_lc)
