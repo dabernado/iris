@@ -15,9 +15,9 @@ fn test_get_opcode() {
 
 #[test]
 fn test_itype() {
-    let instr = encode_i(OP_EXPF, 2).unwrap();
+    let instr = encode_i(OP_EXPN, 2).unwrap();
 
-    assert!(OP_EXPF == get_opcode(instr, false));
+    assert!(OP_EXPN == get_opcode(instr, false));
     assert!(2 == decode_i(instr));
 }
 

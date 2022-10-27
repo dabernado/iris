@@ -315,7 +315,7 @@ impl Thread {
                 };
 
                 colf(cast_ptr, mem)?;
-                self.data.set(mem.alloc(())?);
+                self.data.set(mem.alloc(Unit::new())?.as_untyped(mem));
             },
             OP_CALL => {
                 let index = decode_i(op);
