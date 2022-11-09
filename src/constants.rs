@@ -30,8 +30,8 @@ pub const OP_CALL: u8 = 11;
 pub const OP_UNCALL: u8 = !OP_CALL & (OP_MASK as u8);
 pub const OP_START: u8 = 12;
 pub const OP_END: u8 = !OP_START & (OP_MASK as u8);
-pub const OP_SYSC: u8 = 13;
-pub const OP_RSYSC: u8 = !OP_SYSC & (OP_MASK as u8);
+pub const OP_READ: u8 = 13;
+pub const OP_WRITE: u8 = !OP_SYSC & (OP_MASK as u8);
 pub const OP_PRODS: u8 = 15;
 pub const OP_PRODE: u8 = !OP_PRODS & (OP_MASK as u8);
 

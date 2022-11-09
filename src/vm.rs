@@ -353,8 +353,8 @@ impl Thread {
                     _ => return Err(RuntimeError::new(ErrorKind::BadContext)),
                 }
             },
-            OP_SYSC => {}, // TODO: FFI
-            OP_RSYSC => {}, // TODO: FFI
+            OP_READ => {}, // TODO: FFI
+            OP_WRITE => {}, // TODO: FFI
             OP_SUMS => {
                 let (rc, lc, div) = decode_c(op);
                 let cast_ptr = unsafe { data.cast::<Sum<()>>(mem) };
