@@ -358,6 +358,25 @@ impl <T: Sized + Clone> StackContainer<T> for Array<T> {
     }
 }
 
+/*
+pub trait SplitContainer<T: Sized + Clone>: Container<T> {
+    pub fn concat<'guard>(
+        &self,
+        _guard: &'guard dyn MutatorScope,
+        appendix: ScopedPtr<'guard, Array<T>>
+    ) -> Result<(), RuntimeError>;
+    
+    fn split<'guard>(
+        &self,
+        _guard: &'guard dyn MutatorScope,
+        index: ArraySize
+    ) -> Result<ScopedPtr<'guard, Array<T>, RuntimeError>;
+}
+
+impl <T: Sized + Clone> SplitContainer<T> for Array<T> {
+}
+*/
+
 // for filling an array with a constant in one operation
 pub trait FillContainer<T: Sized + Clone>: Container<T> {
     fn fill<'guard>(

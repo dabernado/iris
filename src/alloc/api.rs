@@ -83,6 +83,12 @@ impl<T: Sized> RawPtr<T> {
         RawPtr::new(self.ptr.cast::<U>().as_ptr())
     }
 
+    pub fn from_usize(nat: usize) -> UntypedPtr {
+        RawPtr {
+            ptr: unsafe { NonNull::new_unchecked(nat as *mut ()) },
+        }
+    }
+
     pub fn as_ptr(self) -> *const T { self.ptr.as_ptr() }
     pub fn as_word(self) -> usize { self.ptr.as_ptr() as usize }
     pub fn as_untyped(self) -> UntypedPtr { unsafe { self.cast() } }

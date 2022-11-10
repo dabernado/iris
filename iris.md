@@ -118,15 +118,14 @@ trace_fn =
   assrs                          // -?a + (?a + ?b)
   (+ id, fn)                     // -?a + (?a + ?c)
   assls                          // (-?a + ?a) + ?c
-  (+ coln:?a, add5 setFlag)      // 0 + ?c
+  (+ coln:?a, (add5 setFlag))    // 0 + ?c
   zeroe.                         // ?c
 ```
 
 #### Functions
 Functions as a datatype in IRIS are represented by a pointer to the function's start in the program, which also includes an offset value which indicates the end of the function. When `EVAL` is called on a data value with a function pointer, the instruction pointer is updated with the information in the function pointer and the function is executed on the data value, returning after the function is finished executing.
 
-#### Polymorphism
-Polymorphic functions can be written IRIS, which are instantiated as overloaded versions of the functions at compile time.
+### Bytecode Format
 
 ### Exceptions
 Despite the strong typing of IRIS allowing for the elimination of many runtime errors that are possible in other assembly languages, there are still some scenarios in which the attempted execution of certain instructions may result in the CPU throwing an exception. Some of the most common are:
@@ -137,100 +136,75 @@ Despite the strong typing of IRIS allowing for the elimination of many runtime e
 
 `ERRZERO` - encountered a function which expects a value of type 0
 
-`ERRISIZE` - integer overflow
-
-`ERRLTE` - attempted less-than elimination on invalid value
+`ERRSIZE` - nat overflow
 
 `ERRCXT` - attempted invalid context transition
 
 `ERRSYSC` - attempted invalid syscall
 
-`ERRTYPE` - types of attempted operation and data do not match
-
 ## Language Spec
-### Primitive Types
+### Types
 ```
 0	:= empty type
 1	:= unit type
-nat	:= unsigned integer
+
+?a <-> ?b := isomorphism type
+(?a * ?b) := product type
+(?a + ?b) := sum type
+x.?a      := recursive type
+-?a       := negative type
+1/?a      := fraction type
+
+nat  := x.(1 + x)
+int  := (nat + nat)
+bool := (1 + 1)
+list := x.(1 + (?a * x))
 ```
 
 ### Functions
 ```
-ID <-> ID		: ?a <-> ?a
+ID <-> ID         : ?a <-> ?a
  * Identity; does nothing
 
-ZEROI <-> ZEROE		: ?a <-> (0 + ?a)
+ZEROI <-> ZEROE   : ?a <-> (0 + ?a)
  * Introduce/eliminate sum variant of type 0
 
-SWAPS <-> SWAPS		: (?a + ?b) <-> (?b + ?a)
+SWAPS <-> SWAPS   : (?a + ?b) <-> (?b + ?a)
  * Swap the two variant types' sides
  *
- * d = index of last variant of the left hand of the type
+ * lc = # of types on the left-hand side of the sum
+ * rc = # of types on the right-hand side of the sum
 
-ASSRS <-> ASSLS		: ((?a + ?b) + ?c) <-> (?a + (?b + ?c))
+ASSRS <-> ASSLS   : ((?a + ?b) + ?c) <-> (?a + (?b + ?c))
  * Associate inner sum with types on the right or left
 
-UNITI <-> UNITE		: ?a <-> (1 * ?a)
+UNITI <-> UNITE   : ?a <-> (1 * ?a)
  * Introduce/eliminate product with unit type
 
-SWAPP <-> SWAPP 	: (?a * ?b) <-> (?b * ?a)
+SWAPP <-> SWAPP   : (?a * ?b) <-> (?b * ?a)
  * Swap the first and second values
 
-ASSRP <-> ASSLP		: ((?a * ?b) * ?c) <-> (?a * (?b * ?c))
+ASSRP <-> ASSLP   : ((?a * ?b) * ?c) <-> (?a * (?b * ?c))
  * Associate inner product with types on the right or left
 
-DIST <-> FACT		: ((?a + ?b) * ?c) <-> ((?a * ?c) + (?b * ?c))
+DIST <-> FACT     : ((?a + ?b) * ?c) <-> ((?a * ?c) + (?b * ?c))
  * Distribute inner sum over both product values/Factor inner
  * sum into first value
  *
- * d = index of last variant of the left hand of the sum type
+ * lc = # of types on the left-hand side of the sum
+ * rc = # of types on the right-hand side of the sum
 
-EXPN <-> COLN		: 0 <-> (-?a + ?a)
+FOLD <-> UFOLD    : a[x.?a] <-> x.?a
+ * Fold/unfold value into a recursively typed value
+
+EXPN <-> COLN     : 0 <-> (-?a + ?a)
  * Reverse type sign and direction of execution
  *
- * d = index of last variant of the left hand of the type
+ * n = number of types in each side of the sum
 
-EXPF i <-> COLF i	: 1 <-> (1/?a * ?a)
+EXPF x <-> COLF x : 1 <-> (1/?a * ?a)
  * Allocate/deallocate new variable
- * i = index of fraction array to value being introduced
-```
-
-### Arithmetic
-```
-ADD <-> SUB		: (nat * nat) <-> (nat * nat)
- * Add/subtract two integers, with result placed in first value
-
-ADDI n <-> SUBI n	: nat <-> nat 
- * Add/subtract constant to/from integer
-
-XOR <-> XOR		: (nat * nat) <-> (nat * nat)
- * Exclusive-or on two integers, result placed in first value
-
-XORI n <-> XORI n 	: nat <-> nat
- * Exclusive-or integer with constant
-
-CSWAP <-> CSWAP		: ((nat * nat) * nat) <-> ((nat * nat) * nat)
- * Controlled swap on two integers, with second value as control
-
-CSWAPI n <-> CSWAPI n	: (nat * nat) <-> (nat * nat)
- * Controlled swap on two integers, with constant as control
-
-RR <-> RL		: (nat * nat) <-> (nat * nat)
- * Rotate bits of an integer left/right
-
-RRI n <-> RLI n		: nat <-> nat
- * Rotate bits of an integer left/right by constant value
-
-LTI <-> LTE		: (nat * nat) <-> ((nat * nat) + (nat * nat))
- * Create left/right value from nat product if first value is
- * less than second value, or collapse back into nat product
- * if sum tag and nat comparison match
-
-LTII n <-> LTEI n	: nat <-> (nat + nat)
- * Create left/right value from nat if value is less than
- * immediate value, or collapse back into nat if sum tag
- * and nat comparison match
+ * x = index of fraction array to value being introduced
 ```
 
 ### Combinators
@@ -261,7 +235,7 @@ LTII n <-> LTEI n	: nat <-> (nat + nat)
 CALL f <-> UNCALL f		: ?a <-> ?b
 	where f: ?a <-> ?b
  * Invoke function forwards/backwards on datatype
- * f = index in function list to invoked function
+ * f = name of invoked function, stored in a hash table with function address
 
 SYSC f <-> RSYSC f		: ?a <-> ?b
  * Invoke system call forwards/backwards on datatype; used for
@@ -273,26 +247,50 @@ START <-> END			: ?a <-> ?a
 ```
 
 ### Extensions
-#### Vectors
-COPY <-> UNCOPY		: [?a; n] <-> ([?a; n] * [?a; n])
-ZIP <-> UNZIP		: ([?a; n] * [?b; n]) <-> [?a * ?b; n]
-IOTA <-> ATOI		: nat <-> [nat; n]
-CONCAT <-> SPLIT	: ([?a; n] * [?a; m]) <-> (nat * [?a; n+m])
-REORD <-> REORD		: [nat * ?a; n] <-> [nat * ?a; n]
-VADD <-> VSUB		: ([nat; n] * [nat; n]) <-> ([nat; n] * [nat; n])
-VCSWAP <-> VCSWAP	: (nat * ([?a; n] * [?b; n])) <-> (nat * ([?a; n] * [?b; n]))
-MAP f <-> UNMAP f	: [?a; n] <-> [?b; n]
-	where f: ?a <-> ?b
-SCANL f <-> SCANR f	: [?a; n] <-> [?a; n]
-	where f: (?a * ?a) <-> (?a * ?a)
+#### Arithmetic Extension
+```
+add <-> sub           : (nat * nat) <-> (nat * nat)
+ * Add/subtract two integers, with result placed in first value
+
+addi n <-> subi n	    : nat <-> nat 
+ * Add/subtract constant to/from integer
+
+xor <-> xor           : (nat * nat) <-> (nat * nat)
+ * Exclusive-or on two integers, result placed in first value
+
+xori n <-> xori n 	  : nat <-> nat
+ * Exclusive-or integer with constant
+
+cswap <-> cswap		    : ((nat * nat) * nat) <-> ((nat * nat) * nat)
+ * Controlled swap on two integers, with second value as control
+
+cswapi n <-> cswapi n	: (nat * nat) <-> (nat * nat)
+ * Controlled swap on two integers, with constant as control
+
+rr <-> rl             : (nat * nat) <-> (nat * nat)
+ * Rotate bits of an integer left/right
+
+rri n <-> rli n		    : nat <-> nat
+ * Rotate bits of an integer left/right by constant value
+
+lti <-> lte		        : (nat * nat) <-> ((nat * nat) + (nat * nat))
+ * Create left/right value from nat product if first value is
+ * less than second value, or collapse back into nat product
+ * if sum tag and nat comparison match
+
+ltii n <-> ltei n	    : nat <-> (nat + nat)
+ * Create left/right value from nat if value is less than
+ * immediate value, or collapse back into nat if sum tag
+ * and nat comparison match
+```
 
 ## Instruction Encoding
 ```
  * I-Type
  *
- * 31				6 5	   0
- * [	        imm		] [ opcode ]
- *	        26b		      6b
+ * 31                           0
+ * [       imm       ] [ opcode ]
+ *	       27b		         5b
  *
  * Instructions that do not contain additional information or
  * contain a constant value are represented by the I-Type
@@ -300,9 +298,9 @@ SCANL f <-> SCANR f	: [?a; n] <-> [?a; n]
 
  * S-Type
  *
- * 31	       19 18		6 5	   0
- * [    rc	] [     lc	] [ opcode ]
- *      13b	        13b	      6b
+ * 31                                     0
+ * [0] [    rc    ] [    lc    ] [ opcode ]
+ *  1b      13b	         13b	       5b
  *
  * The S-Type encoding is for certain sum type
  * instructions, which contain the number of variants
@@ -310,9 +308,9 @@ SCANL f <-> SCANR f	: [?a; n] <-> [?a; n]
 
  * C-Type
  *
- * 31 30 29	 22 21     14 13      6 5	 0
- * [ 0 ] [   rc   ] [  lc   ] [  div  ] [ opcode ]
- *  2b       8b	       8b	 8b	    6b
+ * 31                                       0
+ * [   rc   ] [   lc   ] [  div  ] [ opcode ]
+ *     9b	        9b	       9b	       5b
  *
  * The only instructions with the C-Type encoding are SUMS/SUME,
  * which contain the division value for a

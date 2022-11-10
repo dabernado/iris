@@ -1,19 +1,17 @@
 // Bitmasks
-pub const OP_MASK: u32 = 0x0000003F;
-pub const I_MASK: u32 = 0xFFFFFFC0;
-pub const C_LC_MASK: u32 = 0x0007FFC0;
-pub const C_RC_MASK: u32 = 0xFFF8000;
-pub const S_DIV_MASK: u32 = 0x00003FC0;
-pub const S_LC_MASK: u32 = 0x003FC000;
-pub const S_RC_MASK: u32 = 0x3FC00000;
+pub const OP_MASK: u32 = 0x0000001F;
+pub const I_MASK: u32 = 0xFFFFFFE0;
+pub const S_LC_MASK: u32 = 0x0003FFE0;
+pub const S_RC_MASK: u32 = 0x7FFC000;
+pub const C_DIV_MASK: u32 = 0x00003FE0;
+pub const C_LC_MASK: u32 = 0x007FC000;
+pub const C_RC_MASK: u32 = 0xFF800000;
 
 // I-Type
 pub const OP_ID: u8 = 0;
 pub const OP_ID_R: u8 = !OP_ID & (OP_MASK as u8);
 pub const OP_ZEROI: u8 = 1;
 pub const OP_ZEROE: u8 = !OP_ZEROI & (OP_MASK as u8);
-pub const OP_SWAPS: u8 = 2;
-pub const OP_SWAPS_R: u8 = !OP_SWAPS & (OP_MASK as u8);
 pub const OP_ASSRS: u8 = 3;
 pub const OP_ASSLS: u8 = !OP_ASSRS & (OP_MASK as u8);
 pub const OP_UNITI: u8 = 4;
@@ -22,45 +20,32 @@ pub const OP_SWAPP: u8 = 5;
 pub const OP_SWAPP_R: u8 = !OP_SWAPP & (OP_MASK as u8);
 pub const OP_ASSRP: u8 = 6;
 pub const OP_ASSLP: u8 = !OP_ASSRP & (OP_MASK as u8);
-pub const OP_DIST: u8 = 7;
-pub const OP_FACT: u8 = !OP_DIST & (OP_MASK as u8);
-pub const OP_EXPN: u8 = 8;
+pub const OP_FOLD: u8 = 8;
+pub const OP_UFOLD: u8 = !OP_FOLD & (OP_MASK as u8);
+pub const OP_EXPN: u8 = 9;
 pub const OP_COLN: u8 = !OP_EXPN & (OP_MASK as u8);
-pub const OP_ADD: u8 = 10;
-pub const OP_SUB: u8 = !OP_ADD & (OP_MASK as u8);
-pub const OP_ADDI: u8 = 11;
-pub const OP_SUBI: u8 = !OP_ADDI & (OP_MASK as u8);
-pub const OP_XOR: u8 = 12;
-pub const OP_XOR_R: u8 = !OP_XOR & (OP_MASK as u8);
-pub const OP_XORI: u8 = 13;
-pub const OP_XORI_R: u8 = !OP_XORI & (OP_MASK as u8);
-pub const OP_CSWAP: u8 = 14;
-pub const OP_CSWAP_R: u8 = !OP_CSWAP & (OP_MASK as u8);
-pub const OP_CSWAPI: u8 = 15;
-pub const OP_CSWAPI_R: u8 = !OP_CSWAPI & (OP_MASK as u8);
-pub const OP_RR: u8 = 16;
-pub const OP_RL: u8 = !OP_RR & (OP_MASK as u8);
-pub const OP_RRI: u8 = 17;
-pub const OP_RLI: u8 = !OP_RRI & (OP_MASK as u8);
-pub const OP_LTI: u8 = 18;
-pub const OP_LTE: u8 = !OP_LTI & (OP_MASK as u8);
-pub const OP_LTII: u8 = 19;
-pub const OP_LTEI: u8 = !OP_LTII & (OP_MASK as u8);
-pub const OP_CALL: u8 = 22;
-pub const OP_UNCALL: u8 = !OP_CALL & (OP_MASK as u8);
-pub const OP_START: u8 = 23;
-pub const OP_END: u8 = !OP_START & (OP_MASK as u8);
-pub const OP_SYSC: u8 = 24;
-pub const OP_RSYSC: u8 = !OP_SYSC & (OP_MASK as u8);
-
-// C-Type
-pub const OP_EXPF: u8 = 9;
+pub const OP_EXPF: u8 = 10;
 pub const OP_COLF: u8 = !OP_EXPF & (OP_MASK as u8);
-pub const OP_SUMS: u8 = 20;
-pub const OP_SUME: u8 = !OP_SUMS & (OP_MASK as u8);
-pub const OP_PRODS: u8 = 21;
+pub const OP_CALL: u8 = 11;
+pub const OP_UNCALL: u8 = !OP_CALL & (OP_MASK as u8);
+pub const OP_START: u8 = 12;
+pub const OP_END: u8 = !OP_START & (OP_MASK as u8);
+pub const OP_READ: u8 = 13;
+pub const OP_WRITE: u8 = !OP_SYSC & (OP_MASK as u8);
+pub const OP_PRODS: u8 = 15;
 pub const OP_PRODE: u8 = !OP_PRODS & (OP_MASK as u8);
 
+// S-Type
+pub const OP_SWAPS: u8 = 2;
+pub const OP_SWAPS_R: u8 = !OP_SWAPS & (OP_MASK as u8);
+pub const OP_DIST: u8 = 7;
+pub const OP_FACT: u8 = !OP_DIST & (OP_MASK as u8);
+
+// C-Type
+pub const OP_SUMS: u8 = 14;
+pub const OP_SUME: u8 = !OP_SUMS & (OP_MASK as u8);
+
 // Maximums/Minimums
-pub const MAX_ITYPE_FIELD: u32 = 67108864;
-pub const MAX_CTYPE_FIELD: u16 = 8192;
+pub const MAX_ITYPE_FIELD: u32 = 134217727;
+pub const MAX_STYPE_FIELD: u16 = 8191;
+pub const MAX_CTYPE_FIELD: u16 = 511;

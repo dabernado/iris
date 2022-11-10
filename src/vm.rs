@@ -269,6 +269,8 @@ impl Thread {
                 let prod = fact(cast_ptr, lc, rc, mem)?;
                 self.data.set(prod.as_untyped(mem));
             },
+            OP_FOLD => {}, // TODO: implement
+            OP_UFOLD => {}, // TODO: implement
             OP_EXPN => {
                 let div = decode_i(op);
                 if cont.direction() {
@@ -313,92 +315,7 @@ impl Thread {
                 };
 
                 colf(cast_ptr, mem)?;
-                self.data.set(mem.alloc(())?);
-            },
-            OP_ADD => {
-                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
-                add(&cast_ptr, mem);
-            },
-            OP_SUB => {
-                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
-                sub(&cast_ptr, mem)?;
-            },
-            OP_ADDI => {
-                let operand = decode_i(op);
-                let cast_ptr = unsafe { data.cast::<Nat>(mem) };
-                addi(&cast_ptr, operand, mem);
-            },
-            OP_SUBI => {
-                let operand = decode_i(op);
-                let cast_ptr = unsafe { data.cast::<Nat>(mem) };
-                subi(&cast_ptr, operand, mem)?;
-            },
-            OP_XOR | OP_XOR_R => {
-                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
-                xor(&cast_ptr, mem);
-            },
-            OP_XORI | OP_XORI_R => {
-                let operand = decode_i(op);
-                let cast_ptr = unsafe { data.cast::<Nat>(mem) };
-                xori(&cast_ptr, operand, mem);
-            },
-            OP_CSWAP | OP_CSWAP_R => {
-                let cast_ptr = unsafe {
-                    data.cast::<Product<Product<Nat, Nat>, Nat>>(mem)
-                };
-                cswap(&cast_ptr, mem);
-            },
-            OP_CSWAPI | OP_CSWAPI_R => {
-                let operand = decode_i(op);
-                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
-                cswapi(&cast_ptr, operand, mem);
-            },
-            OP_RR => {
-                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
-                rr(&cast_ptr, mem);
-            },
-            OP_RL => {
-                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
-                rl(&cast_ptr, mem);
-            },
-            OP_RRI => {
-                let operand = decode_i(op);
-                let cast_ptr = unsafe { data.cast::<Nat>(mem) };
-                rri(&cast_ptr, operand, mem);
-            },
-            OP_RLI => {
-                let operand = decode_i(op);
-                let cast_ptr = unsafe { data.cast::<Nat>(mem) };
-                rli(&cast_ptr, operand, mem);
-            },
-            OP_LTI => {
-                let cast_ptr = unsafe { data.cast::<Product<Nat, Nat>>(mem) };
-                let new_data = mem.alloc(lti(cast_ptr, mem))?;
-                self.data.set(new_data.as_untyped(mem));
-            },
-            OP_LTE => {
-                let cast_ptr = unsafe {
-                    data.cast::<Sum<Product<Nat, Nat>>>(mem)
-                };
-                let inner = lte(cast_ptr, mem)?;
-
-                self.data.set(inner.as_untyped(mem));
-                mem.dealloc(cast_ptr)?;
-            },
-            OP_LTII => {
-                let div = decode_i(op);
-                let cast_ptr = unsafe { data.cast::<Nat>(mem) };
-                
-                let new_data = mem.alloc(ltii(cast_ptr, div, mem))?;
-                self.data.set(new_data.as_untyped(mem));
-            },
-            OP_LTEI => {
-                let div = decode_i(op);
-                let cast_ptr = unsafe { data.cast::<Sum<Nat>>(mem) };
-
-                let inner = ltei(cast_ptr, div, mem)?;
-                self.data.set(inner.as_untyped(mem));
-                mem.dealloc(cast_ptr)?;
+                self.data.set(mem.alloc(Unit::new())?.as_untyped(mem));
             },
             OP_CALL => {
                 let index = decode_i(op);
@@ -436,8 +353,8 @@ impl Thread {
                     _ => return Err(RuntimeError::new(ErrorKind::BadContext)),
                 }
             },
-            OP_SYSC => {}, // TODO: FFI
-            OP_RSYSC => {}, // TODO: FFI
+            OP_READ => {}, // TODO: FFI
+            OP_WRITE => {}, // TODO: FFI
             OP_SUMS => {
                 let (rc, lc, div) = decode_c(op);
                 let cast_ptr = unsafe { data.cast::<Sum<()>>(mem) };
