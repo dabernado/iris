@@ -237,51 +237,13 @@ CALL f <-> UNCALL f		: ?a <-> ?b
  * Invoke function forwards/backwards on datatype
  * f = name of invoked function, stored in a hash table with function address
 
-SYSC f <-> RSYSC f		: ?a <-> ?b
- * Invoke system call forwards/backwards on datatype; used for
- * ISA extensions and I/O ops
- * f = id of system function
+READ c <-> WRITE c		: ?a <-> (?b * ?a)
+ * Read/write data to/from external communication channel with ?a as
+ * an optional argument; also can open new channels
+ * c = id of communication channel
 
 START <-> END			: ?a <-> ?a
  * Designates beginning/end of function; operationally equivalent to ID
-```
-
-### Extensions
-#### Arithmetic Extension
-```
-add <-> sub           : (nat * nat) <-> (nat * nat)
- * Add/subtract two integers, with result placed in first value
-
-addi n <-> subi n	    : nat <-> nat 
- * Add/subtract constant to/from integer
-
-xor <-> xor           : (nat * nat) <-> (nat * nat)
- * Exclusive-or on two integers, result placed in first value
-
-xori n <-> xori n 	  : nat <-> nat
- * Exclusive-or integer with constant
-
-cswap <-> cswap		    : ((nat * nat) * nat) <-> ((nat * nat) * nat)
- * Controlled swap on two integers, with second value as control
-
-cswapi n <-> cswapi n	: (nat * nat) <-> (nat * nat)
- * Controlled swap on two integers, with constant as control
-
-rr <-> rl             : (nat * nat) <-> (nat * nat)
- * Rotate bits of an integer left/right
-
-rri n <-> rli n		    : nat <-> nat
- * Rotate bits of an integer left/right by constant value
-
-lti <-> lte		        : (nat * nat) <-> ((nat * nat) + (nat * nat))
- * Create left/right value from nat product if first value is
- * less than second value, or collapse back into nat product
- * if sum tag and nat comparison match
-
-ltii n <-> ltei n	    : nat <-> (nat + nat)
- * Create left/right value from nat if value is less than
- * immediate value, or collapse back into nat if sum tag
- * and nat comparison match
 ```
 
 ## Instruction Encoding
