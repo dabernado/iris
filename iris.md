@@ -140,7 +140,7 @@ Despite the strong typing of IRIS allowing for the elimination of many runtime e
 
 `ERRCXT` - attempted invalid context transition
 
-`ERRSYSC` - attempted invalid syscall
+`ERRIO` - read/write error
 
 ## Language Spec
 ### Types
