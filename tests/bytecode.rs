@@ -9,8 +9,8 @@ fn test_get_opcode() {
             && OP_ZEROI == get_opcode(OP_ZEROE as u32, true));
     assert!(OP_FOLD == get_opcode(OP_FOLD as u32, false)
             && OP_UFOLD == get_opcode(OP_FOLD as u32, true));
-    assert!(OP_SYSC == get_opcode(OP_SYSC as u32, false)
-            && OP_RSYSC == get_opcode(OP_SYSC as u32, true));
+    assert!(OP_READ == get_opcode(OP_READ as u32, false)
+            && OP_WRITE == get_opcode(OP_READ as u32, true));
 }
 
 #[test]

@@ -6,7 +6,9 @@ use crate::memory::MutatorScope;
 use crate::safeptr::{CellPtr, ScopedPtr, UntypedCellPtr};
 use crate::printer::*;
 
-/* Primitive Types */
+/*
+ * Primitive Types
+ */
 // This type should NEVER be instantiated
 pub struct Zero;
 impl AllocObject for Zero {}
@@ -79,7 +81,9 @@ impl Print for Bool {
     ) -> fmt::Result { write!(f, "{}", self) }
 }
 
-/* Algebraic Data Types */
+/*
+ * Algebraic Data Types
+ */
 #[derive(Clone, Debug)]
 pub struct Fraction {
     ptr: UntypedCellPtr,

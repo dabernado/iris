@@ -1,9 +1,11 @@
 use crate::alloc::api::AllocObject;
 use crate::array::{Array, ArraySize, StackContainer};
 use crate::bytecode::{
+    /*
     Function,
-    Continuation,
     get_opcode,
+    */
+    Continuation,
     decode_i,
     decode_s,
     decode_c
@@ -16,6 +18,12 @@ use crate::memory::{MutatorView, MutatorScope};
 use crate::op::*;
 use crate::safeptr::*;
 
+/*
+ * Iris Datatypes
+ */
+pub type Op<O: AllocObject> = Product<Nat, Sum<O>>;
+pub type Function = Array<Op<()>>;
+
 #[derive(PartialEq)]
 pub enum EvalStatus {
     Pending,
@@ -23,6 +31,16 @@ pub enum EvalStatus {
     Err,
 }
 
+pub struct Thread {
+    function: CellPtr<Function>,
+    continuation: CellPtr<Continuation>,
+    cxt_stack: CellPtr<ContextStack>,
+    data: UntypedCellPtr,
+}
+
+impl AllocObject for Thread {}
+
+/*
 pub struct Thread {
     functions: CellPtr<Array<FuncPtr>>,
     continuation: CellPtr<Continuation>,
@@ -461,3 +479,4 @@ impl Thread {
 
     pub fn data(&self) -> &UntypedCellPtr { &self.data }
 }
+*/

@@ -70,6 +70,7 @@ impl<'memory> MutatorView<'memory> {
         Ok(())
     }
 
+    // TODO: Can't just copy whole region of memory
     pub fn alloc_frac(&self, object: ScopedPtr<'_, ()>, size: u32)
         -> Result<ScopedPtr<'_, ()>, RuntimeError>
     {
@@ -100,6 +101,7 @@ impl<'memory> MutatorView<'memory> {
             )
         };
 
+        // TODO: Unification will never succeed (pointer comparison), fix it
         let mut same = false;
         for bytes in frac_val.iter().zip(obj_val.iter()) {
             let (frac_byte, obj_byte) = bytes;

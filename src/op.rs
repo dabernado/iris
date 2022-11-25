@@ -1,6 +1,7 @@
 use crate::alloc::api::{AllocObject, RawPtr};
+use crate::array::*;
 use crate::data::*;
-use crate::error::{RuntimeError, ErrorKind};
+use crate::error::RuntimeError;
 use crate::memory::{MutatorScope, MutatorView};
 use crate::safeptr::{CellPtr, ScopedPtr};
 
@@ -268,4 +269,60 @@ pub fn colf<'guard>(
 
     mem.dealloc_frac(frac, val, frac.size())?;
     mem.dealloc(prod)
+}
+
+/*
+ * Fold/Unfold
+ */
+pub fn fold<'guard>(
+    val: ScopedPtr<'guard, Sum<()>>,
+    size: u32,
+    mem: &'guard MutatorView
+) -> Result<Array<()>, RuntimeError>
+{
+    if val.tag() == 0 {
+        let cast_val = unsafe { val.cast::<Sum<Unit>>(mem) };
+    } else {
+    }
+}
+
+pub fn fold_nat<'guard>(
+    val: ScopedPtr<'guard, Sum<Nat>>,
+    mem: &'guard MutatorView
+) -> Result<ScopedPtr<'guard, Nat>, RuntimeError>
+{
+    let nat = val.data(mem);
+    let nat_mut = nat.as_rawptr(mem).as_mut();
+
+    *nat_mut = *nat_mut + 1;
+    mem.dealloc(val);
+
+    Ok(nat)
+}
+
+pub fn unfold<'guard>(
+    val: ScopedPtr<'guard, Array<()>>,
+    size: u32,
+    mem: &'guard MutatorView
+) -> Result<Sum<()>, RuntimeError>
+{
+    if val.length() == 0 {
+    } else {
+        // alloc product
+    }
+}
+
+pub fn unfold_nat<'guard>(
+    val: ScopedPtr<'guard, Nat>,
+    mem: &'guard MutatorView
+) -> Result<Sum<Nat>, RuntimeError>
+{
+    let val_mut = val.as_rawptr(mem).as_mut();
+    *val_mut = *val_mut - 1;
+
+    if *val_mut == 0 {
+        Ok(Sum::new(0, CellPtr::new_with(val)))
+    } else {
+        Ok(Sum::new(1, CellPtr::new_with(val)))
+    }
 }

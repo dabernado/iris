@@ -24,11 +24,11 @@ The context stack tells an IRIS computer what they are doing, and stores necessa
 - @b = pointer to root product
 
 **Left @i @n**; the context for processing the left value of a sum
-- @i = pointer to first instruction of the right part of the sum combinator, which is compared to the instruction pointer before each instruction is executed. When the instruction pointer reaches this value, the Left context is popped off the stack and the instruction pointer moves down the program without executing anything until it reaches the end of the sum combinator.
+- @i = pointer to first instruction (or last, if executing backwards) of the right part of the sum combinator, which is compared to the instruction pointer before each instruction is executed. When the instruction pointer reaches this value, the Left context is popped off the stack and the instruction pointer moves down the program without executing anything until it reaches the end of the sum combinator.
 - @n = # of instructions to jump towards the instruction after the closing SUMC of the combinator, if executing forwards
 
 **Right @i @n**; the context for processing the right value of a sum
-- @i = pointer to first instruction of the right part of the sum combinator, which when executing in reverse behaves exactly like the instruction pointer in a Left context. When the instruction pointer reaches the end of the sum combinator, the Right context is popped off the stack.
+- @i = pointer to last instruction (or first, if executing backwards) of the left part of the sum combinator, which when executing in reverse behaves exactly like the instruction pointer in a Left context. When the instruction pointer reaches the end of the sum combinator, the Right context is popped off the stack.
 - @n = # of instructions to jump backwards to the instruction before the opening SUMC of the combinator, if executing in reverse
 
 **Call @f @i 0|1**; the context for calling a function
@@ -123,9 +123,9 @@ trace_fn =
 ```
 
 #### Functions
-Functions as a datatype in IRIS are represented by a pointer to the function's start in the program, which also includes an offset value which indicates the end of the function. When `EVAL` is called on a data value with a function pointer, the instruction pointer is updated with the information in the function pointer and the function is executed on the data value, returning after the function is finished executing.
+Functions are defined as a special case of an inductive type which contains the opcode type `nat * ?a`, where depending on the opcode in the first cell, the second cell is typed according to what the op requires. Functions can also be folded/unfolded to access the individual operations within.
 
-### Bytecode Format
+### Interaction
 
 ### Exceptions
 Despite the strong typing of IRIS allowing for the elimination of many runtime errors that are possible in other assembly languages, there are still some scenarios in which the attempted execution of certain instructions may result in the CPU throwing an exception. Some of the most common are:
@@ -151,7 +151,7 @@ Despite the strong typing of IRIS allowing for the elimination of many runtime e
 ?a <-> ?b := isomorphism type
 (?a * ?b) := product type
 (?a + ?b) := sum type
-x.?a      := recursive type
+x.?a      := inductive type
 -?a       := negative type
 1/?a      := fraction type
 
@@ -195,7 +195,7 @@ DIST <-> FACT     : ((?a + ?b) * ?c) <-> ((?a * ?c) + (?b * ?c))
  * rc = # of types on the right-hand side of the sum
 
 FOLD <-> UFOLD    : a[x.?a] <-> x.?a
- * Fold/unfold value into a recursively typed value
+ * Fold/unfold value into/out of an inductive type
 
 EXPN <-> COLN     : 0 <-> (-?a + ?a)
  * Reverse type sign and direction of execution
@@ -241,18 +241,15 @@ READ c <-> WRITE c		: ?a <-> (?b * ?a)
  * Read/write data to/from external communication channel with ?a as
  * an optional argument; also can open new channels
  * c = id of communication channel
-
-START <-> END			: ?a <-> ?a
- * Designates beginning/end of function; operationally equivalent to ID
 ```
 
 ## Instruction Encoding
 ```
  * I-Type
  *
- * 31                           0
- * [       imm       ] [ opcode ]
- *	       27b		         5b
+ * 31                                     0
+ * [            imm            ] [ opcode ]
+ *	            27b		               5b
  *
  * Instructions that do not contain additional information or
  * contain a constant value are represented by the I-Type
@@ -270,9 +267,9 @@ START <-> END			: ?a <-> ?a
 
  * C-Type
  *
- * 31                                       0
- * [   rc   ] [   lc   ] [  div  ] [ opcode ]
- *     9b	        9b	       9b	       5b
+ * 31                                     0
+ * [   rc  ] [   lc  ] [  div  ] [ opcode ]
+ *     9b	       9b	       9b	       5b
  *
  * The only instructions with the C-Type encoding are SUMS/SUME,
  * which contain the division value for a
