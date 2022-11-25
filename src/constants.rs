@@ -28,11 +28,11 @@ pub const OP_EXPF: u8 = 10;
 pub const OP_COLF: u8 = !OP_EXPF & (OP_MASK as u8);
 pub const OP_CALL: u8 = 11;
 pub const OP_UNCALL: u8 = !OP_CALL & (OP_MASK as u8);
-pub const OP_START: u8 = 12;
-pub const OP_END: u8 = !OP_START & (OP_MASK as u8);
-pub const OP_READ: u8 = 13;
+pub const OP_READ: u8 = 12;
 pub const OP_WRITE: u8 = !OP_READ & (OP_MASK as u8);
-pub const OP_PRODS: u8 = 15;
+pub const OP_SUMS: u8 = 13;
+pub const OP_SUME: u8 = !OP_SUMS & (OP_MASK as u8);
+pub const OP_PRODS: u8 = 14;
 pub const OP_PRODE: u8 = !OP_PRODS & (OP_MASK as u8);
 
 // S-Type
@@ -40,10 +40,6 @@ pub const OP_SWAPS: u8 = 2;
 pub const OP_SWAPS_R: u8 = !OP_SWAPS & (OP_MASK as u8);
 pub const OP_DIST: u8 = 7;
 pub const OP_FACT: u8 = !OP_DIST & (OP_MASK as u8);
-
-// C-Type
-pub const OP_SUMS: u8 = 14;
-pub const OP_SUME: u8 = !OP_SUMS & (OP_MASK as u8);
 
 // Maximums/Minimums
 pub const MAX_ITYPE_FIELD: u32 = 134217727;

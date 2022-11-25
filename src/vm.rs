@@ -1,14 +1,10 @@
 use crate::alloc::api::AllocObject;
 use crate::array::{Array, ArraySize, StackContainer};
 use crate::bytecode::{
-    /*
-    Function,
-    get_opcode,
-    */
     Continuation,
+    get_opcode,
     decode_i,
-    decode_s,
-    decode_c
+    decode_s
 };
 use crate::constants::*;
 use crate::context::{Context, ContextStack};
@@ -21,8 +17,8 @@ use crate::safeptr::*;
 /*
  * Iris Datatypes
  */
-pub type Op<O: AllocObject> = Product<Nat, Sum<O>>;
-pub type Function = Array<Op<()>>;
+pub type Instruction<O: AllocObject> = Product<Nat, Sum<O>>;
+pub type Function = Array<Instruction<()>>;
 
 #[derive(PartialEq)]
 pub enum EvalStatus {
@@ -40,73 +36,22 @@ pub struct Thread {
 
 impl AllocObject for Thread {}
 
-/*
-pub struct Thread {
-    functions: CellPtr<Array<FuncPtr>>,
-    continuation: CellPtr<Continuation>,
-    cxt_stack: CellPtr<ContextStack>,
-    data: UntypedCellPtr,
-}
-
-impl AllocObject for Thread {}
-
 impl Thread {
     pub fn alloc_with_arg<'guard>(
         mem: &'guard MutatorView,
-        data: UntypedCellPtr
+        data: ScopedPtr<'guard, Product<Function, ()>>
     )
         -> Result<ScopedPtr<'guard, Thread>, RuntimeError>
     {
-        let funcs = Array::<FuncPtr>::alloc_with_capacity(mem, 128)?;
-        let cxts = Array::<Context>::alloc_with_capacity(mem, 256)?;
-        cxts.push(mem, Context::Nil)?;
-
-        let empty_fn = Function::alloc(mem)?;
-        let cont = Continuation::alloc(mem, empty_fn)?;
-
-        mem.alloc(Thread {
-            functions: CellPtr::new_with(funcs),
-            continuation: CellPtr::new_with(cont),
-            cxt_stack: CellPtr::new_with(cxts),
-            data: data,
-        })
-    }
-
-    fn lookup_frac<'guard>(
-        &self,
-        guard: &'guard dyn MutatorScope,
-        index: ArraySize
-    ) -> Result<&'guard Fraction, RuntimeError>
-    {
-        self.continuation.get(guard)
-            .as_ref(guard)
-            .get_frac(guard, index)
-    }
-
-    pub fn add_func<'guard>(
-        &self,
-        guard: &'guard MutatorView,
-        func: ScopedPtr<'guard, Function>
-    ) {
-        self.functions.get(guard).push(guard, CellPtr::new_with(func));
     }
 
     pub fn call_func<'guard>(
         &self,
         mem: &'guard dyn MutatorScope,
-        index: ArraySize,
+        start: ArraySize,
+        end: ArraySize,
         not: bool,
     ) -> Result<(), RuntimeError> {
-        let cont = self.continuation.get(mem);
-        let func_ptr = self.functions.get(mem)
-            .read_ref(mem, index)?
-            .get(mem);
-
-        cont.set_func(func_ptr);
-        if not { cont.reverse(); }
-
-        cont.reset(func_ptr.length());
-        Ok(())
     }
 
     fn eval_context<'guard>(&self, mem: &'guard MutatorView)
@@ -116,6 +61,7 @@ impl Thread {
         let cont = self.continuation.get(mem);
 
         match cxt_stack.top(mem)? {
+            Context::Nil => {},
             Context::First {
                 snd_op_index,
                 snd_val,
@@ -149,7 +95,7 @@ impl Thread {
                 // if executing forwards, will exit combinator
                 // once PRODE is encountered
                 // else, check if moving into first part
-                if ip == fst_op_index && cont.direction() {
+                if cont.direction() && ip == fst_op_index {
                     // push First onto context stack
                     let new_cxt = Context::First {
                         snd_op_index: ip + 1,
@@ -172,7 +118,7 @@ impl Thread {
                 // if executing backwards, will exit combinator
                 // once SUME is encountered
                 // else, check if moving out of left part
-                if ip == right_op_index && !cont.direction() {
+                if !cont.direction() && ip == right_op_index {
                     // exit combinator
                     cxt_stack.pop(mem);
                     cont.jump(jump + 1);
@@ -189,14 +135,19 @@ impl Thread {
                 // if executing forwards, will exit combinator
                 // once SUME is encountered
                 // else, check if moving out of right part
-                if ip == left_op_index && cont.direction() {
+                if cont.direction() && ip == left_op_index {
                     // exit combinator
                     cxt_stack.pop(mem);
                     cont.jump(jump + 1);
                     self.data.set(root_val.get(mem).as_untyped(mem));
                 }
             },
-            _ => {},
+            Context::Call {
+                not,
+                start,
+                end,
+                ret
+            } => {},
         }
 
         Ok(())
@@ -213,8 +164,11 @@ impl Thread {
         let cxt_stack = self.cxt_stack.get(mem);
         let data = self.data.get(mem);
 
+        /*
+         * TODO: Reimplement instruction fetching
         let op = cont.get_next_op(mem)?;
         let opcode = get_opcode(op, cont.direction());
+        */
 
         match opcode {
             OP_ID | OP_ID_R => {}, // identity
@@ -359,22 +313,10 @@ impl Thread {
                 self.call_func(mem, index, !dir);
                 cxt_stack.push(mem, new_cxt);
             },
-            OP_START => {}, // op-equivalent to ID
-            OP_END => {
-                match cxt_stack.top(mem)? {
-                    Context::Call { ret_func, ret_addr, not } => {
-                        if not { cont.reverse(); }
-                        cont.set_func(ret_func.get(mem));
-                        cont.set_ip(ret_addr);
-                    },
-                    Context::Nil => return Ok(EvalStatus::Ok),
-                    _ => return Err(RuntimeError::new(ErrorKind::BadContext)),
-                }
-            },
             OP_READ => {}, // TODO: FFI
             OP_WRITE => {}, // TODO: FFI
             OP_SUMS => {
-                let (rc, lc, div) = decode_c(op);
+                let div = decode_i(op);
                 let cast_ptr = unsafe { data.cast::<Sum<()>>(mem) };
 
                 if cast_ptr.tag() < div as u32 {
@@ -479,4 +421,3 @@ impl Thread {
 
     pub fn data(&self) -> &UntypedCellPtr { &self.data }
 }
-*/

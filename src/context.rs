@@ -1,7 +1,7 @@
 use crate::array::{Array, ArraySize};
 use crate::alloc::api::AllocObject;
 use crate::data::{Bool, Product, Sum};
-use crate::safeptr::{CellPtr, FuncPtr, UntypedCellPtr};
+use crate::safeptr::{CellPtr, UntypedCellPtr};
 
 pub type ContextStack = Array<Context>;
 
@@ -30,9 +30,10 @@ pub enum Context {
         root_val: CellPtr<Sum<()>>,
     },
     Call {
-        ret_func: FuncPtr,
-        ret_addr: ArraySize,
-        not: Bool
+        not: Bool,
+        start: ArraySize,
+        end: ArraySize,
+        ret: ArraySize
     },
 }
 

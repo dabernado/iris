@@ -28,11 +28,3 @@ fn test_stype() {
     assert!(OP_SWAPS == get_opcode(instr, false));
     assert!((6, 9) == decode_s(instr));
 }
-
-#[test]
-fn test_ctype() {
-    let instr = encode_c(OP_SUMS, 4, 2, 3);
-
-    assert!(OP_SUMS == get_opcode(instr, false));
-    assert!((4, 2, 3) == decode_c(instr));
-}

@@ -4,11 +4,8 @@ use std::mem;
 use std::ops::Deref;
 
 use crate::alloc::api::{RawPtr, AllocObject};
-use crate::bytecode::Function;
 use crate::memory::MutatorScope;
 use crate::printer::Print;
-
-pub type FuncPtr = CellPtr<Function>;
 
 /* Scoped Pointers */
 pub struct ScopedPtr<'guard, T: Sized> {

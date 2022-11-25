@@ -1,54 +1,16 @@
 use std::cell::Cell;
 
 use crate::alloc::api::AllocObject;
-use crate::array::{
-    Array,
-    ArraySize,
-    Container, IndexedContainer, StackContainer
-};
+use crate::array::ArraySize;
 use crate::constants::*;
-use crate::data::Fraction;
 use crate::error::{RuntimeError, ErrorKind};
-use crate::memory::{MutatorView, MutatorScope};
-use crate::safeptr::{CellPtr, ScopedPtr, FuncPtr};
+use crate::memory::MutatorView;
+use crate::safeptr::ScopedPtr;
 
 pub type Opcode = u32;
 
 #[derive(Clone)]
-pub struct Function {
-    fractions: Array<Fraction>,
-    code: Array<Opcode>,
-}
-impl AllocObject for Function {}
-
-impl Function {
-    pub fn alloc<'guard>(
-        mem: &'guard MutatorView,
-    ) -> Result<ScopedPtr<'guard, Function>, RuntimeError> {
-        mem.alloc(Function {
-            fractions: Array::<Fraction>::new(),
-            code: Array::<Opcode>::new(),
-        })
-    }
-
-    pub fn push<'guard>(
-        &self,
-        mem: &'guard MutatorView,
-        op: Opcode
-    ) -> Result<(), RuntimeError> { self.code.push(mem, op) }
-
-    pub fn push_frac<'guard>(
-        &self,
-        mem: &'guard MutatorView,
-        ptr: Fraction
-    ) -> Result<(), RuntimeError> { self.fractions.push(mem, ptr) }
-
-    pub fn length(&self) -> ArraySize { self.code.length() }
-}
-
-#[derive(Clone)]
 pub struct Continuation {
-    function: FuncPtr,
     ip: Cell<ArraySize>,
     direction: Cell<bool>,
 }
@@ -57,53 +19,11 @@ impl AllocObject for Continuation {}
 impl Continuation {
     pub fn alloc<'guard>(
         mem: &'guard MutatorView,
-        func: ScopedPtr<'_, Function>,
     ) -> Result<ScopedPtr<'guard, Continuation>, RuntimeError> {
         mem.alloc(Continuation {
-            function: CellPtr::new_with(func),
             ip: Cell::new(0),
             direction: Cell::new(false),
         })
-    }
-
-    pub fn switch_frame(
-        &self,
-        code: ScopedPtr<'_, Function>,
-        ip: ArraySize,
-        dir: bool,
-    ) {
-        self.function.set(code);
-        self.ip.set(ip);
-        self.direction.set(dir);
-    }
-
-    // TODO: Optimize (too many indirections)
-    pub fn get_next_op<'guard>(
-        &self,
-        guard: &'guard dyn MutatorScope,
-    ) -> Result<Opcode, RuntimeError> {
-        let current_ip = self.ip.get();
-        let instr = self
-            .function
-            .get(guard)
-            .code
-            .get(guard, current_ip)?;
-
-        if !self.direction.get() {
-            self.ip.set(current_ip + 1);
-        } else {
-            self.ip.set(current_ip - 1);
-        }
-
-        Ok(instr)
-    }
-
-    pub fn get_frac<'guard>(
-        &self,
-        guard: &'guard dyn MutatorScope,
-        index: ArraySize,
-    ) -> Result<&'guard Fraction, RuntimeError> {
-        Ok(self.function.get(guard).fractions.read_ref(guard, index)?)
     }
 
     pub fn set_ip(&self, i: ArraySize) { self.ip.set(i); }
@@ -113,10 +33,6 @@ impl Continuation {
         } else {
             self.set_ip(self.ip() - jmp);
         }
-    }
-
-    pub fn set_func<'guard>(&self, func: ScopedPtr<'guard, Function>) {
-        self.function.set(func);
     }
 
     pub fn reset(&self, jmp: ArraySize) {
@@ -130,10 +46,6 @@ impl Continuation {
     pub fn ip(&self) -> ArraySize { self.ip.get() }
     pub fn direction(&self) -> bool { self.direction.get() }
     pub fn reverse(&self) { self.direction.set(!self.direction()) }
-    pub fn current_func<'guard>(
-        &self,
-        guard: &'guard dyn MutatorScope,
-    ) -> ScopedPtr<'guard, Function> { self.function.get(guard) }
 }
 
 // Decoding Functions
@@ -153,14 +65,6 @@ pub fn decode_s(instr: Opcode) -> (u16, u16) {
     (
         ((instr & S_LC_MASK) >> 5) as u16,
         ((instr & S_RC_MASK) >> 18) as u16
-    )
-}
-
-pub fn decode_c(instr: Opcode) -> (u8, u8, u8) {
-    (
-        ((instr & C_DIV_MASK) >> 5) as u8,
-        ((instr & C_LC_MASK) >> 14) as u8,
-        ((instr & C_RC_MASK) >> 23) as u8
     )
 }
 
@@ -184,15 +88,4 @@ pub fn encode_s(op: u8, lc: u16, rc: u16) -> Result<Opcode, RuntimeError> {
     } else {
         Err(RuntimeError::new(ErrorKind::IntOverflow))
     }
-}
-
-pub fn encode_c(op: u8, div: u8, lc: u8, rc: u8) -> Opcode {
-    let padded_div = (div as u32) << 5;
-    let padded_lc = (lc as u32) << 14;
-    let padded_rc = (rc as u32) << 23;
-
-    (((0 ^ padded_rc)
-      ^ padded_lc)
-     ^ padded_div)
-    ^ (op as u32)
 }
