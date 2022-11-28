@@ -31,8 +31,6 @@ pub enum Context {
     },
     Call {
         not: Bool,
-        start: ArraySize,
-        end: ArraySize,
         ret: ArraySize
     },
 }

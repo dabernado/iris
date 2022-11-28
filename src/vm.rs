@@ -62,6 +62,7 @@ impl Thread {
 
         match cxt_stack.top(mem)? {
             Context::Nil => {},
+            Context::Call { not, ret } => {},
             Context::First {
                 snd_op_index,
                 snd_val,
@@ -142,12 +143,6 @@ impl Thread {
                     self.data.set(root_val.get(mem).as_untyped(mem));
                 }
             },
-            Context::Call {
-                not,
-                start,
-                end,
-                ret
-            } => {},
         }
 
         Ok(())
@@ -273,45 +268,40 @@ impl Thread {
                     return Err(RuntimeError::new(ErrorKind::ExpectedZero));
                 }
             },
-            OP_EXPF => {
-                let index = decode_i(op);
-                let frac_ptr = self.lookup_frac(mem, index)?;
-
-                let new_data = mem.alloc(expf(frac_ptr, mem)?)?;
-                mem.dealloc(data)?;
-                self.data.set(new_data.as_untyped(mem));
-            },
-            OP_COLF => {
-                let cast_ptr = unsafe {
-                    data.cast::<Product<Fraction, ()>>(mem)
-                };
-
-                colf(cast_ptr, mem)?;
-                self.data.set(mem.alloc(Unit::new())?.as_untyped(mem));
-            },
+            OP_EXPF => {}, // TODO: reimplement
+            OP_COLF => {}, // TODO: reimplement
             OP_CALL => {
-                let index = decode_i(op);
                 let dir = cont.direction();
+                let not = if !dir { false } else { true };
                 let new_cxt = Context::Call {
-                    ret_func: CellPtr::new_with(cont.current_func(mem)),
-                    ret_addr: if dir { cont.ip() - 1 } else { cont.ip() + 1 },
-                    not: dir,
+                    not,
+                    ret: if dir { cont.ip() - 1 } else { cont.ip() + 1 },
                 };
 
-                self.call_func(mem, index, dir);
+                self.call_func(mem, index, not);
                 cxt_stack.push(mem, new_cxt);
             },
             OP_UNCALL => {
-                let index = decode_i(op);
                 let dir = cont.direction();
+                let not = if dir { false } else { true };
                 let new_cxt = Context::Call {
-                    ret_func: CellPtr::new_with(cont.current_func(mem)),
-                    ret_addr: if dir { cont.ip() - 1 } else { cont.ip() + 1 },
-                    not: !dir,
+                    not,
+                    ret: if dir { cont.ip() - 1 } else { cont.ip() + 1 },
                 };
 
-                self.call_func(mem, index, !dir);
+                self.call_func(mem, index, not);
                 cxt_stack.push(mem, new_cxt);
+            },
+            OP_START => {}, // op-equivalent to ID
+            OP_END => {
+                match cxt_stack.top(mem)? {
+                    Context::Call { not, ret } => {
+                        if not { cont.reverse(); }
+                        cont.set_ip(ret);
+                    },
+                    Context::Nil => return Ok(EvalStatus::Ok),
+                    _ => return Err(RuntimeError::new(ErrorKind::BadContext)),
+                }
             },
             OP_READ => {}, // TODO: FFI
             OP_WRITE => {}, // TODO: FFI
