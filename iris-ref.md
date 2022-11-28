@@ -7,14 +7,14 @@
 ?a <-> ?b := isomorphism type
 (?a * ?b) := product type
 (?a + ?b) := sum type
-x.?a      := inductive type
+x.[?a]    := inductive type
 -?a       := negative type
 1/?a      := fraction type
 
-nat  := x.(1 + x)
+nat  := x.[1 + x]
 int  := (nat + nat)
 bool := (1 + 1)
-list := x.(1 + (?a * x))
+list := x.[1 + (?a * x)]
 ```
 
 ### Functions
@@ -60,21 +60,19 @@ EXPN <-> COLN     : 0 <-> (-?a + ?a)
 
 EXPF x <-> COLF x : 1 <-> (1/?a * ?a)
  * Allocate/deallocate new variable
- * x = index of fraction array to value being introduced
+ * x = name of value being introduced
 ```
 
 ### Combinators
 ```
 +{
  * Left hand sum combinator delimiter
- * l = number of instructions in left hand of combinator
- * r = number of instructions in right hand of combinator
+ * j = jump to first instruction of right half of combinator
  * d = index of last variant of the left hand of the type
 
 }+
  * Right hand sum combinator delimiter
- * l = number of instructions in left hand of combinator
- * r = number of instructions in right hand of combinator
+ * j = jump to last instruction of left half of combinator
  * d = index of last variant of the left hand of the type
 
 *{
@@ -88,10 +86,13 @@ EXPF x <-> COLF x : 1 <-> (1/?a * ?a)
 
 ### Control/Memory
 ```
+START <-> END		: ?a <-> ?a
+ * Denotes start/end of function; operationally equivalent to ID
+
 CALL f <-> UNCALL f		: ?a <-> ?b
 	where f: ?a <-> ?b
  * Invoke function forwards/backwards on datatype
- * f = name of invoked function, stored in a hash table with function address
+ * f = name of invoked function, translated to start + end indices in bytecode
 
 READ c <-> WRITE c		: ?a <-> (?b * ?a)
  * Read/write data to/from external communication channel with ?a as
