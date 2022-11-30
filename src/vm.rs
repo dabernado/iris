@@ -1,11 +1,6 @@
 use crate::alloc::api::AllocObject;
-use crate::array::{Array, ArraySize, StackContainer};
-use crate::bytecode::{
-    Continuation,
-    get_opcode,
-    decode_i,
-    decode_s
-};
+use crate::array::{ArraySize, StackContainer};
+use crate::bytecode::*;
 use crate::constants::*;
 use crate::context::{Context, ContextStack};
 use crate::data::*;
@@ -13,12 +8,6 @@ use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::{MutatorView, MutatorScope};
 use crate::op::*;
 use crate::safeptr::*;
-
-/*
- * Iris Datatypes
- */
-pub type Instruction<O: AllocObject> = Product<Nat, Sum<O>>;
-pub type Function = Array<Instruction<()>>;
 
 #[derive(PartialEq)]
 pub enum EvalStatus {
@@ -43,6 +32,16 @@ impl Thread {
     )
         -> Result<ScopedPtr<'guard, Thread>, RuntimeError>
     {
+        let cont = Continuation::alloc(mem)?;
+        let cxts = Array::<Context>::alloc_with_capacity(mem, 256)?;
+        cxts.push(mem, Context::Nil)?;
+
+        mem.alloc(Thread {
+            function: CellPtr::new_with(data.fst(mem)),
+            continuation: CellPtr::new_with(cont),
+            cxt_stack: CellPtr::new_with(cxts),
+            data: CellPtr::new_with(data.snd(mem)),
+        })
     }
 
     pub fn call_func<'guard>(
@@ -52,6 +51,24 @@ impl Thread {
         end: ArraySize,
         not: bool,
     ) -> Result<(), RuntimeError> {
+        let cont = self.continuation.get(mem);
+        let current_dir = cont.direction();
+
+        if !current_dir {
+            if not {
+                cont.set_ip(end);
+                cont.reverse();
+            } else {
+                cont.set_ip(start);
+            }
+        } else {
+            if not {
+                cont.set_ip(start);
+                cont.reverse();
+            } else {
+                cont.set_ip(end);
+            }
+        }
     }
 
     fn eval_context<'guard>(&self, mem: &'guard MutatorView)
@@ -154,16 +171,17 @@ impl Thread {
         // check the context stack for any necessary state changes
         self.eval_context(mem)?;
 
+        let function = self.function.get(mem);
         let cont = self.continuation.get(mem)
             .as_ref(mem);
         let cxt_stack = self.cxt_stack.get(mem);
         let data = self.data.get(mem);
 
-        /*
-         * TODO: Reimplement instruction fetching
-        let op = cont.get_next_op(mem)?;
+        // get instruction
+        let instruction = cont.fetch_instr(mem, function);
+        let op = instruction.fst(mem);
+        let arg = instruction.snd(mem);
         let opcode = get_opcode(op, cont.direction());
-        */
 
         match opcode {
             OP_ID | OP_ID_R => {}, // identity
@@ -277,8 +295,15 @@ impl Thread {
                     not,
                     ret: if dir { cont.ip() - 1 } else { cont.ip() + 1 },
                 };
+                
+                let cast_arg = unsafe {
+                    arg.cast::<Sum<Product<Nat, Nat>>>(mem)
+                };
+                let start_end = cast_arg.data(mem);
+                let start = start_end.fst(mem);
+                let end = start_end.snd(mem);
 
-                self.call_func(mem, index, not);
+                self.call_func(mem, start, end, not);
                 cxt_stack.push(mem, new_cxt);
             },
             OP_UNCALL => {
@@ -289,7 +314,14 @@ impl Thread {
                     ret: if dir { cont.ip() - 1 } else { cont.ip() + 1 },
                 };
 
-                self.call_func(mem, index, not);
+                let cast_arg = unsafe {
+                    arg.cast::<Sum<Product<Nat, Nat>>>(mem)
+                };
+                let start_end = cast_arg.data(mem);
+                let start = start_end.fst(mem);
+                let end = start_end.snd(mem);
+
+                self.call_func(mem, start, end, not);
                 cxt_stack.push(mem, new_cxt);
             },
             OP_START => {}, // op-equivalent to ID
@@ -305,6 +337,7 @@ impl Thread {
             },
             OP_READ => {}, // TODO: FFI
             OP_WRITE => {}, // TODO: FFI
+            // TODO: Rewrite to use arg as jump
             OP_SUMS => {
                 let div = decode_i(op);
                 let cast_ptr = unsafe { data.cast::<Sum<()>>(mem) };
@@ -366,6 +399,7 @@ impl Thread {
                     _ => return Err(RuntimeError::new(ErrorKind::BadContext)),
                 }
             },
+            // TODO: Rewrite to use arg as jump
             OP_PRODS => {
                 let index = decode_i(op) + cont.ip();
                 let cast_ptr = unsafe { data.cast::<Product<(), ()>>(mem) };

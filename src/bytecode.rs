@@ -1,13 +1,19 @@
 use std::cell::Cell;
 
 use crate::alloc::api::AllocObject;
-use crate::array::ArraySize;
+use crate::array::{Array, ArraySize, IndexedContainer};
 use crate::constants::*;
+use crate::data::{Nat, Product, Sum};
 use crate::error::{RuntimeError, ErrorKind};
-use crate::memory::MutatorView;
+use crate::memory::{MutatorScope, MutatorView};
 use crate::safeptr::ScopedPtr;
 
-pub type Opcode = u32;
+/*
+ * Iris Datatypes
+ */
+pub type Opcode = Nat;
+pub type Instruction<O: AllocObject> = Product<Opcode, Sum<O>>;
+pub type Function = Array<Instruction<()>>;
 
 #[derive(Clone)]
 pub struct Continuation {
@@ -24,6 +30,14 @@ impl Continuation {
             ip: Cell::new(0),
             direction: Cell::new(false),
         })
+    }
+
+    pub fn fetch_instr<'guard>(
+        &self,
+        guard: &'guard dyn MutatorScope,
+        func: ScopedPtr<'guard, Function>
+    ) -> Result<Instruction, RuntimeError> {
+        func.get(guard, self.ip)
     }
 
     pub fn set_ip(&self, i: ArraySize) { self.ip.set(i); }
