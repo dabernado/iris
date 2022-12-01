@@ -12,11 +12,12 @@ As of now, Iris is getting close to becoming a functioning prototype of an IRIS 
 
 Right now, the next steps are as follows:
 - write integration tests for bytecode interpretation
-- switch out data types for capnproto types?
-  - ideally, we want to load images without converting to internal data types
-- design and implement a new data structure for code/data images
-  - implement and test IRIS image serialization/deserialization
-- implement dynamic function lookup/dispatch
+- design and implement serialized code/data images
+  - switch out data types for capnproto types?
+    - ideally, we want to load images without converting to internal data types
+- write IRIS lang compiler
+  - begin work on sive->IRIS transpiler for bootstrapping metacircular compiler
 - JIT compilation via Cranelift for x86/arm64/risc-v
 - implement foreign function interface
 - ???
+  - fuzz testing?
