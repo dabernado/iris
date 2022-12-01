@@ -1,5 +1,5 @@
 use crate::alloc::api::AllocObject;
-use crate::array::{ArraySize, StackContainer};
+use crate::array::{Array, ArraySize, StackContainer};
 use crate::bytecode::*;
 use crate::constants::*;
 use crate::context::{Context, ContextStack};
@@ -50,7 +50,7 @@ impl Thread {
         start: ArraySize,
         end: ArraySize,
         not: bool,
-    ) -> Result<(), RuntimeError> {
+    ) {
         let cont = self.continuation.get(mem);
         let current_dir = cont.direction();
 
@@ -178,10 +178,10 @@ impl Thread {
         let data = self.data.get(mem);
 
         // get instruction
-        let instruction = cont.fetch_instr(mem, function);
+        let instruction = cont.fetch_instr(mem, function)?;
         let op = instruction.fst(mem);
         let arg = instruction.snd(mem);
-        let opcode = get_opcode(op, cont.direction());
+        let opcode = get_opcode(*op, cont.direction());
 
         match opcode {
             OP_ID | OP_ID_R => {}, // identity
@@ -228,7 +228,7 @@ impl Thread {
                 asslp(&cast_ptr, mem);
             },
             OP_SWAPS | OP_SWAPS_R => {
-                let (lc, rc) = decode_s(op);
+                let (lc, rc) = decode_s(*op);
                 let cast_ptr = unsafe {
                     data.cast::<Sum<()>>(mem)
                 };
@@ -237,7 +237,7 @@ impl Thread {
             },
             OP_ASSRS | OP_ASSLS => {}, // op-equivalent to ID
             OP_DIST => {
-                let (lc, rc) = decode_s(op);
+                let (lc, rc) = decode_s(*op);
                 let cast_ptr = unsafe {
                     data.cast::<Product<Sum<()>, ()>>(mem)
                 };
@@ -246,7 +246,7 @@ impl Thread {
                 self.data.set(sum.as_untyped(mem));
             },
             OP_FACT => {
-                let (lc, rc) = decode_s(op);
+                let (lc, rc) = decode_s(*op);
                 let cast_ptr = unsafe {
                     data.cast::<Sum<Product<(), ()>>>(mem)
                 };
@@ -257,7 +257,7 @@ impl Thread {
             OP_FOLD => {}, // TODO: implement
             OP_UFOLD => {}, // TODO: implement
             OP_EXPN => {
-                let div = decode_i(op);
+                let div = decode_i(*op);
                 if cont.direction() {
                     let cast_ptr = unsafe {
                         data.cast::<Sum<()>>(mem)
@@ -271,7 +271,7 @@ impl Thread {
                 }
             },
             OP_COLN => {
-                let div = decode_i(op);
+                let div = decode_i(*op);
                 if !cont.direction() {
                     let cast_ptr = unsafe {
                         data.cast::<Sum<()>>(mem)
@@ -303,7 +303,7 @@ impl Thread {
                 let start = start_end.fst(mem);
                 let end = start_end.snd(mem);
 
-                self.call_func(mem, start, end, not);
+                self.call_func(mem, *start, *end, not);
                 cxt_stack.push(mem, new_cxt);
             },
             OP_UNCALL => {
@@ -321,7 +321,7 @@ impl Thread {
                 let start = start_end.fst(mem);
                 let end = start_end.snd(mem);
 
-                self.call_func(mem, start, end, not);
+                self.call_func(mem, *start, *end, not);
                 cxt_stack.push(mem, new_cxt);
             },
             OP_START => {}, // op-equivalent to ID
@@ -339,14 +339,20 @@ impl Thread {
             OP_WRITE => {}, // TODO: FFI
             // TODO: Rewrite to use arg as jump
             OP_SUMS => {
-                let div = decode_i(op);
+                let div = decode_i(*op);
                 let cast_ptr = unsafe { data.cast::<Sum<()>>(mem) };
+                let cast_arg = unsafe {
+                    arg.cast::<Sum<Product<Nat, Nat>>>(mem)
+                };
+                let lc_rc = cast_arg.data(mem);
+                let lc = lc_rc.fst(mem);
+                let rc = lc_rc.snd(mem);
 
                 if cast_ptr.tag() < div as u32 {
                     if !cont.direction() {
                         let new_cxt = Context::Left {
-                            right_op_index: cont.ip() + (lc + 1) as u32,
-                            jump: rc as u32,
+                            right_op_index: cont.ip() + (*lc + 1),
+                            jump: *rc,
                             root_val: CellPtr::new_with(cast_ptr),
                         };
 
@@ -354,30 +360,30 @@ impl Thread {
                         self.data.set(cast_ptr.data(mem));
                     } else {
                         let new_cxt = Context::Left {
-                            right_op_index: cont.ip() - rc as u32,
-                            jump: rc as u32,
+                            right_op_index: cont.ip() - *rc,
+                            jump: *rc,
                             root_val: CellPtr::new_with(cast_ptr),
                         };
 
-                        cont.jump((rc + 1) as u32); // ip - rc+1
+                        cont.jump(*rc + 1); // ip - rc+1
                         cxt_stack.push(mem, new_cxt);
                         self.data.set(cast_ptr.data(mem));
                     }
                 } else {
                     if !cont.direction() {
                         let new_cxt = Context::Right {
-                            left_op_index: cont.ip() + lc as u32,
-                            jump: lc as u32,
+                            left_op_index: cont.ip() + *lc,
+                            jump: *lc,
                             root_val: CellPtr::new_with(cast_ptr),
                         };
 
-                        cont.jump((lc + 1) as u32); // ip + lc+1
+                        cont.jump(*lc + 1); // ip + lc+1
                         cxt_stack.push(mem, new_cxt);
                         self.data.set(cast_ptr.data(mem));
                     } else {
                         let new_cxt = Context::Right {
-                            left_op_index: cont.ip() - (rc + 1) as u32,
-                            jump: lc as u32,
+                            left_op_index: cont.ip() - (*rc + 1),
+                            jump: *lc,
                             root_val: CellPtr::new_with(cast_ptr),
                         };
 
@@ -401,12 +407,13 @@ impl Thread {
             },
             // TODO: Rewrite to use arg as jump
             OP_PRODS => {
-                let index = decode_i(op) + cont.ip();
                 let cast_ptr = unsafe { data.cast::<Product<(), ()>>(mem) };
+                let cast_arg = unsafe { arg.cast::<Sum<Nat>>(mem) };
+                let jmp = cast_arg.data(mem);
 
                 if !cont.direction() {
                     let new_cxt = Context::First {
-                        snd_op_index: index,
+                        snd_op_index: *jmp + cont.ip(),
                         snd_val: CellPtr::new_with(cast_ptr.snd(mem)),
                         root_val: CellPtr::new_with(cast_ptr),
                     };
@@ -415,7 +422,7 @@ impl Thread {
                     self.data.set(cast_ptr.fst(mem));
                 } else {
                     let new_cxt = Context::Second {
-                        fst_op_index: index,
+                        fst_op_index: *jmp + cont.ip(),
                         fst_val: CellPtr::new_with(cast_ptr.fst(mem)),
                         root_val: CellPtr::new_with(cast_ptr),
                     };

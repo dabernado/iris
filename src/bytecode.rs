@@ -36,8 +36,8 @@ impl Continuation {
         &self,
         guard: &'guard dyn MutatorScope,
         func: ScopedPtr<'guard, Function>
-    ) -> Result<Instruction, RuntimeError> {
-        func.get(guard, self.ip)
+    ) -> Result<Instruction<()>, RuntimeError> {
+        func.get(guard, self.ip.get())
     }
 
     pub fn set_ip(&self, i: ArraySize) { self.ip.set(i); }
