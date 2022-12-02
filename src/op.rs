@@ -347,15 +347,15 @@ pub fn unfold<'guard>(
 pub fn unfold_nat<'guard>(
     val: ScopedPtr<'guard, Nat>,
     mem: &'guard MutatorView
-) -> Result<Sum<Nat>, RuntimeError>
+) -> Result<ScopedPtr<'guard, Sum<Nat>>, RuntimeError>
 {
     let mut binding = val.as_rawptr(mem);
     let val_mut = binding.as_mut();
     *val_mut = *val_mut - 1;
 
     if *val_mut == 0 {
-        Ok(Sum::new(0, CellPtr::new_with(val)))
+        mem.alloc(Sum::new(0, CellPtr::new_with(val)))
     } else {
-        Ok(Sum::new(1, CellPtr::new_with(val)))
+        mem.alloc(Sum::new(1, CellPtr::new_with(val)))
     }
 }

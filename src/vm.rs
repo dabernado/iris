@@ -254,8 +254,44 @@ impl Thread {
                 let prod = fact(cast_ptr, lc, rc, mem)?;
                 self.data.set(prod.as_untyped(mem));
             },
-            OP_FOLD => {}, // TODO: implement
-            OP_UFOLD => {}, // TODO: implement
+            OP_FOLD => {
+                let is_nat = decode_i(*op);
+
+                if is_nat == 0 {
+                    let cast_ptr = unsafe {
+                        data.cast::<Sum<Nat>>(mem)
+                    };
+
+                    let new_val = fold_nat(cast_ptr, mem)?;
+                    self.data.set(new_val.as_untyped(mem));
+                } else {
+                    let cast_ptr = unsafe {
+                        data.cast::<Sum<()>>(mem)
+                    };
+
+                    let new_val = fold(cast_ptr, mem)?;
+                    self.data.set(new_val.as_untyped(mem));
+                }
+            },
+            OP_UFOLD => {
+                let is_nat = decode_i(*op);
+
+                if is_nat == 0 {
+                    let cast_ptr = unsafe {
+                        data.cast::<Nat>(mem)
+                    };
+
+                    let new_val = unfold_nat(cast_ptr, mem)?;
+                    self.data.set(new_val.as_untyped(mem));
+                } else {
+                    let cast_ptr = unsafe {
+                        data.cast::<Inductive<()>>(mem)
+                    };
+
+                    let new_val = unfold(cast_ptr, mem)?;
+                    self.data.set(new_val.as_untyped(mem));
+                }
+            },
             OP_EXPN => {
                 let div = decode_i(*op);
                 if cont.direction() {
