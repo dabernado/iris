@@ -2,6 +2,7 @@ use std::fmt;
 use std::cell::Cell;
 
 use crate::alloc::api::AllocObject;
+use crate::array::Array;
 use crate::memory::MutatorScope;
 use crate::safeptr::{CellPtr, ScopedPtr, UntypedCellPtr};
 use crate::printer::*;
@@ -217,3 +218,5 @@ impl<F: AllocObject + Print, S: AllocObject + Print> Print for Product<F, S> {
         write!(f, ", {})", prod.snd.get(guard))
     }
 }
+
+pub type Inductive<O> = Array<CellPtr<O>>;

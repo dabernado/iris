@@ -79,7 +79,7 @@ impl Thread {
 
         match cxt_stack.top(mem)? {
             Context::Nil => {},
-            Context::Call { not, ret } => {},
+            Context::Call { not: _, ret: _ } => {},
             Context::First {
                 snd_op_index,
                 snd_val,
@@ -98,8 +98,8 @@ impl Thread {
                         root_val,
                     };
 
-                    cxt_stack.pop(mem);
-                    cxt_stack.push(mem, new_cxt);
+                    cxt_stack.pop(mem)?;
+                    cxt_stack.push(mem, new_cxt)?;
                     self.data.set(snd_val.get(mem));
                 }
             },
@@ -121,8 +121,8 @@ impl Thread {
                         root_val,
                     };
 
-                    cxt_stack.pop(mem);
-                    cxt_stack.push(mem, new_cxt);
+                    cxt_stack.pop(mem)?;
+                    cxt_stack.push(mem, new_cxt)?;
                     self.data.set(fst_val.get(mem));
                 }
             },
@@ -138,7 +138,7 @@ impl Thread {
                 // else, check if moving out of left part
                 if !cont.direction() && ip == right_op_index {
                     // exit combinator
-                    cxt_stack.pop(mem);
+                    cxt_stack.pop(mem)?;
                     cont.jump(jump + 1);
                     self.data.set(root_val.get(mem).as_untyped(mem));
                 }
@@ -155,7 +155,7 @@ impl Thread {
                 // else, check if moving out of right part
                 if cont.direction() && ip == left_op_index {
                     // exit combinator
-                    cxt_stack.pop(mem);
+                    cxt_stack.pop(mem)?;
                     cont.jump(jump + 1);
                     self.data.set(root_val.get(mem).as_untyped(mem));
                 }
@@ -304,7 +304,7 @@ impl Thread {
                 let end = start_end.snd(mem);
 
                 self.call_func(mem, *start, *end, not);
-                cxt_stack.push(mem, new_cxt);
+                cxt_stack.push(mem, new_cxt)?;
             },
             OP_UNCALL => {
                 let dir = cont.direction();
@@ -322,7 +322,7 @@ impl Thread {
                 let end = start_end.snd(mem);
 
                 self.call_func(mem, *start, *end, not);
-                cxt_stack.push(mem, new_cxt);
+                cxt_stack.push(mem, new_cxt)?;
             },
             OP_START => {}, // op-equivalent to ID
             OP_END => {
@@ -337,7 +337,6 @@ impl Thread {
             },
             OP_READ => {}, // TODO: FFI
             OP_WRITE => {}, // TODO: FFI
-            // TODO: Rewrite to use arg as jump
             OP_SUMS => {
                 let div = decode_i(*op);
                 let cast_ptr = unsafe { data.cast::<Sum<()>>(mem) };
@@ -356,7 +355,7 @@ impl Thread {
                             root_val: CellPtr::new_with(cast_ptr),
                         };
 
-                        cxt_stack.push(mem, new_cxt);
+                        cxt_stack.push(mem, new_cxt)?;
                         self.data.set(cast_ptr.data(mem));
                     } else {
                         let new_cxt = Context::Left {
@@ -366,7 +365,7 @@ impl Thread {
                         };
 
                         cont.jump(*rc + 1); // ip - rc+1
-                        cxt_stack.push(mem, new_cxt);
+                        cxt_stack.push(mem, new_cxt)?;
                         self.data.set(cast_ptr.data(mem));
                     }
                 } else {
@@ -378,7 +377,7 @@ impl Thread {
                         };
 
                         cont.jump(*lc + 1); // ip + lc+1
-                        cxt_stack.push(mem, new_cxt);
+                        cxt_stack.push(mem, new_cxt)?;
                         self.data.set(cast_ptr.data(mem));
                     } else {
                         let new_cxt = Context::Right {
@@ -387,7 +386,7 @@ impl Thread {
                             root_val: CellPtr::new_with(cast_ptr),
                         };
 
-                        cxt_stack.push(mem, new_cxt);
+                        cxt_stack.push(mem, new_cxt)?;
                         self.data.set(cast_ptr.data(mem));
                     }
                 }
@@ -405,7 +404,6 @@ impl Thread {
                     _ => return Err(RuntimeError::new(ErrorKind::BadContext)),
                 }
             },
-            // TODO: Rewrite to use arg as jump
             OP_PRODS => {
                 let cast_ptr = unsafe { data.cast::<Product<(), ()>>(mem) };
                 let cast_arg = unsafe { arg.cast::<Sum<Nat>>(mem) };
@@ -418,7 +416,7 @@ impl Thread {
                         root_val: CellPtr::new_with(cast_ptr),
                     };
 
-                    cxt_stack.push(mem, new_cxt);
+                    cxt_stack.push(mem, new_cxt)?;
                     self.data.set(cast_ptr.fst(mem));
                 } else {
                     let new_cxt = Context::Second {
@@ -427,7 +425,7 @@ impl Thread {
                         root_val: CellPtr::new_with(cast_ptr),
                     };
 
-                    cxt_stack.push(mem, new_cxt);
+                    cxt_stack.push(mem, new_cxt)?;
                     self.data.set(cast_ptr.snd(mem));
                 }
             }

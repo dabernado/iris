@@ -81,6 +81,7 @@ impl<'memory> MutatorView<'memory> {
         ))
     }
 
+    // TODO: Needs to compare values of type, not the memory itself
     pub fn dealloc_frac(
         &self,
         fraction: ScopedPtr<'_, Fraction>,
@@ -101,7 +102,6 @@ impl<'memory> MutatorView<'memory> {
             )
         };
 
-        // TODO: Unification will never succeed (pointer comparison), fix it
         let mut same = false;
         for bytes in frac_val.iter().zip(obj_val.iter()) {
             let (frac_byte, obj_byte) = bytes;

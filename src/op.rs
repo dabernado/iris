@@ -271,18 +271,30 @@ pub fn colf<'guard>(
     mem.dealloc(prod)
 }
 
-/*
- * Fold/Unfold
- */
 pub fn fold<'guard>(
     val: ScopedPtr<'guard, Sum<()>>,
-    size: u32,
     mem: &'guard MutatorView
-) -> Result<Array<()>, RuntimeError>
+) -> Result<ScopedPtr<'guard, Inductive<()>>, RuntimeError>
 {
     if val.tag() == 0 {
         let cast_val = unsafe { val.cast::<Sum<Unit>>(mem) };
+
+        mem.dealloc(cast_val.data(mem))?;
+        mem.dealloc(cast_val)?;
+        Array::alloc(mem)
     } else {
+        let cast_val = unsafe {
+            val.cast::<Sum<Product<(), Inductive<()>>>>(mem)
+        };
+
+        let data = cast_val.data(mem);
+        let inductive = data.snd(mem);
+
+        inductive.push(mem, CellPtr::new_with(data.fst(mem)))?;
+        mem.dealloc(data)?;
+        mem.dealloc(cast_val)?;
+
+        Ok(inductive)
     }
 }
 
@@ -292,23 +304,43 @@ pub fn fold_nat<'guard>(
 ) -> Result<ScopedPtr<'guard, Nat>, RuntimeError>
 {
     let nat = val.data(mem);
-    let nat_mut = nat.as_rawptr(mem).as_mut();
+    let mut binding = nat.as_rawptr(mem);
+    let nat_mut = binding.as_mut();
 
     *nat_mut = *nat_mut + 1;
-    mem.dealloc(val);
+    mem.dealloc(val)?;
 
     Ok(nat)
 }
 
 pub fn unfold<'guard>(
-    val: ScopedPtr<'guard, Array<()>>,
-    size: u32,
+    val: ScopedPtr<'guard, Inductive<()>>,
     mem: &'guard MutatorView
-) -> Result<Sum<()>, RuntimeError>
+) -> Result<ScopedPtr<'guard, Sum<()>>, RuntimeError>
 {
     if val.length() == 0 {
+        mem.dealloc(val)?;
+        let ptr = mem.alloc(
+            Sum::new(0, CellPtr::new_with(mem.alloc(Unit::new())?))
+        )?;
+        
+        Ok(unsafe {
+            ptr.cast::<Sum<()>>(mem)
+        })
     } else {
         // alloc product
+        let new_val = val.pop(mem)?.get(mem);
+        let prod = mem.alloc(Product::new(
+            CellPtr::new_with(new_val),
+            CellPtr::new_with(val),
+        ))?;
+        let sum = mem.alloc(
+            Sum::new(1, CellPtr::new_with(prod))
+        )?;
+        
+        Ok(unsafe {
+            sum.cast::<Sum<()>>(mem)
+        })
     }
 }
 
@@ -317,7 +349,8 @@ pub fn unfold_nat<'guard>(
     mem: &'guard MutatorView
 ) -> Result<Sum<Nat>, RuntimeError>
 {
-    let val_mut = val.as_rawptr(mem).as_mut();
+    let mut binding = val.as_rawptr(mem);
+    let val_mut = binding.as_mut();
     *val_mut = *val_mut - 1;
 
     if *val_mut == 0 {
