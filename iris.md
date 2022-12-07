@@ -71,7 +71,18 @@ trace_fn =
 ```
 
 #### Functions
-Functions are defined as a special case of an inductive type which contains the opcode type `nat * ?a`, where depending on the opcode in the first cell, the second cell is typed according to what the op requires. Functions can also be folded/unfolded to access the individual operations within.
+Functions are defined as a special case of the inductive type `x.[1 + ((nat * (nat + ((nat * nat) + ?a))) * x)]`, where depending on the opcode in the first cell, the second cell is typed according to what the op requires. Functions can also be folded/unfolded to access the individual operations within.
+
+The cases of the second value of instructions break down as follows:
+- case 0: general op or prod combinator = (nat * nat)
+  - fst = opcode
+  - snd = jump forwards/backwards to first or second half of combinator
+- case 1: CALL/UNCALL or sum combinator = (nat * (nat * nat))
+  - fst = opcode
+  - snd = index to start + end of function, or lc + rc of sum combinator
+- case 2: EXPF/COLF = (nat * ?a)
+  - fst = opcode
+  - snd = frac value
 
 ### Interaction
 

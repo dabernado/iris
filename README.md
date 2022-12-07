@@ -15,9 +15,18 @@ Right now, the next steps are as follows:
 - design and implement serialized code/data images
   - switch out data types for capnproto types?
     - ideally, we want to load images without converting to internal data types
-- write IRIS lang compiler
+- write IRIS assembler
   - begin work on sive->IRIS transpiler for bootstrapping metacircular compiler
+- optimize
+  - direct nat embedding, no more pointers
+  - 32-bit sum tag, always directly in front of value
+    - size = largest variant
+  - product as 2 32-bit values, either nat or pointer
+  - packed inductives; no more pointer arrays
+  - more fine grained type encoding in instructions
+    - also tells what size given object is at any given time
 - JIT compilation via Cranelift for x86/arm64/risc-v
 - implement foreign function interface
 - ???
-  - fuzz testing?
+  - fuzz testing
+  - profiling + optimization
