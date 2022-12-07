@@ -6,7 +6,7 @@ use crate::constants::*;
 use crate::data::{Nat, Product, Sum, Inductive};
 use crate::error::{RuntimeError, ErrorKind};
 use crate::memory::{MutatorScope, MutatorView};
-use crate::safeptr::ScopedPtr;
+use crate::safeptr::{ScopedPtr, CellPtr};
 
 /*
  * Iris Datatypes
@@ -17,6 +17,7 @@ pub type Function = Inductive<Instruction<()>>;
 
 #[derive(Clone)]
 pub struct Continuation {
+    function: CellPtr<Function>,
     ip: Cell<ArraySize>,
     direction: Cell<bool>,
 }
@@ -25,19 +26,22 @@ impl AllocObject for Continuation {}
 impl Continuation {
     pub fn alloc<'guard>(
         mem: &'guard MutatorView,
+        func: ScopedPtr<'guard, Function>
     ) -> Result<ScopedPtr<'guard, Continuation>, RuntimeError> {
         mem.alloc(Continuation {
+            function: CellPtr::new_with(func),
             ip: Cell::new(0),
             direction: Cell::new(false),
         })
     }
 
+    // TODO: Optimize (way too many indirections)
     pub fn fetch_instr<'guard>(
         &self,
         guard: &'guard dyn MutatorScope,
-        func: ScopedPtr<'guard, Function>
     ) -> Result<ScopedPtr<'guard, Instruction<()>>, RuntimeError> {
-        let ptr = func.get(guard, self.ip.get())?;
+        let ptr = self.function.get(guard)
+            .get(guard, self.ip.get())?;
         Ok(ptr.get(guard))
     }
 

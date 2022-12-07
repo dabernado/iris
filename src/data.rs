@@ -219,4 +219,5 @@ impl<F: AllocObject + Print, S: AllocObject + Print> Print for Product<F, S> {
     }
 }
 
+// TODO: Switch to packed implementation
 pub type Inductive<O> = Array<CellPtr<O>>;

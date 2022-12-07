@@ -89,6 +89,9 @@ impl Thread {
                 // once PRODE is encountered
                 // else, check if moving into second part
                 if ip == snd_op_index && !cont.direction() {
+                    root_val.get(mem).set_fst(self.data.get(mem));
+                    self.data.set(snd_val.get(mem));
+                    
                     // push Second onto context stack
                     let new_cxt = Context::Second {
                         fst_op_index: ip - 1,
@@ -98,8 +101,6 @@ impl Thread {
 
                     cxt_stack.pop(mem)?;
                     cxt_stack.push(mem, new_cxt)?;
-                    root_val.get(mem).set_fst(self.data.get(mem));
-                    self.data.set(snd_val.get(mem));
                 }
             },
             Context::Second {
@@ -113,6 +114,9 @@ impl Thread {
                 // once PRODE is encountered
                 // else, check if moving into first part
                 if cont.direction() && ip == fst_op_index {
+                    root_val.get(mem).set_snd(self.data.get(mem));
+                    self.data.set(fst_val.get(mem));
+                    
                     // push First onto context stack
                     let new_cxt = Context::First {
                         snd_op_index: ip + 1,
@@ -122,8 +126,6 @@ impl Thread {
 
                     cxt_stack.pop(mem)?;
                     cxt_stack.push(mem, new_cxt)?;
-                    root_val.get(mem).set_snd(self.data.get(mem));
-                    self.data.set(fst_val.get(mem));
                 }
             },
             Context::Left {
@@ -179,7 +181,7 @@ impl Thread {
         let data = self.data.get(mem);
 
         // get instruction
-        // TODO: Optimize (two indirections to get op is too much)
+        // TODO: Optimize (way too many indirections)
         let instruction = cont.fetch_instr(mem)?;
         let op = *(instruction.fst(mem));
         let arg = instruction.snd(mem);
