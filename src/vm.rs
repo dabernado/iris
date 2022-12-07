@@ -17,7 +17,6 @@ pub enum EvalStatus {
 }
 
 pub struct Thread {
-    function: CellPtr<Function>,
     continuation: CellPtr<Continuation>,
     cxt_stack: CellPtr<ContextStack>,
     data: UntypedCellPtr,
@@ -32,12 +31,11 @@ impl Thread {
     )
         -> Result<ScopedPtr<'guard, Thread>, RuntimeError>
     {
-        let cont = Continuation::alloc(mem)?;
+        let cont = Continuation::alloc(mem, data.fst(mem))?;
         let cxts = Array::<Context>::alloc_with_capacity(mem, 256)?;
         cxts.push(mem, Context::Nil)?;
 
         mem.alloc(Thread {
-            function: CellPtr::new_with(data.fst(mem)),
             continuation: CellPtr::new_with(cont),
             cxt_stack: CellPtr::new_with(cxts),
             data: CellPtr::new_with(data.snd(mem)),
@@ -100,6 +98,7 @@ impl Thread {
 
                     cxt_stack.pop(mem)?;
                     cxt_stack.push(mem, new_cxt)?;
+                    root_val.get(mem).set_fst(self.data.get(mem));
                     self.data.set(snd_val.get(mem));
                 }
             },
@@ -123,6 +122,7 @@ impl Thread {
 
                     cxt_stack.pop(mem)?;
                     cxt_stack.push(mem, new_cxt)?;
+                    root_val.get(mem).set_snd(self.data.get(mem));
                     self.data.set(fst_val.get(mem));
                 }
             },
@@ -140,6 +140,7 @@ impl Thread {
                     // exit combinator
                     cxt_stack.pop(mem)?;
                     cont.jump(jump + 1);
+                    root_val.get(mem).set_data(self.data.get(mem));
                     self.data.set(root_val.get(mem).as_untyped(mem));
                 }
             },
@@ -157,6 +158,7 @@ impl Thread {
                     // exit combinator
                     cxt_stack.pop(mem)?;
                     cont.jump(jump + 1);
+                    root_val.get(mem).set_data(self.data.get(mem));
                     self.data.set(root_val.get(mem).as_untyped(mem));
                 }
             },
@@ -171,17 +173,17 @@ impl Thread {
         // check the context stack for any necessary state changes
         self.eval_context(mem)?;
 
-        let function = self.function.get(mem);
         let cont = self.continuation.get(mem)
             .as_ref(mem);
         let cxt_stack = self.cxt_stack.get(mem);
         let data = self.data.get(mem);
 
         // get instruction
-        let instruction = cont.fetch_instr(mem, function)?;
-        let op = instruction.fst(mem);
+        // TODO: Optimize (two indirections to get op is too much)
+        let instruction = cont.fetch_instr(mem)?;
+        let op = *(instruction.fst(mem));
         let arg = instruction.snd(mem);
-        let opcode = get_opcode(*op, cont.direction());
+        let opcode = get_opcode(op, cont.direction());
 
         match opcode {
             OP_ID | OP_ID_R => {}, // identity
@@ -228,7 +230,7 @@ impl Thread {
                 asslp(&cast_ptr, mem);
             },
             OP_SWAPS | OP_SWAPS_R => {
-                let (lc, rc) = decode_s(*op);
+                let (lc, rc) = decode_s(op);
                 let cast_ptr = unsafe {
                     data.cast::<Sum<()>>(mem)
                 };
@@ -237,7 +239,7 @@ impl Thread {
             },
             OP_ASSRS | OP_ASSLS => {}, // op-equivalent to ID
             OP_DIST => {
-                let (lc, rc) = decode_s(*op);
+                let (lc, rc) = decode_s(op);
                 let cast_ptr = unsafe {
                     data.cast::<Product<Sum<()>, ()>>(mem)
                 };
@@ -246,7 +248,7 @@ impl Thread {
                 self.data.set(sum.as_untyped(mem));
             },
             OP_FACT => {
-                let (lc, rc) = decode_s(*op);
+                let (lc, rc) = decode_s(op);
                 let cast_ptr = unsafe {
                     data.cast::<Sum<Product<(), ()>>>(mem)
                 };
@@ -255,7 +257,7 @@ impl Thread {
                 self.data.set(prod.as_untyped(mem));
             },
             OP_FOLD => {
-                let is_nat = decode_i(*op);
+                let is_nat = decode_i(op);
 
                 if is_nat == 0 {
                     let cast_ptr = unsafe {
@@ -274,7 +276,7 @@ impl Thread {
                 }
             },
             OP_UFOLD => {
-                let is_nat = decode_i(*op);
+                let is_nat = decode_i(op);
 
                 if is_nat == 0 {
                     let cast_ptr = unsafe {
@@ -293,7 +295,7 @@ impl Thread {
                 }
             },
             OP_EXPN => {
-                let div = decode_i(*op);
+                let div = decode_i(op);
                 if cont.direction() {
                     let cast_ptr = unsafe {
                         data.cast::<Sum<()>>(mem)
@@ -307,7 +309,7 @@ impl Thread {
                 }
             },
             OP_COLN => {
-                let div = decode_i(*op);
+                let div = decode_i(op);
                 if !cont.direction() {
                     let cast_ptr = unsafe {
                         data.cast::<Sum<()>>(mem)
@@ -374,7 +376,7 @@ impl Thread {
             OP_READ => {}, // TODO: FFI
             OP_WRITE => {}, // TODO: FFI
             OP_SUMS => {
-                let div = decode_i(*op);
+                let div = decode_i(op);
                 let cast_ptr = unsafe { data.cast::<Sum<()>>(mem) };
                 let cast_arg = unsafe {
                     arg.cast::<Sum<Product<Nat, Nat>>>(mem)
@@ -432,9 +434,11 @@ impl Thread {
 
                 match sum_cxt {
                     Context::Left { root_val, .. } => {
+                        root_val.get(mem).set_data(self.data.get(mem));
                         self.data.set(root_val.get(mem).as_untyped(mem));
                     },
                     Context::Right { root_val, .. } => {
+                        root_val.get(mem).set_data(self.data.get(mem));
                         self.data.set(root_val.get(mem).as_untyped(mem));
                     },
                     _ => return Err(RuntimeError::new(ErrorKind::BadContext)),
@@ -470,9 +474,11 @@ impl Thread {
 
                 match sum_cxt {
                     Context::First { root_val, .. } => {
+                        root_val.get(mem).set_fst(self.data.get(mem));
                         self.data.set(root_val.get(mem).as_untyped(mem));
                     },
                     Context::Second { root_val, .. } => {
+                        root_val.get(mem).set_snd(self.data.get(mem));
                         self.data.set(root_val.get(mem).as_untyped(mem));
                     },
                     _ => return Err(RuntimeError::new(ErrorKind::BadContext)),
