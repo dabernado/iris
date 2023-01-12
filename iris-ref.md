@@ -7,14 +7,15 @@
 ?a <-> ?b := isomorphism type
 (?a * ?b) := product type
 (?a + ?b) := sum type
-x.[?a]    := inductive type
+μx.[?a]   := inductive type
+νx.[?a]   := coinductive type
 -?a       := negative type
 1/?a      := fraction type
 
-nat  := x.[1 + x]
+nat  := μx.[1 + x]
 int  := (nat + nat)
 bool := (1 + 1)
-list := x.[1 + (?a * x)]
+list := μx.[1 + (?a * x)]
 ```
 
 ### Functions
@@ -50,17 +51,14 @@ DIST <-> FACT     : ((?a + ?b) * ?c) <-> ((?a * ?c) + (?b * ?c))
  * lc = # of types on the left-hand side of the sum
  * rc = # of types on the right-hand side of the sum
 
-FOLD <-> UFOLD    : a[x.?a] <-> x.?a
- * Fold/unfold value into/out of an inductive type
+FOLD <-> UFOLD    : μx.[?a/b]b <-> μx.[?a]
+ * Fold/unfold value into/out of a coinductive type
+ * n = size of inductive type elements
 
-EXPN <-> COLN     : 0 <-> (-?a + ?a)
- * Reverse type sign and direction of execution
- *
- * n = number of types in each side of the sum
-
-EXPF x <-> COLF x : 1 <-> (1/?a * ?a)
- * Allocate/deallocate new variable
- * x = name of value being introduced
+GEN f <-> REC f   : νx.[?a/b]b <-> νx.[?a]
+	where f: ?b <-> ?a
+ * Generate/read value in/out of a coinductive type
+ * f = isomorphism (user or machine-defined) to generate/read elements
 ```
 
 ### Combinators
@@ -86,6 +84,15 @@ EXPF x <-> COLF x : 1 <-> (1/?a * ?a)
 
 ### Control/Memory
 ```
+EXPN <-> COLN     : 0 <-> (-?a + ?a)
+ * Reverse type sign and direction of execution
+ *
+ * n = number of types in each side of the sum
+
+EXPF x <-> COLF x : 1 <-> (1/?a * ?a)
+ * Allocate/deallocate new variable
+ * x = name of value being introduced
+
 START <-> END		: ?a <-> ?a
  * Denotes start/end of function; operationally equivalent to ID
 
@@ -93,11 +100,6 @@ CALL f <-> UNCALL f		: ?a <-> ?b
 	where f: ?a <-> ?b
  * Invoke function forwards/backwards on datatype
  * f = name of invoked function, translated to start + end indices in bytecode
-
-READ c <-> WRITE c		: ?a <-> (?b * ?a)
- * Read/write data to/from external communication channel with ?a as
- * an optional argument; also can open new channels
- * c = id of communication channel
 ```
 
 ## Instruction Encoding

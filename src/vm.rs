@@ -296,6 +296,8 @@ impl Thread {
                     self.data.set(new_val.as_untyped(mem));
                 }
             },
+            OP_GEN => {}, // TODO: add coinduction
+            OP_REC => {}, // TODO: add coinduction
             OP_EXPN => {
                 let div = decode_i(op);
                 if cont.direction() {
@@ -375,8 +377,6 @@ impl Thread {
                     _ => return Err(RuntimeError::new(ErrorKind::BadContext)),
                 }
             },
-            OP_READ => {}, // TODO: FFI
-            OP_WRITE => {}, // TODO: FFI
             OP_SUMS => {
                 let div = decode_i(op);
                 let cast_ptr = unsafe { data.cast::<Sum<()>>(mem) };

@@ -1,26 +1,38 @@
 ## Questions
-### How to implement dynamic function dispatch?
-- special `READ/WRITE` channel for type checking + executing functions
-  - system may choose to disable and remove ability to execute live code
-  - requires a type checker to be implemented in VM/hardware
-
 ### How to fix EXPF/COLF?
 - needs some kind of type token to compare actual values when unifying
+  - GC must walk through the actual values of the type and compare them
 - introduce `type` primitive into type system?
   - could also be useful for defining functions
   - does it necessarily need to be a primitive type though?
 - or put type info into fraction type?
   - arg in bytecode must still be polymorphic, even if it is a fraction
 
-### How to implement packed inductives?
-- each inductive contains a field indicating the size of each datum
-  - size 1 (nat, unit)
-  - size 2 (product, sum(nat))
-  - size 3 (sum(product))
-  - size n (inductive); equivalent to 1 (each cell is a pointer to inductive)
-- could datum size be encoded in `FOLD/UNFOLD` ops?
+### What is the relationship between interaction combinators and IRIS?
+- interaction combinators as IRIS implementation technique?
+  - operators can't be cut; reduction must be reversible somehow
 
-### Should we implement access paths at IRIS layer?
+### How to optimize?
+- parallelization
+  - Iris could achieve HVM levels of speedup
+- nat embedding
+  - embedded directly into product cells
+- localized sum tag
+  - tag is always directly in front of wrapped value, instead of its pointer
+- packed inductives
+  - each inductive contains a field indicating the size of each datum
+    - size 1 (nat, unit)
+    - size 2 (product, sum(nat))
+    - size 3 (sum(product))
+    - size n (inductive); equivalent to 1 (each cell is a pointer to inductive)
+- lazy evaluation?
+- packed products?
+  - not feasible without a tag byte
+- type encoding
+  - encode enough information in ops to determine size of current data type
+  - could datum size be encoded in `FOLD/UNFOLD`, instead of as inductive field?
+
+### Should access paths be implemented at IRIS layer?
 - IRIS access path = inductive of (fst/snd + sum + index) tokens at each step
 - useful for replacing pointer to current data type
 - access path = type token?
@@ -28,18 +40,21 @@
   - add field to IRIS machine for holding/manipulating type info?
 - add ops for access paths?
 
-### How to implement interaction?
-- add arrows to wrap READ/WRITE?
-  - arrow call context?
-  - or should it be in sive runtime?
-    - has potential to break pure reversible type checking in IRIS
-- async/await for IO operations?
-- `READ/WRITE` as delimited continuations?
-  - negative types give concise definition
-- static interaction vs dynamic interaction
-  - static interaction = interaction with channel id as constant
-  - dynamic interaction = interaction with channel id as op argument
-    - capabilities?
+### How to implement interaction (aka concurrency)?
+- coinductive types?
+  - implementation?
+    - isomorphism?
+      - unfold = straightforward, take next element in type
+      - fold = requires seeding with pre-existing coinductive value
+        - and iso(/arrow?) which generates/degenerates succeeding values?
+    - case 0: access communication channel
+      - successful creation of type dependent on thread's capabilities
+      - specific types defined in machine with integer constants
+        - FFI, hardware interfaces, thread creation, etc.
+    - case 1: lazy evaluated data structure
+      - execute async piece of code which generates next element
+        - real numbers, infinite lists, etc.
+  - whats the relationship between coinductive types and capabilities?
 - interaction channels (standardized "IRIS Interactive System Interface"?)
   - 0: open/close new channels
   - 1: delete data (potentially irreversible)
@@ -48,6 +63,9 @@
   - 4: console I/O
   - 5: network I/O
 
+### How to implement dynamic function dispatch?
+- add coinductive capability for thread to inspect/reflect itself?
+
 ## TODO
 - reimplement EXPF/COLF
-- optimize op fetch
+- implement optimizations

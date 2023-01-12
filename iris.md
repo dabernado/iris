@@ -99,4 +99,4 @@ Despite the strong typing of IRIS allowing for the elimination of many runtime e
 
 `ERRCXT` - attempted invalid context transition
 
-`ERRIO` - read/write error
+`ERRCOIDCT` - coinduction/IO error
